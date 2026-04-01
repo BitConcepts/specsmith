@@ -49,6 +49,26 @@ pre-commit install
 - Windows scripts: `.cmd` only (no `.ps1`)
 - Line length: 100
 
+## Tool Registry
+
+When adding a new project type:
+1. Add the enum to `config.py` (`ProjectType`)
+2. Add type label and section ref to `config.py` (`_TYPE_LABELS`, `_SECTION_REFS`)
+3. Add directory structure to `scaffolder.py` (`_get_empty_dirs`)
+4. Add tool entries to `tools.py` (`_TOOL_REGISTRY`)
+5. Add CI metadata to `tools.py` (`LANG_CI_META`) if the language is new
+6. Add type-specific rules to `templates/agents.md.j2`
+7. Add tests for the new type
+
+## Importing Existing Projects
+
+`specsmith import` generates governance overlay for existing projects. The detection engine in `importer.py` handles:
+- Language detection by file extension
+- Build system detection (pyproject.toml, Cargo.toml, CMakeLists.txt, etc.)
+- Test framework detection
+- CI and VCS platform detection
+- Module and entry point discovery
+
 ## Pull Requests
 
 - Branch from `develop` (features) or `main` (hotfixes)

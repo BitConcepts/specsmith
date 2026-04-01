@@ -9,6 +9,10 @@
 - **REQ-CLI-005**: `specsmith upgrade` regenerates governance files for a newer spec version
 - **REQ-CLI-006**: All commands accept `--project-dir` to target a specific project root
 - **REQ-CLI-007**: `specsmith --version` displays the current version
+- **REQ-CLI-008**: `specsmith import` detects an existing project and generates governance overlay
+- **REQ-CLI-009**: `specsmith init --guided` runs interactive architecture definition session
+- **REQ-CLI-010**: `specsmith status` shows CI status, alerts, and PRs from VCS platform CLI
+- **REQ-CLI-011**: `specsmith diff` compares governance files against spec templates
 
 ## Scaffolding
 
@@ -22,8 +26,10 @@
 ## Configuration
 
 - **REQ-CFG-001**: ProjectConfig validates scaffold.yml input with pydantic
-- **REQ-CFG-002**: ProjectConfig supports 8 project types (backend-frontend, cli-python, fpga-rtl, etc.)
+- **REQ-CFG-002**: ProjectConfig supports 20 project types covering Python, Rust, Go, C/C++, JS/TS, .NET, mobile, DevOps, data/ML, and microservices
 - **REQ-CFG-003**: ProjectConfig derives package_name from project name (hyphen → underscore)
+- **REQ-CFG-004**: ProjectConfig supports verification_tools overrides per tool category
+- **REQ-CFG-005**: ProjectConfig stores detected_build_system and detected_test_framework from import
 
 ## Audit
 
@@ -61,7 +67,32 @@
 - **REQ-INT-004**: Copilot adapter generates .github/copilot-instructions.md
 - **REQ-INT-005**: Adapter registry allows listing and instantiating adapters by name
 
+## Tool Registry
+
+- **REQ-TLR-001**: Tool registry maps each project type to lint, typecheck, test, security, build, format, and compliance tools
+- **REQ-TLR-002**: Tool registry provides CI metadata per language (GitHub Actions setup, Docker images, cache keys)
+- **REQ-TLR-003**: Tool registry supports user overrides via verification_tools config field
+- **REQ-TLR-004**: Format tools have CI check-mode equivalents (e.g., ruff format → ruff format --check)
+
+## Import
+
+- **REQ-IMP-001**: Importer detects primary language from file extension counts
+- **REQ-IMP-002**: Importer detects build system from marker files (pyproject.toml, Cargo.toml, etc.)
+- **REQ-IMP-003**: Importer detects test framework from indicator files
+- **REQ-IMP-004**: Importer detects existing CI and VCS platform
+- **REQ-IMP-005**: Importer detects existing governance files and modules/entry points
+- **REQ-IMP-006**: Importer infers correct ProjectType from detection results
+- **REQ-IMP-007**: Overlay generation creates AGENTS.md, LEDGER.md, REQUIREMENTS.md, TEST_SPEC.md, architecture.md
+- **REQ-IMP-008**: Overlay generation skips existing files unless --force is specified
+
+## VCS Platforms
+
+- **REQ-VCS-001**: GitHub, GitLab, and Bitbucket platforms generate tool-aware CI configs from the registry
+- **REQ-VCS-002**: CI config generation supports all 20 project types with correct tool commands
+- **REQ-VCS-003**: Dependabot/Renovate config uses correct package ecosystem per language
+- **REQ-VCS-004**: Mixed-language projects (e.g., Python+JS) get multi-runtime CI setup
+
 ## Cross-Platform
 
 - **REQ-XPL-001**: All CLI commands work on Windows, Linux, and macOS
-- **REQ-XPL-002**: Generated scripts include both .ps1 and .sh variants
+- **REQ-XPL-002**: Generated scripts include both .cmd and .sh variants

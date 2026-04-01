@@ -8,7 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **specsmith CLI tool** with 7 commands: `init`, `audit`, `validate`, `compress`, `upgrade`, `status`, `diff`.
+- **specsmith CLI tool** with 9 commands: `init`, `import`, `audit`, `validate`, `compress`, `upgrade`, `status`, `diff`.
+- **`specsmith import`**: walk an existing project, detect language/build/tests/CI, generate governance overlay (AGENTS.md, LEDGER.md, REQUIREMENTS.md, TEST_SPEC.md, architecture.md). Supports `--force` to overwrite existing files.
+- **`specsmith init --guided`**: interactive architecture definition session that auto-generates REQ/TEST stubs and architecture.md from user-defined components.
+- **Verification tool registry** (`tools.py`): maps all 20 project types to lint, typecheck, test, security, build, format, and compliance tools. Supports user overrides via `verification_tools` config field.
+- **Tool-aware CI generation**: GitHub Actions, GitLab CI, and Bitbucket Pipelines generate correct tool commands per project type (not just Python). CI metadata for 13 languages including setup actions, Docker images, and cache keys.
+- **20 project types** (up from 8): added web-frontend, fullstack-js, cli-rust, cli-go, cli-c, library-rust, library-c, dotnet-app, mobile-app, devops-iac, data-ml, microservices.
+- **Project detection engine** (`importer.py`): detects language, build system, test framework, CI, governance files, modules, entry points, and VCS state from an existing project directory.
+- **Auditor tool verification**: `specsmith audit` now checks that CI configs reference the expected verification tools for the project type.
+- **Type-specific governance templates**: AGENTS.md and verification.md now include type-specific rules for Rust, Go, C/C++, web frontend, .NET, DevOps/IaC, data/ML, and microservices projects.
+- **Mixed-language CI support**: projects with both Python and JS tools (e.g., backend-frontend) automatically get both runtime setups in CI.
+- **Language-specific Dependabot ecosystems**: pip, cargo, gomod, npm, nuget, pub detected from project language.
 - **Interactive prompts** for VCS platform, branching strategy, and agent integrations during `specsmith init`.
 - **`specsmith status`**: pull CI status, dependency alerts, and open PRs from VCS platform CLI (gh/glab/bb).
 - **`specsmith diff`**: compare governance files against what spec templates would generate.
@@ -16,9 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Config inheritance**: `extends` field in scaffold.yml to inherit org-level defaults.
 - **7 agent integration adapters**: Warp/Oz, Claude Code, Cursor, Copilot, Gemini, Windsurf, Aider.
 - **3 VCS platform integrations**: GitHub (`gh`), GitLab (`glab`), Bitbucket (`bb`) with CI/CD, dependency, and security config generation.
-- **Domain-specific scaffold directories**: FPGA (rtl/src, constraints, testbenches, ip_cores), Yocto (meta-layer, kas, configs), PCB (schematics, layout, bom, fabrication, 3d-models), Embedded (firmware/src, include, drivers).
-- **Branching strategy config**: gitflow, trunk-based, github-flow with tuning knobs (require_pr_reviews, required_approvals, require_ci_pass, allow_force_push, use_remote_rules).
-- **59 tests** across 10 test files covering CLI, scaffolder, auditor, validator, compressor, integrations, VCS platforms.
+- **Domain-specific scaffold directories**: FPGA, Yocto, PCB, Embedded, Web, Rust, Go, C/C++, .NET, Mobile, DevOps, Data/ML, Microservices.
+- **Branching strategy config**: gitflow, trunk-based, github-flow with tuning knobs.
+- **98 tests** across 12 test files covering CLI, scaffolder, auditor, validator, compressor, integrations, VCS platforms, tool registry, and importer.
 - **GitHub Actions CI**: lint (ruff), typecheck (mypy --strict), test (pytest, 3 OS × 3 Python), security audit (pip-audit).
 - **Release workflow**: tag-triggered build (sdist + wheel) → GitHub Release artifacts.
 - Dependabot, pre-commit, Docker local CI.

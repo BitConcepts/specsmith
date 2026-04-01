@@ -317,6 +317,80 @@ def check_context_size(root: Path) -> list[AuditResult]:
 # ---------------------------------------------------------------------------
 
 
+def check_tool_configuration(root: Path) -> list[AuditResult]:
+    """Check that CI config references the expected verification tools."""
+    results: list[AuditResult] = []
+    scaffold_path = root / "scaffold.yml"
+    if not scaffold_path.exists():
+        return results  # Not a specsmith project — skip silently
+
+    import yaml
+
+    from specsmith.config import ProjectConfig
+    from specsmith.tools import get_tools
+
+    try:
+        with open(scaffold_path) as f:
+            raw = yaml.safe_load(f)
+        config = ProjectConfig(**raw)
+    except Exception:  # noqa: BLE001
+        return results  # Malformed config — other checks will catch this
+
+    tools = get_tools(config)
+    if not any([tools.lint, tools.typecheck, tools.test, tools.security]):
+        return results  # No tools registered for this type
+
+    # Check CI configs for expected tool references
+    ci_files = list(root.glob(".github/workflows/*.yml")) + [
+        root / ".gitlab-ci.yml",
+        root / "bitbucket-pipelines.yml",
+    ]
+    ci_content = ""
+    for ci_file in ci_files:
+        if ci_file.exists():
+            ci_content += ci_file.read_text(encoding="utf-8")
+
+    if not ci_content:
+        results.append(
+            AuditResult(
+                name="tool-ci-config",
+                passed=True,
+                message="No CI config found — tool verification skipped",
+            )
+        )
+        return results
+
+    missing: list[str] = []
+    # Check that at least the primary lint and test tools appear in CI
+    for cmd in tools.lint[:1]:
+        tool_name = cmd.split()[0]  # e.g. "ruff" from "ruff check"
+        if tool_name not in ci_content:
+            missing.append(f"lint:{tool_name}")
+    for cmd in tools.test[:1]:
+        tool_name = cmd.split()[0]
+        if tool_name not in ci_content:
+            missing.append(f"test:{tool_name}")
+
+    if missing:
+        results.append(
+            AuditResult(
+                name="tool-ci-config",
+                passed=False,
+                message=f"CI config missing expected tools: {', '.join(missing)}",
+            )
+        )
+    else:
+        results.append(
+            AuditResult(
+                name="tool-ci-config",
+                passed=True,
+                message=f"CI config references expected verification tools for {config.type.value}",
+            )
+        )
+
+    return results
+
+
 def run_audit(root: Path) -> AuditReport:
     """Run all audit checks and return a report."""
     report = AuditReport()
@@ -324,6 +398,7 @@ def run_audit(root: Path) -> AuditReport:
     report.results.extend(check_req_test_consistency(root))
     report.results.extend(check_ledger_health(root))
     report.results.extend(check_context_size(root))
+    report.results.extend(check_tool_configuration(root))
     return report
 
 

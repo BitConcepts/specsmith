@@ -10,7 +10,7 @@
   Covers: REQ-CFG-001
 - **TEST-CFG-003**: package_name converts hyphens to underscores
   Covers: REQ-CFG-003
-- **TEST-CFG-004**: All 8 project types have valid type_label and section_ref
+- **TEST-CFG-004**: All 20 project types have valid type_label and section_ref
   Covers: REQ-CFG-002
 
 ### Auditor
@@ -89,3 +89,62 @@
   Covers: REQ-INT-004
 - **TEST-INT-005**: Adapter registry lists all available adapters
   Covers: REQ-INT-005
+
+### Tool Registry
+
+- **TEST-TLR-001**: Python CLI type has ruff, mypy, pytest, pip-audit, ruff format
+  Covers: REQ-TLR-001
+- **TEST-TLR-002**: Rust CLI type has clippy, cargo check, cargo test, cargo audit, cargo fmt
+  Covers: REQ-TLR-001
+- **TEST-TLR-003**: Go, web-frontend, FPGA, embedded, .NET types have correct tools
+  Covers: REQ-TLR-001
+- **TEST-TLR-004**: All 20 project types have at least one tool registered
+  Covers: REQ-TLR-001
+- **TEST-TLR-005**: get_tools() returns defaults from registry
+  Covers: REQ-TLR-001
+- **TEST-TLR-006**: get_tools() respects verification_tools overrides
+  Covers: REQ-TLR-003
+- **TEST-TLR-007**: Format check commands convert correctly (ruff, cargo fmt, prettier)
+  Covers: REQ-TLR-004
+- **TEST-TLR-008**: All languages in LANG_CI_META have docker_image
+  Covers: REQ-TLR-002
+
+### Importer
+
+- **TEST-IMP-001**: Detects Python project (language, build system, test framework, type)
+  Covers: REQ-IMP-001, REQ-IMP-002, REQ-IMP-003, REQ-IMP-006
+- **TEST-IMP-002**: Detects Rust project
+  Covers: REQ-IMP-001, REQ-IMP-002, REQ-IMP-006
+- **TEST-IMP-003**: Detects JS web project
+  Covers: REQ-IMP-001, REQ-IMP-002, REQ-IMP-006
+- **TEST-IMP-004**: Detects entry points and test files
+  Covers: REQ-IMP-005
+- **TEST-IMP-005**: Detects GitHub CI and governance files
+  Covers: REQ-IMP-004, REQ-IMP-005
+- **TEST-IMP-006**: Empty directory returns safe defaults
+  Covers: REQ-IMP-006
+- **TEST-IMP-007**: generate_import_config produces correct ProjectConfig
+  Covers: REQ-IMP-006
+- **TEST-IMP-008**: Overlay creates all 5 governance files
+  Covers: REQ-IMP-007
+- **TEST-IMP-009**: Overlay skips existing files without --force
+  Covers: REQ-IMP-008
+- **TEST-IMP-010**: Overlay force-overwrites existing files
+  Covers: REQ-IMP-008
+
+### VCS Platforms (Tool-Aware CI)
+
+- **TEST-VCS-001**: GitHub CI for Python has ruff, mypy, pytest, pip-audit
+  Covers: REQ-VCS-001
+- **TEST-VCS-002**: GitHub CI for Rust has cargo clippy, cargo test, rust-toolchain
+  Covers: REQ-VCS-001, REQ-VCS-002
+- **TEST-VCS-003**: GitHub CI for Go has golangci-lint, go test, setup-go
+  Covers: REQ-VCS-001, REQ-VCS-002
+- **TEST-VCS-004**: GitHub CI for FPGA has vsg, ghdl
+  Covers: REQ-VCS-001, REQ-VCS-002
+- **TEST-VCS-005**: Dependabot config uses correct ecosystem (pip, cargo, gomod)
+  Covers: REQ-VCS-003
+- **TEST-VCS-006**: GitLab CI for Rust uses rust:latest image and cargo commands
+  Covers: REQ-VCS-001
+- **TEST-VCS-007**: Bitbucket pipelines for Python has python:3.12-slim image
+  Covers: REQ-VCS-001

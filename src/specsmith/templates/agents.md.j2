@@ -64,6 +64,37 @@ Other project documents:
 - BOM files are governance artifacts — changes require proposals
 - Schematic review is a formal gate before layout
 - ECAD-MCAD sync points must be documented in workflow.md
+{% elif project.type.value in ('cli-rust', 'library-rust') %}
+- `cargo clippy` must pass with no warnings before merge
+- All public APIs must have doc comments
+- `cargo audit` must pass in CI
+{% elif project.type.value in ('cli-go',) %}
+- `golangci-lint run` must pass before merge
+- All exported functions must have doc comments
+- `govulncheck` must pass in CI
+{% elif project.type.value in ('cli-c', 'library-c') %}
+- MISRA-C compliance rules apply where annotated
+- `clang-tidy` and `cppcheck` must pass before merge
+- Memory safety must be verified for all allocations
+{% elif project.type.value == 'web-frontend' %}
+- `eslint` and `prettier` must pass before merge
+- All components must have corresponding test files
+- Accessibility (a11y) checks are recommended
+{% elif project.type.value == 'dotnet-app' %}
+- `dotnet format --verify-no-changes` must pass before merge
+- All public APIs must have XML doc comments
+{% elif project.type.value == 'devops-iac' %}
+- `tflint` / `ansible-lint` must pass before merge
+- Security scanning (`tfsec` / `checkov`) is mandatory
+- State files must never be committed
+{% elif project.type.value == 'data-ml' %}
+- Notebooks must be stripped of output before commit (`nbstripout`)
+- Model metrics must be recorded in the ledger
+- Data pipeline tests are mandatory
+{% elif project.type.value == 'microservices' %}
+- Each service must have independent CI and test suites
+- API contracts (OpenAPI / protobuf) are governance artifacts
+- `docker compose build` must succeed before merge
 {% else %}
 - Cross-platform rules apply to all file path and process behavior
 {% endif %}

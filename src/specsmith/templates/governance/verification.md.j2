@@ -10,6 +10,31 @@ Every meaningful task must record:
 
 "Not tested" is acceptable. "Tested" without evidence is not.
 
+## Project Verification Tools
+{% if tools.lint %}
+**Lint:** {{ tools.lint | join(', ') }}
+{% endif %}
+{% if tools.typecheck %}
+**Typecheck:** {{ tools.typecheck | join(', ') }}
+{% endif %}
+{% if tools.test %}
+**Test:** {{ tools.test | join(', ') }}
+{% endif %}
+{% if tools.security %}
+**Security:** {{ tools.security | join(', ') }}
+{% endif %}
+{% if tools.build %}
+**Build:** {{ tools.build | join(', ') }}
+{% endif %}
+{% if tools.format %}
+**Format:** {{ tools.format | join(', ') }}
+{% endif %}
+{% if tools.compliance %}
+**Compliance:** {{ tools.compliance | join(', ') }}
+{% endif %}
+
+Run these tools before marking any task as complete. Record tool output in the ledger.
+
 ## Acceptance standard
 Work is accepted ONLY if:
 - Proposal matched execution (no scope creep)

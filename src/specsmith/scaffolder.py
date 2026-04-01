@@ -26,10 +26,14 @@ def scaffold_project(config: ProjectConfig, target: Path) -> list[Path]:
         lstrip_blocks=True,
     )
 
+    from specsmith.tools import get_tools
+
+    tools = get_tools(config)
     ctx = {
         "project": config,
         "today": date.today().isoformat(),
         "package_name": config.package_name,
+        "tools": tools,
     }
 
     created: list[Path] = []

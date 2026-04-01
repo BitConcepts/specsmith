@@ -39,6 +39,13 @@ specsmith init
 # From config file
 specsmith init --config scaffold.yml --no-git
 
+# Guided scaffold with architecture definition
+specsmith init --guided
+
+# Import an existing project (generate governance overlay)
+specsmith import --project-dir ./my-existing-project
+specsmith import --project-dir ./my-existing-project --force
+
 # Health checks on an existing governed project
 specsmith audit --project-dir ./my-project
 specsmith validate --project-dir ./my-project
@@ -61,6 +68,8 @@ specsmith diff --project-dir ./my-project
 | Command | Description |
 |---------|-------------|
 | `specsmith init` | Scaffold a new governed project (interactive or YAML-driven) |
+| `specsmith init --guided` | Scaffold with interactive architecture definition (REQ/TEST stub generation) |
+| `specsmith import` | Import an existing project and generate governance overlay |
 | `specsmith audit [--fix]` | Drift detection and health checks; `--fix` auto-repairs missing files and oversized ledgers |
 | `specsmith validate` | Governance consistency (scaffold.yml, AGENTS.md refs, REQ uniqueness, arch↔req linkage) |
 | `specsmith compress` | Archive old ledger entries to `docs/ledger-archive.md` |
@@ -70,16 +79,30 @@ specsmith diff --project-dir ./my-project
 
 ## Project Types
 
-| # | Type | Spec Section |
-|---|------|-------------|
-| 1 | Python backend + web frontend | 17.1 |
-| 2 | Python backend + web frontend + tray | 17.2 |
-| 3 | CLI tool (Python) | 17.3 |
-| 4 | Library / SDK (Python) | 17.4 |
-| 5 | Embedded / hardware | 17.5 |
-| 6 | FPGA / RTL | 17.6 |
-| 7 | Yocto / embedded Linux BSP | 17.7 |
-| 8 | PCB / hardware design | 17.8 |
+specsmith supports 20 project types, each with type-specific directory structures, CI tooling, and governance rules:
+
+| # | Type | Spec Section | Verification Tools |
+|---|------|-------------|--------------------|
+| 1 | Python backend + web frontend | 17.1 | ruff, mypy, pytest, pip-audit |
+| 2 | Python backend + web frontend + tray | 17.2 | ruff, mypy, pytest, pip-audit |
+| 3 | CLI tool (Python) | 17.3 | ruff, mypy, pytest, pip-audit |
+| 4 | Library / SDK (Python) | 17.4 | ruff, mypy, pytest, pip-audit |
+| 5 | Embedded / hardware | 17.5 | clang-tidy, cppcheck, ctest, flawfinder |
+| 6 | FPGA / RTL | 17.6 | vsg, verilator, ghdl, cocotb |
+| 7 | Yocto / embedded Linux BSP | 17.7 | oelint-adv, bitbake |
+| 8 | PCB / hardware design | 17.8 | drc-check, erc-check, kicad-cli |
+| 9 | Web frontend (SPA) | 17.9 | eslint, tsc, vitest, prettier |
+| 10 | Fullstack JS/TS | 17.10 | eslint, tsc, vitest, jest |
+| 11 | CLI tool (Rust) | 17.11 | clippy, cargo check/test/audit, rustfmt |
+| 12 | CLI tool (Go) | 17.12 | golangci-lint, go test, govulncheck |
+| 13 | CLI tool (C/C++) | 17.13 | clang-tidy, cppcheck, ctest, clang-format |
+| 14 | Library / crate (Rust) | 17.14 | clippy, cargo check/test/audit, rustfmt |
+| 15 | Library (C/C++) | 17.15 | clang-tidy, cppcheck, ctest, clang-format |
+| 16 | .NET / C# application | 17.16 | dotnet format/test/audit |
+| 17 | Mobile app | 17.17 | flutter analyze/test, eslint |
+| 18 | DevOps / IaC | 17.18 | tflint, ansible-lint, tfsec, checkov |
+| 19 | Data / ML pipeline | 17.19 | ruff, mypy, pytest, pip-audit |
+| 20 | Microservices | 17.20 | ruff, eslint, pytest, jest, docker compose |
 
 ## Agent Integrations
 
@@ -98,11 +121,13 @@ specsmith generates agent-specific governance files so AI assistants understand 
 
 ## VCS Platform Support
 
+CI configs are **tool-aware** — generated from the verification tool registry per project type.
+
 | Platform | CLI | CI Config | Dependency Mgmt | Security |
 |----------|-----|-----------|-----------------|----------|
-| **GitHub** | `gh` | GitHub Actions | Dependabot | pip-audit in CI |
-| **GitLab** | `glab` | `.gitlab-ci.yml` | Renovate | pip-audit in CI |
-| **Bitbucket** | `bb` | Bitbucket Pipelines | Renovate | pip-audit in CI |
+| **GitHub** | `gh` | GitHub Actions | Dependabot (pip/cargo/gomod/npm/nuget) | Tool-specific per type |
+| **GitLab** | `glab` | `.gitlab-ci.yml` | Renovate | Tool-specific per type |
+| **Bitbucket** | `bb` | Bitbucket Pipelines | Renovate | Tool-specific per type |
 
 ## Branching Strategy
 

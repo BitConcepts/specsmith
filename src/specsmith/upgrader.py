@@ -81,10 +81,13 @@ def run_upgrade(
         lstrip_blocks=True,
     )
 
+    from specsmith.tools import get_tools
+
     ctx = {
         "project": config,
         "today": date.today().isoformat(),
         "package_name": config.package_name,
+        "tools": get_tools(config),
     }
 
     result = UpgradeResult()
