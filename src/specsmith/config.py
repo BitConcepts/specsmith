@@ -38,6 +38,20 @@ class ProjectType(str, Enum):
     DEVOPS_IAC = "devops-iac"
     DATA_ML = "data-ml"
     MICROSERVICES = "microservices"
+    # Document / Knowledge
+    SPEC_DOCUMENT = "spec-document"
+    USER_MANUAL = "user-manual"
+    RESEARCH_PAPER = "research-paper"
+    # Business / Legal
+    BUSINESS_PLAN = "business-plan"
+    PATENT_APPLICATION = "patent-application"
+    LEGAL_COMPLIANCE = "legal-compliance"
+    # Project management
+    REQUIREMENTS_MGMT = "requirements-mgmt"
+    API_SPECIFICATION = "api-specification"
+    # More software
+    MONOREPO = "monorepo"
+    BROWSER_EXTENSION = "browser-extension"
 
 
 class Platform(str, Enum):
@@ -205,6 +219,20 @@ _TYPE_LABELS: dict[ProjectType, str] = {
     ProjectType.DEVOPS_IAC: "DevOps / IaC",
     ProjectType.DATA_ML: "Data / ML pipeline",
     ProjectType.MICROSERVICES: "Microservices",
+    # Document / Knowledge
+    ProjectType.SPEC_DOCUMENT: "Technical specification",
+    ProjectType.USER_MANUAL: "User manual / documentation",
+    ProjectType.RESEARCH_PAPER: "Research paper / white paper",
+    # Business / Legal
+    ProjectType.BUSINESS_PLAN: "Business plan / proposal",
+    ProjectType.PATENT_APPLICATION: "Patent application",
+    ProjectType.LEGAL_COMPLIANCE: "Legal / compliance",
+    # Project management
+    ProjectType.REQUIREMENTS_MGMT: "Requirements management",
+    ProjectType.API_SPECIFICATION: "API specification",
+    # More software
+    ProjectType.MONOREPO: "Monorepo (multi-package)",
+    ProjectType.BROWSER_EXTENSION: "Browser extension",
 }
 
 _SECTION_REFS: dict[ProjectType, str] = {
@@ -228,4 +256,14 @@ _SECTION_REFS: dict[ProjectType, str] = {
     ProjectType.DEVOPS_IAC: "17.18",
     ProjectType.DATA_ML: "17.19",
     ProjectType.MICROSERVICES: "17.20",
+    ProjectType.SPEC_DOCUMENT: "17.21",
+    ProjectType.USER_MANUAL: "17.22",
+    ProjectType.RESEARCH_PAPER: "17.23",
+    ProjectType.BUSINESS_PLAN: "17.24",
+    ProjectType.PATENT_APPLICATION: "17.25",
+    ProjectType.LEGAL_COMPLIANCE: "17.26",
+    ProjectType.REQUIREMENTS_MGMT: "17.27",
+    ProjectType.API_SPECIFICATION: "17.28",
+    ProjectType.MONOREPO: "17.29",
+    ProjectType.BROWSER_EXTENSION: "17.30",
 }

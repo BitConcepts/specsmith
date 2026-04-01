@@ -47,10 +47,13 @@ def run_diff(root: Path) -> list[tuple[str, str]]:
         lstrip_blocks=True,
     )
 
+    from specsmith.tools import get_tools
+
     ctx = {
         "project": config,
         "today": date.today().isoformat(),
         "package_name": config.package_name,
+        "tools": get_tools(config),
     }
 
     results: list[tuple[str, str]] = []

@@ -95,6 +95,52 @@ Other project documents:
 - Each service must have independent CI and test suites
 - API contracts (OpenAPI / protobuf) are governance artifacts
 - `docker compose build` must succeed before merge
+{% elif project.type.value == 'spec-document' %}
+- All specification text must use precise, testable language
+- Cross-references must be validated before merge
+- Change proposals must reference exact section numbers
+- Prose linting (`vale`) must pass before merge
+{% elif project.type.value == 'user-manual' %}
+- All screenshots must be kept current with software releases
+- Link checking (`markdown-link-check`) must pass before merge
+- Spell checking (`cspell`) is mandatory
+- Versioned alongside the product it documents
+{% elif project.type.value == 'research-paper' %}
+- Citation integrity must be maintained — all `\cite{}` must resolve
+- Data and figures must be reproducible from source
+- LaTeX compilation must produce clean output (no warnings)
+{% elif project.type.value == 'business-plan' %}
+- Financial projections must cite assumptions and sources
+- Market data must include retrieval dates
+- All changes require stakeholder review
+{% elif project.type.value == 'patent-application' %}
+- Claims are governance artifacts — ALL changes require proposals
+- Independent claims must be self-contained and not reference other claims
+- Prior art references must be documented with publication dates
+- Figures must be numbered and referenced in the specification
+- Claim dependency chains must be validated (`claim-ref-check`)
+{% elif project.type.value == 'legal-compliance' %}
+- All document changes must be tracked with version history
+- Regulatory references must include jurisdiction and effective date
+- Approval workflows are mandatory before publication
+- Privileged/confidential documents must be marked clearly
+{% elif project.type.value == 'requirements-mgmt' %}
+- Every requirement must have a unique ID (REQ-xxx-NNN)
+- Traceability from requirements → tests must be maintained
+- Baseline snapshots must be taken at milestone boundaries
+{% elif project.type.value == 'api-specification' %}
+- API specs (OpenAPI / protobuf) are governance artifacts
+- Breaking changes require explicit proposals and version bumps
+- Linting (`spectral` / `buf lint`) must pass before merge
+- Generated code must not be manually edited
+{% elif project.type.value == 'monorepo' %}
+- Each package/service must have independent test suites
+- Shared code changes require impact analysis across consumers
+- Build tool (`nx` / `turbo`) must succeed before merge
+{% elif project.type.value == 'browser-extension' %}
+- Manifest permissions must be minimal and documented
+- Content security policy must be explicitly defined
+- `web-ext lint` must pass before merge
 {% else %}
 - Cross-platform rules apply to all file path and process behavior
 {% endif %}

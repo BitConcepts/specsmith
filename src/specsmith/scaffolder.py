@@ -264,6 +264,106 @@ def _get_empty_dirs(config: ProjectConfig, target: Path) -> list[Path]:
                 target / "tests/integration",
             ]
         )
+    # --- Document / Knowledge ---
+    elif config.type == ProjectType.SPEC_DOCUMENT:
+        dirs.extend(
+            [
+                target / "docs",
+                target / "drafts",
+                target / "figures",
+                target / "references",
+                target / "published",
+            ]
+        )
+    elif config.type == ProjectType.USER_MANUAL:
+        dirs.extend(
+            [
+                target / "chapters",
+                target / "images",
+                target / "api-ref",
+                target / "build",
+            ]
+        )
+    elif config.type == ProjectType.RESEARCH_PAPER:
+        dirs.extend(
+            [
+                target / "paper",
+                target / "data",
+                target / "figures",
+                target / "references",
+                target / "supplementary",
+            ]
+        )
+    # --- Business / Legal ---
+    elif config.type == ProjectType.BUSINESS_PLAN:
+        dirs.extend(
+            [
+                target / "plan",
+                target / "financials",
+                target / "market-research",
+                target / "appendices",
+            ]
+        )
+    elif config.type == ProjectType.PATENT_APPLICATION:
+        dirs.extend(
+            [
+                target / "claims",
+                target / "specification",
+                target / "figures",
+                target / "prior-art",
+                target / "correspondence",
+            ]
+        )
+    elif config.type == ProjectType.LEGAL_COMPLIANCE:
+        dirs.extend(
+            [
+                target / "contracts",
+                target / "policies",
+                target / "templates",
+                target / "evidence",
+                target / "audit-trail",
+            ]
+        )
+    # --- Project management ---
+    elif config.type == ProjectType.REQUIREMENTS_MGMT:
+        dirs.extend(
+            [
+                target / "requirements",
+                target / "traces",
+                target / "reports",
+                target / "baselines",
+            ]
+        )
+    elif config.type == ProjectType.API_SPECIFICATION:
+        dirs.extend(
+            [
+                target / "specs",
+                target / "schemas",
+                target / "examples",
+                target / "generated",
+            ]
+        )
+    # --- More software ---
+    elif config.type == ProjectType.MONOREPO:
+        dirs.extend(
+            [
+                target / "packages",
+                target / "services",
+                target / "shared",
+                target / "tools",
+                target / "deploy",
+            ]
+        )
+    elif config.type == ProjectType.BROWSER_EXTENSION:
+        dirs.extend(
+            [
+                target / "src/popup",
+                target / "src/content",
+                target / "src/background",
+                target / "icons",
+                target / "tests",
+            ]
+        )
 
     return dirs
 

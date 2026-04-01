@@ -179,6 +179,69 @@ _TOOL_REGISTRY: dict[ProjectType, ToolSet] = {
         security=["pip-audit", "npm audit"],
         build=["docker compose build"],
     ),
+    # --- Document / Knowledge ---
+    ProjectType.SPEC_DOCUMENT: ToolSet(
+        lint=["vale", "markdownlint", "cspell"],
+        format=["prettier"],
+        build=["pandoc", "mkdocs build"],
+        test=["markdown-link-check"],
+    ),
+    ProjectType.USER_MANUAL: ToolSet(
+        lint=["vale", "markdownlint", "cspell"],
+        format=["prettier"],
+        build=["sphinx-build", "mkdocs build"],
+        test=["markdown-link-check"],
+    ),
+    ProjectType.RESEARCH_PAPER: ToolSet(
+        lint=["vale", "cspell", "chktex"],
+        format=["latexindent"],
+        build=["pdflatex", "bibtex"],
+    ),
+    # --- Business / Legal ---
+    ProjectType.BUSINESS_PLAN: ToolSet(
+        lint=["vale", "cspell"],
+        format=["prettier"],
+        build=["pandoc"],
+    ),
+    ProjectType.PATENT_APPLICATION: ToolSet(
+        lint=["vale", "cspell"],
+        format=["prettier"],
+        build=["pandoc"],
+        compliance=["claim-ref-check"],
+    ),
+    ProjectType.LEGAL_COMPLIANCE: ToolSet(
+        lint=["vale", "cspell"],
+        format=["prettier"],
+        build=["pandoc"],
+        compliance=["regulation-ref-check"],
+    ),
+    # --- Project management ---
+    ProjectType.REQUIREMENTS_MGMT: ToolSet(
+        lint=["vale", "markdownlint"],
+        format=["prettier"],
+        test=["req-trace"],
+    ),
+    ProjectType.API_SPECIFICATION: ToolSet(
+        lint=["spectral", "buf lint"],
+        test=["schemathesis", "dredd"],
+        build=["openapi-generator", "protoc"],
+        format=["prettier"],
+    ),
+    # --- More software ---
+    ProjectType.MONOREPO: ToolSet(
+        lint=["eslint", "ruff check"],
+        test=["nx test", "turbo test"],
+        build=["nx build", "turbo build"],
+        security=["npm audit", "pip-audit"],
+    ),
+    ProjectType.BROWSER_EXTENSION: ToolSet(
+        lint=["eslint", "web-ext lint"],
+        typecheck=["tsc"],
+        test=["vitest", "jest"],
+        build=["web-ext build"],
+        format=["prettier"],
+        security=["npm audit"],
+    ),
 }
 
 
@@ -297,6 +360,30 @@ LANG_CI_META: dict[str, dict[str, str]] = {
     "verilog": {
         "gh_setup": "",
         "docker_image": "verilator/verilator:latest",
+        "install": "",
+    },
+    "markdown": {
+        "gh_setup": "",
+        "docker_image": "pandoc/core:latest",
+        "install": "pip install vale mkdocs",
+    },
+    "latex": {
+        "gh_setup": "",
+        "docker_image": "texlive/texlive:latest",
+        "install": "",
+    },
+    "openapi": {
+        "gh_setup": (
+            "      - uses: actions/setup-node@v4\n"
+            '        with:\n          node-version: "20"\n          cache: npm\n'
+        ),
+        "docker_image": "node:20",
+        "install": "npm ci",
+        "bb_cache": "node",
+    },
+    "protobuf": {
+        "gh_setup": "",
+        "docker_image": "namely/protoc:latest",
         "install": "",
     },
 }

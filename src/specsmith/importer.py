@@ -38,6 +38,13 @@ _EXT_LANG: dict[str, str] = {
     ".yaml": "yaml",
     ".bb": "bitbake",
     ".bbappend": "bitbake",
+    ".proto": "protobuf",
+    ".graphql": "graphql",
+    ".gql": "graphql",
+    ".tex": "latex",
+    ".bib": "bibtex",
+    ".md": "markdown",
+    ".rst": "restructuredtext",
 }
 
 # Build system detection: file → build system name
@@ -311,6 +318,12 @@ def _infer_type(result: DetectionResult) -> ProjectType:
         return ProjectType.MOBILE_APP
     if lang == "terraform":
         return ProjectType.DEVOPS_IAC
+    if lang == "latex":
+        return ProjectType.RESEARCH_PAPER
+    if lang == "protobuf":
+        return ProjectType.API_SPECIFICATION
+    if lang == "graphql":
+        return ProjectType.API_SPECIFICATION
 
     # JS/TS
     if lang in ("javascript", "typescript", "jsx", "tsx"):
