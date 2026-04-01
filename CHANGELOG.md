@@ -7,17 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-04-01
+
 ### Added
-- **30 project types** (up from 20): added spec-document, user-manual, research-paper, business-plan, patent-application, legal-compliance, requirements-mgmt, api-specification, monorepo, browser-extension.
-- **`specsmith export`**: generate compliance reports with REQ↔TEST coverage matrix, audit summary, tool status, and governance file inventory. Supports `--output` to save to file.
-- **`specsmith import --guided`**: run guided architecture definition after importing an existing project.
-- **Auditor auto-fix for CI configs**: `audit --fix` now generates missing CI configs from the tool registry.
-- **Domain-specific templates**: patent applications get claim/spec/figure requirements and tests; legal projects get contract/regulatory starters; business plans get exec summary/financials starters; research papers get citation/methodology starters; API specs get endpoint/auth starters.
-- **PyPI publishing**: release workflow now publishes to PyPI via trusted publishing (OIDC).
-- **Read the Docs site**: comprehensive documentation at specsmith.readthedocs.io with 10 pages covering all commands, 30 types, tool registry, importing, configuration, governance, export, and contributing.
-- **CI metadata for document languages**: markdown (pandoc), latex (texlive), openapi (node/spectral), protobuf.
-- **Sandbox integration tests**: patent-application scaffold, Rust CLI scaffold, config inheritance, and export command tests.
-- **110 tests** across 15 test files, all passing.
+- **11 CLI commands**: `init`, `import`, `audit`, `validate`, `compress`, `upgrade`, `status`, `diff`, `export`, `doctor`.
+- **30 project types** across 6 categories: software (Python, Rust, Go, C/C++, .NET, JS/TS, mobile, monorepo, microservices, DevOps, data/ML, browser extension), hardware (FPGA, Yocto, PCB, embedded), documents (spec, manual, paper, API spec, requirements mgmt), business/legal (business plan, patent, legal/compliance).
+- **Verification tool registry**: maps each type to lint/typecheck/test/security/build/format/compliance tools with CI metadata for 16 languages.
+- **Tool-aware CI generation**: GitHub Actions, GitLab CI, Bitbucket Pipelines with correct tools per project type. Mixed-language support (Python+JS auto-detects Node.js).
+- **Project importer**: `specsmith import` detects language, build system, test framework, CI, governance, modules, and entry points. Merge mode preserves existing files.
+- **`specsmith export`**: compliance reports with REQ↔TEST coverage matrix, audit summary, git activity, tool status, governance inventory.
+- **`specsmith doctor`**: checks if verification tools are installed on PATH.
+- **`specsmith init --guided`**: interactive architecture definition with REQ/TEST stub generation.
+- **Auditor**: 6 health checks (files, REQ↔TEST, ledger, governance size, tool config, consistency). `--fix` auto-repairs missing files and CI configs.
+- **Domain-specific templates**: patent claims/spec/figures, legal contracts/regulatory, business exec-summary/financials, research citations/methodology, API endpoints/auth.
+- **7 agent integrations**: AGENTS.md, Warp/Oz, Claude Code, Cursor, Copilot, Gemini, Windsurf, Aider.
+- **3 VCS platforms**: GitHub (`gh`), GitLab (`glab`), Bitbucket (`bb`) with CI/CD, dependency management (Dependabot/Renovate per ecosystem), and status checks.
+- **Config inheritance**: `extends` field in scaffold.yml for org-level defaults.
+- **Type-specific .gitignore**: Rust, Go, Node, Kotlin, .NET, KiCad, FPGA, Zephyr, LaTeX, Terraform patterns.
+- **Type-specific governance rules**: 20+ project types have tailored AGENTS.md rules.
+- **Read the Docs**: 13-page user manual at specsmith.readthedocs.io.
+- **PyPI publishing**: automated via trusted publishing (OIDC).
+- **GitHub infrastructure**: issue templates (bug, feature, new type), PR template, Discussions, 12 labels.
+- **Self-governance**: 74 requirements, 113 tests, 100% REQ↔TEST coverage, audit healthy (9/9).
+- **`python -m specsmith`** supported via `__main__.py`.
 
 ## [0.1.0-alpha.2] - 2026-04-01
 
@@ -96,6 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **G9**: Session start file list now marks services.md as conditional ("if it exists").
 - **G10**: Open TODOs format specified as `- [ ]` / `- [x]` checkbox syntax.
 
-[Unreleased]: https://github.com/BitConcepts/specsmith/compare/v0.1.0-alpha.2...HEAD
+[Unreleased]: https://github.com/BitConcepts/specsmith/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/BitConcepts/specsmith/compare/v0.1.0-alpha.2...v0.1.0
 [0.1.0-alpha.2]: https://github.com/BitConcepts/specsmith/compare/v0.1.0-alpha.1...v0.1.0-alpha.2
 [0.1.0-alpha.1]: https://github.com/BitConcepts/specsmith/releases/tag/v0.1.0-alpha.1

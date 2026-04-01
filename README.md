@@ -29,7 +29,7 @@ Every governed project follows the closed-loop workflow: **propose → check →
 ## Install
 
 ```bash
-pip install --pre specsmith
+pip install specsmith
 ```
 
 ## Quick Start

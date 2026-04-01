@@ -10,7 +10,7 @@ def test_version():
     """Version string is set."""
 
 
-assert __version__ == "0.1.0a4"
+assert __version__ == "0.1.0"
 
 
 def test_config_defaults():

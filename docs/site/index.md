@@ -31,7 +31,7 @@ When you run `specsmith init` or `specsmith import`, your project gets:
 ## Quick Start
 
 ```bash
-pip install --pre specsmith
+pip install specsmith
 
 # New project (interactive)
 specsmith init
