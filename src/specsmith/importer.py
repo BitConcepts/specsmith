@@ -115,6 +115,26 @@ class DetectionResult:
     entry_points: list[str] = field(default_factory=list)
 
 
+def _detect_vcs_from_remote(remote_url: str) -> str:
+    """Infer VCS platform from a git remote URL using proper host parsing."""
+    from urllib.parse import urlparse
+
+    # Handle SSH-style remotes: git@github.com:user/repo.git
+    if remote_url.startswith("git@"):
+        host = remote_url.split("@", 1)[1].split(":", 1)[0].lower()
+    else:
+        parsed = urlparse(remote_url)
+        host = (parsed.hostname or "").lower()
+
+    if host == "github.com":
+        return "github"
+    if host in ("gitlab.com",) or host.startswith("gitlab."):
+        return "gitlab"
+    if host in ("bitbucket.org",) or host.startswith("bitbucket."):
+        return "bitbucket"
+    return ""
+
+
 def detect_project(root: Path) -> DetectionResult:
     """Walk an existing project and detect its structure.
 
@@ -194,12 +214,7 @@ def detect_project(root: Path) -> DetectionResult:
             )
             if remote.returncode == 0:
                 result.git_remote = remote.stdout.strip()
-                if "github.com" in result.git_remote:
-                    result.vcs_platform = "github"
-                elif "gitlab" in result.git_remote:
-                    result.vcs_platform = "gitlab"
-                elif "bitbucket" in result.git_remote:
-                    result.vcs_platform = "bitbucket"
+                result.vcs_platform = _detect_vcs_from_remote(result.git_remote)
         except (subprocess.TimeoutExpired, FileNotFoundError):
             pass
 
