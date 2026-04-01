@@ -72,8 +72,13 @@ class TestToolRegistry:
             ts = list_tools_for_type(pt)
             # Every type should have at least one tool category populated
             has_any = bool(
-                ts.lint or ts.typecheck or ts.test or ts.security
-                or ts.build or ts.format or ts.compliance
+                ts.lint
+                or ts.typecheck
+                or ts.test
+                or ts.security
+                or ts.build
+                or ts.format
+                or ts.compliance
             )
             assert has_any, f"{pt.value} has no tools registered"
 
