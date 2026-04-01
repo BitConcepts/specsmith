@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """Windsurf integration adapter."""
 
 from __future__ import annotations

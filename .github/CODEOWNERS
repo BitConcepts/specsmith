@@ -1,0 +1,11 @@
+# Default owner for all files
+* @tristenpierson
+
+# Specification
+AGENT-WORKFLOW-SPEC.md @tristenpierson
+
+# Core CLI
+src/specsmith/ @tristenpierson
+
+# CI/CD
+.github/ @tristenpierson

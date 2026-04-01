@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """CLI tests using Click CliRunner."""
 
 from __future__ import annotations

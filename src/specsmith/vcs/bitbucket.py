@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """Bitbucket platform integration."""
 
 from __future__ import annotations

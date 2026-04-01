@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """Compressor — ledger archival (Spec Section 26.3)."""
 
 from __future__ import annotations

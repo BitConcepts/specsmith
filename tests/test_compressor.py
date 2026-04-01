@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """Tests for specsmith compressor."""
 
 from __future__ import annotations

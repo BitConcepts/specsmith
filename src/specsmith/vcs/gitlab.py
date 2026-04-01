@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """GitLab platform integration via glab CLI."""
 
 from __future__ import annotations

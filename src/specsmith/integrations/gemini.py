@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """Gemini CLI integration adapter."""
 
 from __future__ import annotations
@@ -42,6 +44,6 @@ class GeminiAdapter(AgentAdapter):
             f"## Constraints\n"
             f"- Keep AGENTS.md under 200 lines\n"
             f"- All agent-invoked commands must have timeouts\n"
-            f"- Use `scripts/exec.ps1` or `scripts/exec.sh` for bounded execution\n"
+            f"- Use `scripts/exec.cmd` or `scripts/exec.sh` for bounded execution\n"
             f"- Record every session in LEDGER.md\n"
         )

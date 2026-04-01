@@ -1,5 +1,11 @@
 # Contributing to specsmith
 
+## Bootstrap Notice
+
+specsmith is **bootstrapping its own governance process**. The tool generates the Agentic AI Development Workflow for other projects, but specsmith itself is iteratively adopting that same workflow. Future versions will be developed using an older stable version of itself — the process will converge.
+
+Until then, governance files in this repo (`AGENTS.md`, `LEDGER.md`, `docs/governance/`) represent the target state we are working toward, not a fully enforced process yet.
+
 ## Development Setup
 
 ```bash
@@ -8,55 +14,58 @@ cd specsmith
 pip install -e ".[dev]"
 ```
 
+## Branching Strategy (gitflow)
+
+- `main` — production-ready releases
+- `develop` — integration branch for next release
+- `feature/*` — branch from `develop`, merge back to `develop`
+- `release/*` — branch from `develop`, merge to `main` + `develop`
+- `hotfix/*` — branch from `main`, merge to `main` + `develop`
+
+```bash
+git checkout develop
+git checkout -b feature/my-feature
+# work, commit, push
+gh pr create --base develop
+```
+
 ## Running Checks
 
 ```bash
-# Tests
-pytest tests/ -v
-
-# Lint
-ruff check src/ tests/
-
-# Format
-ruff format src/ tests/
-
-# Type check
-mypy src/specsmith/
-
-# All at once
 ruff check src/ tests/ && ruff format --check src/ tests/ && mypy src/specsmith/ && pytest tests/ -v
 ```
 
-## Pre-commit Hooks
+## Pre-commit
 
 ```bash
 pre-commit install
 ```
 
-This runs ruff lint/format on every commit.
+## Code Standards
 
-## Docker Local CI
-
-```bash
-docker compose -f docker-compose.test.yml run test
-docker compose -f docker-compose.test.yml run lint
-docker compose -f docker-compose.test.yml run typecheck
-```
-
-## Making Changes
-
-This project follows its own Agentic AI Development Workflow Specification.
-
-1. Read `AGENTS.md` for project context
-2. Check `LEDGER.md` for open TODOs and current state
-3. Propose changes before implementing
-4. Write tests for new functionality
-5. Ensure all checks pass before submitting a PR
+- SPDX headers on all `.py` files (`MIT`, `BitConcepts, LLC.`)
+- Must pass `ruff check`, `ruff format --check`, `mypy --strict`
+- All features require tests
+- Windows scripts: `.cmd` only (no `.ps1`)
+- Line length: 100
 
 ## Pull Requests
 
-- Branch from `main`
-- Include tests for new features
-- All CI checks must pass (lint, typecheck, test × 9 matrix, security)
-- Update `CHANGELOG.md` under `[Unreleased]`
-- Update `docs/REQUIREMENTS.md` and `docs/TEST_SPEC.md` if adding new features
+- Branch from `develop` (features) or `main` (hotfixes)
+- All CI must pass (lint, typecheck, test × 9 matrix, security)
+- Update `CHANGELOG.md` and docs if applicable
+- One approval required
+
+## Configurable Governance
+
+Key tuning knobs in `scaffold.yml` for enterprise teams:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `branching_strategy` | gitflow | gitflow, trunk-based, github-flow |
+| `require_pr_reviews` | true | Require reviews before merge |
+| `required_approvals` | 1 | Number of required approvals |
+| `require_ci_pass` | true | CI must pass before merge |
+| `allow_force_push` | false | Allow force push to protected branches |
+| `use_remote_rules` | false | Accept existing remote branch rules |
+| `vcs_platform` | github | github, gitlab, bitbucket |

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """Upgrader — update governance files to match a newer spec version."""
 
 from __future__ import annotations

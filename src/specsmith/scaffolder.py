@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """Core scaffold generation logic for specsmith."""
 
 from __future__ import annotations
@@ -107,16 +109,16 @@ def _build_file_map(config: ProjectConfig) -> list[tuple[str, str]]:
         ("docs/requirements.md.j2", "docs/REQUIREMENTS.md"),
         ("docs/test-spec.md.j2", "docs/TEST_SPEC.md"),
         # Scripts
-        ("scripts/setup.ps1.j2", "scripts/setup.ps1"),
+        ("scripts/setup.cmd.j2", "scripts/setup.cmd"),
         ("scripts/setup.sh.j2", "scripts/setup.sh"),
-        ("scripts/run.ps1.j2", "scripts/run.ps1"),
+        ("scripts/run.cmd.j2", "scripts/run.cmd"),
         ("scripts/run.sh.j2", "scripts/run.sh"),
     ]
 
     if config.exec_shims:
         files.extend(
             [
-                ("scripts/exec.ps1.j2", "scripts/exec.ps1"),
+                ("scripts/exec.cmd.j2", "scripts/exec.cmd"),
                 ("scripts/exec.sh.j2", "scripts/exec.sh"),
             ]
         )

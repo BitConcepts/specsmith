@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """Tests for specsmith agent integration adapters."""
 
 from __future__ import annotations

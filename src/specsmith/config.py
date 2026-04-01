@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """Project configuration schema for specsmith."""
 
 from __future__ import annotations
@@ -49,14 +51,48 @@ class ProjectConfig(BaseModel):
         default=False,
         description="Include services.md for daemon/service projects",
     )
-    shell_wrappers: bool = Field(default=False, description="Include shell.ps1/shell.sh wrappers")
-    exec_shims: bool = Field(default=True, description="Include exec.ps1/exec.sh timeout shims")
+    shell_wrappers: bool = Field(default=False, description="Include shell wrapper scripts")
+    exec_shims: bool = Field(default=True, description="Include exec.cmd/exec.sh timeout shims")
     git_init: bool = Field(default=True, description="Initialize git repository")
 
     # VCS platform
     vcs_platform: str = Field(
         default="github",
         description="VCS platform (github, gitlab, bitbucket)",
+    )
+
+    # Branching strategy
+    branching_strategy: str = Field(
+        default="gitflow",
+        description="Branching strategy (gitflow, trunk-based, github-flow)",
+    )
+    default_branch: str = Field(
+        default="main",
+        description="Default/production branch name",
+    )
+    develop_branch: str = Field(
+        default="develop",
+        description="Development integration branch (gitflow only)",
+    )
+    require_pr_reviews: bool = Field(
+        default=True,
+        description="Require pull request reviews before merge",
+    )
+    required_approvals: int = Field(
+        default=1,
+        description="Number of required PR approvals",
+    )
+    require_ci_pass: bool = Field(
+        default=True,
+        description="Require CI checks to pass before merge",
+    )
+    allow_force_push: bool = Field(
+        default=False,
+        description="Allow force push to protected branches",
+    )
+    use_remote_rules: bool = Field(
+        default=False,
+        description="Accept branch protection rules from remote if already configured",
     )
 
     # Agent integrations

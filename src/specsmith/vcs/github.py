@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """GitHub platform integration via gh CLI."""
 
 from __future__ import annotations

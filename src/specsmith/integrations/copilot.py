@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """GitHub Copilot integration adapter."""
 
 from __future__ import annotations
@@ -43,7 +45,7 @@ This project follows the Agentic AI Development Workflow Specification (v{config
 1. Read `AGENTS.md` before making changes
 2. All changes require a proposal in `LEDGER.md`
 3. Follow propose → check → execute → verify → record workflow
-4. All commands must have timeouts (use `scripts/exec.ps1` or `scripts/exec.sh`)
+4. All commands must have timeouts (use `scripts/exec.cmd` or `scripts/exec.sh`)
 5. Keep `AGENTS.md` under 200 lines — delegate to `docs/governance/`
 6. Record every session outcome in `LEDGER.md`
 

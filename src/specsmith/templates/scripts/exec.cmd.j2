@@ -1,0 +1,33 @@
+@echo off
+REM {{ project.name }} — Command Execution Shim (Windows)
+REM Wraps external commands with timeout enforcement, logging, and exit code capture.
+REM Usage: scripts\exec.cmd "<command>" [timeout_seconds]
+
+setlocal enabledelayedexpansion
+
+set "COMMAND=%~1"
+set "TIMEOUT_SEC=%~2"
+if "%TIMEOUT_SEC%"=="" set "TIMEOUT_SEC=120"
+
+set "PROJECT_ROOT=%~dp0.."
+set "LOG_DIR=%PROJECT_ROOT%\.work\logs"
+if not exist "%LOG_DIR%" mkdir "%LOG_DIR%"
+
+for /f "tokens=2 delims==" %%I in ('wmic os get localdatetime /value') do set "DT=%%I"
+set "TIMESTAMP=%DT:~0,4%-%DT:~4,2%-%DT:~6,2%_%DT:~8,2%-%DT:~10,2%-%DT:~12,2%"
+set "LOG_FILE=%LOG_DIR%\exec_%TIMESTAMP%.log"
+
+echo [exec] Command : %COMMAND%
+echo [exec] Timeout : %TIMEOUT_SEC%s
+
+set "START_TIME=%TIME%"
+start /b /wait cmd /c "%COMMAND%" > "%LOG_FILE%.stdout" 2> "%LOG_FILE%.stderr"
+set "EXIT_CODE=%ERRORLEVEL%"
+
+if %EXIT_CODE% equ 0 (
+    echo [exec] OK — exit code 0
+) else (
+    echo [exec] FAILED — exit code %EXIT_CODE%
+)
+
+exit /b %EXIT_CODE%

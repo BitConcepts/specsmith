@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """Integration tests for specsmith scaffolder."""
 
 from __future__ import annotations
@@ -57,7 +59,7 @@ class TestScaffoldCLIPython:
             assert f"docs\\governance\\{gov}" in rel_names or f"docs/governance/{gov}" in rel_names
 
         # Scripts
-        assert any("exec.ps1" in n for n in rel_names)
+        assert any("exec.cmd" in n for n in rel_names)
         assert any("exec.sh" in n for n in rel_names)
 
         # Python source
@@ -122,7 +124,7 @@ class TestScaffoldOptions:
         cfg = _make_config(exec_shims=False)
         files = scaffold_project(cfg, tmp_target)
         rel_names = {f.name for f in files}
-        assert "exec.ps1" not in rel_names
+        assert "exec.cmd" not in rel_names
         assert "exec.sh" not in rel_names
 
     def test_all_files_have_content(self, tmp_target: Path) -> None:

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """Claude Code integration adapter."""
 
 from __future__ import annotations
@@ -46,7 +48,7 @@ Never modify code without a proposal in the ledger first.
 - AGENTS.md is the governance hub — keep it under 200 lines
 - Modular governance docs live in `docs/governance/`
 - All agent-invoked commands must have timeouts
-- Use `scripts/exec.ps1` or `scripts/exec.sh` for bounded execution
+- Use `scripts/exec.cmd` or `scripts/exec.sh` for bounded execution
 - Record every session in LEDGER.md
 
 ## Health commands

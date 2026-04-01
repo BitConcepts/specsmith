@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """Warp / Oz skill integration adapter."""
 
 from __future__ import annotations
@@ -62,7 +64,7 @@ All changes follow: **propose → check → execute → verify → record**.
 ## Rules
 - Proposals before changes (no exceptions)
 - Verify before recording completion
-- Use execution shims (`scripts/exec.ps1` / `scripts/exec.sh`) for external commands
+- Use execution shims (`scripts/exec.cmd` / `scripts/exec.sh`) for external commands
 - Keep AGENTS.md under 200 lines
 - Record every session in the ledger
 """

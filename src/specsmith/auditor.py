@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 BitConcepts, LLC. All rights reserved.
 """Auditor — drift detection and health checks (Spec Sections 23 + 26)."""
 
 from __future__ import annotations
