@@ -173,6 +173,13 @@
 - **TEST-SBX-007**: Auditor tool verification on scaffolded project
   Covers: REQ-AUD-007, REQ-AUD-008
 
+### Sandbox — Import with Existing Docs
+
+- **TEST-SBX-013**: Import preserves existing REQUIREMENTS.md, TEST_SPEC.md, architecture docs
+  Covers: REQ-IMP-008
+- **TEST-SBX-014**: Import with --force overwrites existing docs
+  Covers: REQ-IMP-008
+
 ### Sandbox — Non-Python Types
 
 - **TEST-SBX-008**: Patent application scaffold with domain directories, requirements, tests, tools

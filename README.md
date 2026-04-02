@@ -56,13 +56,14 @@ specsmith doctor --project-dir ./my-project        # Tool check
 
 Each type gets: tool-aware CI (correct lint/test/security/build tools), domain-specific directory structure, governance rules in AGENTS.md, and pre-populated requirements and test stubs.
 
-## 30+ CLI Commands
+## 40+ CLI Commands
 
 | Command | Purpose |
 |---------|---------|
 | `init` | Scaffold a new governed project |
 | `import` | Adopt an existing project (merge mode) |
 | `audit` | Drift detection and health checks (`--fix` to auto-repair) |
+| `architect` | Interactive architecture generation |
 | `validate` | Governance file consistency checks |
 | `compress` | Archive old ledger entries |
 | `upgrade` | Update governance to new spec version |
@@ -70,6 +71,8 @@ Each type gets: tool-aware CI (correct lint/test/security/build tools), domain-s
 | `diff` | Compare governance against templates |
 | `export` | Compliance report with REQ↔TEST coverage |
 | `doctor` | Check if verification tools are installed |
+| `self-update` | Update specsmith (channel-aware) |
+| `credits` | AI credit tracking, analysis, and budgets |
 
 ## 7 Agent Integrations
 

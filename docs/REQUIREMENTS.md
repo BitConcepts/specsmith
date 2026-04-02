@@ -150,6 +150,38 @@
 - **REQ-WFL-009**: specsmith commit --auto-push option to commit and push in one step
 - **REQ-WFL-010**: specsmith session-end provides checklist (unpushed commits, open TODOs, dirty files)
 
+## Credit Tracking
+
+- **REQ-CRD-001**: `specsmith credits record` stores token usage entry with model, provider, tokens, task, and estimated cost
+- **REQ-CRD-002**: `specsmith credits summary` shows aggregate spend by model, provider, and task
+- **REQ-CRD-003**: `specsmith credits report` generates markdown credit report
+- **REQ-CRD-004**: `specsmith credits analyze` detects model inefficiency, token waste, and cost trends
+- **REQ-CRD-005**: `specsmith credits budget` configures monthly cap, alert threshold, and watermark levels
+- **REQ-CRD-006**: Credit tracking auto-initialized on init, import, and upgrade with unlimited default
+- **REQ-CRD-007**: `.specsmith/` directory gitignored by default in generated projects
+- **REQ-CRD-008**: Session-end checklist includes credit summary and budget alerts
+- **REQ-CRD-009**: Agent adapters (Warp, Claude) include credit recording instructions
+
+## Architecture Generation
+
+- **REQ-ARC-001**: `specsmith architect` scans project for modules, languages, dependencies, git history
+- **REQ-ARC-002**: `specsmith architect` runs interactive interview for components, data flow, deployment
+- **REQ-ARC-003**: `specsmith architect --non-interactive` auto-generates without prompts
+- **REQ-ARC-004**: `audit --fix` generates architecture.md from project scan when missing
+
+## Self-Update
+
+- **REQ-SLF-001**: `specsmith self-update` auto-detects channel (stable/dev) from installed version
+- **REQ-SLF-002**: `specsmith self-update --channel dev` forces dev channel
+- **REQ-SLF-003**: `specsmith self-update --version X.Y.Z` pins to specific version
+
+## Templates
+
+- **REQ-TPL-005**: .gitattributes template includes type-specific patterns for all 30 project types
+- **REQ-TPL-006**: .gitignore template includes type-specific patterns for all 30 project types
+- **REQ-TPL-007**: .editorconfig template includes type-specific indent/EOL settings
+- **REQ-TPL-008**: Yocto/bitbake language detection includes .bbclass, .inc, .dts, .dtsi
+
 ## Cross-Platform
 
 - **REQ-XPL-001**: All CLI commands work on Windows, Linux, and macOS

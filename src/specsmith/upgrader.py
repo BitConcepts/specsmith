@@ -110,6 +110,14 @@ def run_upgrade(
         yaml.dump(raw, f, default_flow_style=False, sort_keys=False)
     result.updated_files.append("scaffold.yml")
 
+    # Initialize credit tracking if not present
+    specsmith_dir = root / ".specsmith"
+    if not specsmith_dir.exists():
+        from specsmith.credits import CreditBudget, save_budget
+
+        save_budget(root, CreditBudget())
+        result.updated_files.append(".specsmith/credit-budget.json")
+
     result.message = (
         f"Upgraded from {old_version} to {new_version}. "
         f"{len(result.updated_files)} files updated, {len(result.skipped_files)} skipped."

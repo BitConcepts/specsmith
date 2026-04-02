@@ -8,20 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Dynamic versioning**: `__version__` now reads from `importlib.metadata` at runtime instead of hardcoded strings. Docs use `{{ version }}` placeholders resolved by MkDocs hook. Tests are version-agnostic.
-- **Multi-language detection**: importer now detects and reports all significant languages (primary + secondary). Architecture, AGENTS.md, and CLI display show the full language mix.
-- **`specsmith self-update`** command: auto-detects channel (stable/dev), supports `--channel` override and `--version` pinning.
-- **Dev-release workflow for managed projects** (#35): `specsmith init` with gitflow + GitHub + Python now generates `.github/workflows/dev-release.yml`.
-- **No-hardcoded-versions rule** (H10): governance template and WARP rule enforce `pyproject.toml` as single version source of truth.
-- **Separate PyPI badges**: README shows both stable (blue) and dev (orange) version badges.
+- **AI credit tracking** (#50): `specsmith credits` subcommand group — record, summary, report, analyze, budget. Tracks tokens/cost per session, model, provider, and task. JSON storage at `.specsmith/credits.json`.
+- **Credit spend analysis** (#51): `specsmith credits analyze` detects model inefficiency, token waste, governance bloat, cost trends. Generates optimization recommendations with estimated savings.
+- **Credit budget/watermarks**: `specsmith credits budget --cap 50 --watermarks 5,10,25,50`. Monthly caps, alert thresholds, watermark notifications. Filed #52 for hard-cap enforcement.
+- **Auto-init credit tracking**: `init`, `import`, and `upgrade` all create `.specsmith/credit-budget.json` with unlimited default budget. `.specsmith/` gitignored.
+- **`specsmith architect`** (#49): interactive architecture generation — scans project, interviews user about components/data flow/deployment, generates rich `docs/architecture.md`.
+- **`specsmith self-update`**: auto-detects channel (stable/dev), supports `--channel` override and `--version` pinning.
+- **Multi-language detection**: importer detects and reports all significant languages (primary + secondary).
+- **Dynamic versioning**: `__version__` reads from `importlib.metadata`. Docs use `{{ version }}` hook. Tests are version-agnostic.
+- **Dev-release workflow for managed projects** (#35): gitflow + GitHub + Python generates `.github/workflows/dev-release.yml`.
+- **Type-specific templates**: .gitattributes (#39) for 15 language types, .gitignore (#40) expanded for all 30 types, .editorconfig (#43) with per-language indent settings.
+- **Yocto/bitbake/devicetree/markdown**: `.bbclass`, `.inc`, `.dts`, `.dtsi` in language detection; `kas.yml` build system; enhanced CI metadata.
+- **No-hardcoded-versions rule** (H10): governance template and WARP rule.
+- **Agent credit instructions**: Warp and Claude adapters include credit recording commands.
+- **Session-end credit summary**: `session-end` shows total spend and budget alerts.
 
 ### Fixed
-- **Import with large AGENTS.md** (#46): extraction now uses broader keyword matching, unmatched sections go to rules.md, oversized AGENTS.md is backed up and replaced with a hub.
+- **Import with large AGENTS.md** (#46): broader keyword extraction, diff marker stripping, paragraph dedup, existing doc detection.
+- **UnboundLocalError on import** with existing docs: scoping fix for REQUIREMENTS/TEST_SPEC/architecture skip logic.
+- **Audit false positive**: architecture docs found in subdirectories (e.g., `docs/architecture/DESIGN.md`).
+- **`audit --fix`** now generates missing recommended files (architecture.md from scan, REQUIREMENTS.md, TEST_SPEC.md stubs).
+- **Topic-aware section classification** (#47): body content keywords route sections to correct governance files.
+- **Type-specific audit thresholds** (#48): FPGA/embedded get higher limits (rules=1000, verification=600).
 
 ### Changed
-- RTD default version set to `stable`, default branch set to `develop` (`latest` now builds from develop).
+- RTD default version set to `stable`, default branch set to `develop`.
 - Docs version references use dynamic `{{ version }}` instead of hardcoded strings.
 - `init.py.j2` template for managed projects uses `importlib.metadata` pattern.
+- Governance file size thresholds raised globally (rules=800, verification=400).
+- Yocto toolset: added `testimage`, `yocto-check-layer` compliance.
 
 ## [0.1.3] - 2026-04-01
 
