@@ -55,7 +55,7 @@ specsmith doctor --project-dir ./my-project        # Tool check
 
 Each type gets: tool-aware CI (correct lint/test/security/build tools), domain-specific directory structure, governance rules in AGENTS.md, and pre-populated requirements and test stubs.
 
-## 11 CLI Commands
+## 30+ CLI Commands
 
 | Command | Purpose |
 |---------|---------|

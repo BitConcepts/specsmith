@@ -186,6 +186,67 @@
 - **TEST-SBX-012**: Export to file with --output flag
   Covers: REQ-EXP-005
 
+### Git VCS Commands
+
+- **TEST-GIT-001**: commit generates message from ledger entry
+  Covers: REQ-GIT-001
+- **TEST-GIT-002**: commit refuses when ledger is stale
+  Covers: REQ-GIT-002
+- **TEST-GIT-003**: commit runs audit before committing
+  Covers: REQ-GIT-003
+- **TEST-GIT-004**: push sends to correct remote
+  Covers: REQ-GIT-004
+- **TEST-GIT-005**: push blocks direct-to-main from feature branch
+  Covers: REQ-GIT-005
+- **TEST-GIT-006**: branch create uses develop as base for gitflow
+  Covers: REQ-GIT-006
+- **TEST-GIT-007**: branch list annotates strategy context
+  Covers: REQ-GIT-007
+- **TEST-GIT-008**: pr includes ledger summary and audit in description
+  Covers: REQ-GIT-008
+- **TEST-GIT-009**: pr targets develop for features, main for hotfixes
+  Covers: REQ-GIT-009
+- **TEST-GIT-010**: sync warns on upstream governance changes
+  Covers: REQ-GIT-010
+
+### Self-Update and Migration
+
+- **TEST-UPD-001**: update --check reports version comparison without installing
+  Covers: REQ-UPD-001
+- **TEST-UPD-002**: update detects when already at latest version
+  Covers: REQ-UPD-001
+- **TEST-UPD-003**: migrate-project detects spec_version mismatch
+  Covers: REQ-UPD-004
+- **TEST-UPD-004**: migrate-project regenerates governance templates
+  Covers: REQ-UPD-005
+- **TEST-UPD-005**: migrate-project --dry-run shows changes without writing
+  Covers: REQ-UPD-007
+- **TEST-UPD-006**: migrate-project preserves REQUIREMENTS.md and TEST_SPEC.md
+  Covers: REQ-UPD-010
+- **TEST-UPD-007**: migrate-project appends entry to LEDGER.md
+  Covers: REQ-UPD-009
+- **TEST-UPD-008**: agent adapters include update check instruction
+  Covers: REQ-UPD-008
+
+### Workflow Logic
+
+- **TEST-WFL-001**: agent adapter includes post-save commit proposal logic
+  Covers: REQ-WFL-001
+- **TEST-WFL-002**: agent adapter includes session-end push reminder
+  Covers: REQ-WFL-002
+- **TEST-WFL-003**: agent adapter includes branch-check for gitflow
+  Covers: REQ-WFL-003
+- **TEST-WFL-004**: agent adapter includes branch proposal for new tasks
+  Covers: REQ-WFL-004
+- **TEST-WFL-005**: agent adapter includes PR proposal when feature complete
+  Covers: REQ-WFL-005
+- **TEST-WFL-006**: agent adapter includes sync-first in session start
+  Covers: REQ-WFL-006
+- **TEST-WFL-007**: commit --auto-push commits and pushes in sequence
+  Covers: REQ-WFL-009
+- **TEST-WFL-008**: session-end checklist reports unpushed commits and dirty files
+  Covers: REQ-WFL-010
+
 ### Cross-Platform (CI Matrix)
 
 - **TEST-XPL-001**: CI matrix runs tests on Windows, Linux, macOS with Python 3.10, 3.12, 3.13

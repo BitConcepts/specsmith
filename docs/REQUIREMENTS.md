@@ -111,6 +111,45 @@
 - **REQ-TPL-003**: Test spec template generates domain-specific test stubs
 - **REQ-TPL-004**: Architecture template includes verification tools section
 
+## Git VCS Commands
+
+- **REQ-GIT-001**: specsmith commit generates message from last ledger entry
+- **REQ-GIT-002**: specsmith commit refuses if LEDGER.md not updated since last commit
+- **REQ-GIT-003**: specsmith commit runs audit as pre-commit validation
+- **REQ-GIT-004**: specsmith push pushes current branch with safety checks
+- **REQ-GIT-005**: specsmith push refuses direct push to main from feature branches
+- **REQ-GIT-006**: specsmith branch create enforces naming and base branch per strategy
+- **REQ-GIT-007**: specsmith branch list shows branches with strategy context
+- **REQ-GIT-008**: specsmith pr generates PR with governance summary in description
+- **REQ-GIT-009**: specsmith pr sets correct base branch per branching strategy
+- **REQ-GIT-010**: specsmith sync pulls and warns on governance file conflicts
+
+## Self-Update and Migration
+
+- **REQ-UPD-001**: specsmith update checks PyPI for newer version and reports comparison
+- **REQ-UPD-002**: specsmith update --yes installs latest version without confirmation
+- **REQ-UPD-003**: specsmith update triggers migrate-project after successful update
+- **REQ-UPD-004**: specsmith migrate-project compares scaffold.yml spec_version to installed version
+- **REQ-UPD-005**: specsmith migrate-project regenerates governance templates for new version
+- **REQ-UPD-006**: specsmith migrate-project reports deprecated features and breaking changes
+- **REQ-UPD-007**: specsmith migrate-project --dry-run shows changes without writing
+- **REQ-UPD-008**: Agent adapter files instruct agent to run update --check at session start
+- **REQ-UPD-009**: specsmith migrate-project appends migration entry to LEDGER.md
+- **REQ-UPD-010**: specsmith migrate-project preserves all existing REQs, TESTs, and ledger entries
+
+## Workflow Logic
+
+- **REQ-WFL-001**: Agent proposes commit after successful verification + ledger save
+- **REQ-WFL-002**: Agent proposes push before session end if unpushed commits exist
+- **REQ-WFL-003**: Agent refuses to work on main/develop directly for gitflow projects
+- **REQ-WFL-004**: Agent proposes branch creation when starting a new task
+- **REQ-WFL-005**: Agent proposes PR when feature branch TODOs are complete and audit passes
+- **REQ-WFL-006**: Agent runs sync at session start before any work
+- **REQ-WFL-007**: Agent runs update --check at session start and proposes update if outdated
+- **REQ-WFL-008**: Agent checks current branch matches task type (feature vs hotfix vs release)
+- **REQ-WFL-009**: specsmith commit --auto-push option to commit and push in one step
+- **REQ-WFL-010**: specsmith session-end provides checklist (unpushed commits, open TODOs, dirty files)
+
 ## Cross-Platform
 
 - **REQ-XPL-001**: All CLI commands work on Windows, Linux, and macOS
