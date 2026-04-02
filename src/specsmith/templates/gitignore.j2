@@ -86,16 +86,32 @@ fp-info-cache
 # FPGA
 *.jou
 *.str
+*.bit
+*.bin
+*.xsa
+*.ltx
+*.mmi
 work/
 xsim.dir/
+.Xil/
+dfx_runtime.txt
+*.backup.log
+*.backup.jou
 {% endif %}
 {% if project.type.value in ('yocto-bsp', 'embedded-hardware') %}
 
-# Embedded
+# Yocto / Embedded
 twister-out/
 sstate-cache/
 downloads/
 tmp/
+*.wic
+*.wic.xz
+*.wic.bmap
+*.ext4
+*.manifest
+*.tar.gz
+cache/
 {% endif %}
 {% if project.type.value == 'research-paper' %}
 
@@ -116,4 +132,58 @@ tmp/
 *.tfstate
 *.tfstate.backup
 *.tfvars
+{% endif %}
+{% if project.type.value == 'data-ml' %}
+
+# Data / ML
+.ipynb_checkpoints/
+mlruns/
+wandb/
+data/raw/
+models/*.pkl
+models/*.h5
+models/*.pt
+*.onnx
+{% endif %}
+{% if project.type.value == 'microservices' %}
+
+# Microservices
+.env
+.env.*
+!.env.example
+docker-compose.override.yml
+{% endif %}
+{% if project.type.value in ('monorepo',) %}
+
+# Monorepo
+.turbo/
+.nx/
+{% endif %}
+{% if project.type.value == 'browser-extension' %}
+
+# Browser Extension
+web-ext-artifacts/
+*.crx
+*.xpi
+{% endif %}
+{% if project.type.value in ('spec-document', 'user-manual') %}
+
+# Documentation builds
+_site/
+site/
+_build/
+.cache/
+public/
+{% endif %}
+{% if project.type.value in ('business-plan', 'legal-compliance', 'patent-application') %}
+
+# Office / Documents
+~$*
+*.tmp
+*.bak
+{% endif %}
+{% if project.type.value == 'api-specification' %}
+
+# API / Generated
+generated/
 {% endif %}

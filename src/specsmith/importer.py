@@ -38,6 +38,10 @@ _EXT_LANG: dict[str, str] = {
     ".yaml": "yaml",
     ".bb": "bitbake",
     ".bbappend": "bitbake",
+    ".bbclass": "bitbake",
+    ".inc": "bitbake",
+    ".dts": "devicetree",
+    ".dtsi": "devicetree",
     ".proto": "protobuf",
     ".graphql": "graphql",
     ".gql": "graphql",
@@ -64,6 +68,7 @@ _BUILD_SYSTEMS: dict[str, str] = {
     "build.gradle.kts": "gradle",
     "meson.build": "meson",
     "bitbake": "bitbake",
+    "kas.yml": "kas",
     "west.yml": "west",
     "pubspec.yaml": "flutter",
     "*.csproj": "dotnet",
@@ -752,7 +757,7 @@ def _infer_type(result: DetectionResult) -> ProjectType:
     # Hardware types
     if lang in ("vhdl", "verilog", "systemverilog"):
         return ProjectType.FPGA_RTL
-    if lang == "bitbake" or build == "bitbake":
+    if lang == "bitbake" or build in ("bitbake", "kas"):
         return ProjectType.YOCTO_BSP
 
     # Language-specific

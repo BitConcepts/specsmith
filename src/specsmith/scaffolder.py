@@ -100,6 +100,7 @@ def _build_file_map(config: ProjectConfig) -> list[tuple[str, str]]:
         ("readme.md.j2", "README.md"),
         ("gitignore.j2", ".gitignore"),
         ("gitattributes.j2", ".gitattributes"),
+        ("editorconfig.j2", ".editorconfig"),
         # Modular governance
         ("governance/rules.md.j2", "docs/governance/rules.md"),
         ("governance/workflow.md.j2", "docs/governance/workflow.md"),
