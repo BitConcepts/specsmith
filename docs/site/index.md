@@ -28,6 +28,10 @@ When you run `specsmith init` or `specsmith import`, your project gets:
 - **Dependency management** — Dependabot or Renovate configured for the correct package ecosystem.
 - **Agent integration files** — Warp SKILL.md, CLAUDE.md, Copilot instructions, Cursor rules, etc.
 
+!!! note "Documentation Versions"
+    **Stable:** [specsmith.readthedocs.io/en/latest/](https://specsmith.readthedocs.io/en/latest/) — matches the latest PyPI release.
+    **Dev:** [specsmith.readthedocs.io/en/develop/](https://specsmith.readthedocs.io/en/develop/) — matches the develop branch (`pip install --pre specsmith`).
+
 ## Quick Start
 
 ```bash
