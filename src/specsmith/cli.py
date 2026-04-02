@@ -707,6 +707,101 @@ main.add_command(ledger)
 
 
 # ---------------------------------------------------------------------------
+# Requirements subcommands
+# ---------------------------------------------------------------------------
+
+
+@main.group()
+def req() -> None:
+    """Manage requirements."""
+
+
+@req.command(name="list")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def req_list(project_dir: str) -> None:
+    """List all requirements."""
+    from specsmith.requirements import list_reqs
+
+    reqs = list_reqs(Path(project_dir).resolve())
+    if not reqs:
+        console.print("[yellow]No requirements found.[/yellow]")
+        return
+    for r in reqs:
+        status = r.get("status", "")
+        priority = r.get("priority", "")
+        desc = r.get("description", "")[:60]
+        console.print(f"  {r['id']:20s} {status:12s} {priority:8s} {desc}")
+    console.print(f"\n  {len(reqs)} requirement(s)")
+
+
+@req.command(name="add")
+@click.argument("req_id")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+@click.option("--component", default="")
+@click.option("--priority", default="medium")
+@click.option("--description", default="")
+def req_add(
+    req_id: str, project_dir: str, component: str, priority: str, description: str
+) -> None:
+    """Add a new requirement."""
+    from specsmith.requirements import add_req
+
+    add_req(
+        Path(project_dir).resolve(),
+        req_id,
+        component=component,
+        priority=priority,
+        description=description,
+    )
+    console.print(f"[green]Added {req_id}[/green]")
+
+
+@req.command(name="trace")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def req_trace(project_dir: str) -> None:
+    """Show REQ → TEST traceability."""
+    from specsmith.requirements import trace_reqs
+
+    traces = trace_reqs(Path(project_dir).resolve())
+    for t in traces:
+        icon = "[green]\u2713[/green]" if t["covered"] else "[red]\u2717[/red]"
+        tests = ", ".join(t["tests"]) if t["tests"] else "(none)"  # type: ignore[arg-type]
+        console.print(f"  {icon} {t['req']:20s} \u2192 {tests}")
+
+
+@req.command(name="gaps")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def req_gaps(project_dir: str) -> None:
+    """List requirements without test coverage."""
+    from specsmith.requirements import get_gaps
+
+    gaps = get_gaps(Path(project_dir).resolve())
+    if not gaps:
+        console.print("[bold green]All requirements have test coverage.[/bold green]")
+        return
+    for g in gaps:
+        console.print(f"  [red]\u2717[/red] {g}")
+    console.print(f"\n  {len(gaps)} uncovered requirement(s)")
+
+
+@req.command(name="orphans")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def req_orphans(project_dir: str) -> None:
+    """List tests referencing non-existent requirements."""
+    from specsmith.requirements import get_orphan_tests
+
+    orphans = get_orphan_tests(Path(project_dir).resolve())
+    if not orphans:
+        console.print("[bold green]No orphaned test references.[/bold green]")
+        return
+    for o in orphans:
+        console.print(f"  [yellow]\u26a0[/yellow] {o}")
+
+
+main.add_command(req)
+
+
+# ---------------------------------------------------------------------------
 # Migrate command
 # ---------------------------------------------------------------------------
 
