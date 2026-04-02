@@ -35,7 +35,37 @@ Estimated cost: high
 - CI: lint ✓, security ✓, typecheck pending (fix pushed)
 
 ### Open TODOs
-- [ ] Add VCS platform integrations (GitHub/GitLab/Bitbucket CLI)
-- [ ] Add Gemini, Windsurf, Aider agent adapters
-- [ ] Expand CLI runner test coverage
-- [ ] Self-host governance (this file)
+- [x] Add VCS platform integrations (GitHub/GitLab/Bitbucket CLI)
+- [x] Add Gemini, Windsurf, Aider agent adapters
+- [x] Expand CLI runner test coverage
+- [x] Self-host governance (this file)
+
+## Session 2026-04-02 — v0.2.0→v0.2.2 release cycle
+
+**Status:** Complete
+**Scope:** Major feature release + two patch releases
+
+### Changes
+- **v0.2.0**: Uppercase governance filenames, community templates (#42), AI credit tracking (#50/#51), architect command (#49), self-update, multi-language detection, dynamic versioning, VCS commands, ledger/req/test CLIs, plugin scaffold
+- **v0.2.1**: Process abort/PID tracking (exec/ps/abort commands), language-specific templates (#41 — Rust, Go, JS/TS), RTD integration (#38), release workflow templates (#44), PyPI integration (#36), template refactor (#45), upgrade --full sync mechanism
+- **v0.2.2**: Auto-fix AGENTS.md references on lowercase→uppercase migration, alternate path detection (docs/LEDGER.md, docs/architecture/**), case-insensitive architecture check, CI-gated dev releases
+
+### Issues closed
+- #36, #38, #41, #42, #44, #45 (closed), #55, #56 (filed)
+- Created v0.3.0 milestone, assigned 6 remaining issues
+
+### Verification
+- 115 tests passing (pytest, 3 OS × 3 Python)
+- ruff check + format: clean (src/ + tests/)
+- mypy strict: clean
+- CI: 19/19 checks pass on all PRs before merge
+- CodeQL: 0 open alerts
+- Dependabot: 0 open alerts
+
+### Open TODOs
+- [ ] #55: Fix governance table rendering on RTD (double pipe)
+- [ ] #56: Document 15+ missing CLI commands in RTD
+- [ ] #52: Credit budget cap enforcement
+- [ ] #37: Secure API key management
+- [ ] #10: USPTO/MCP patent integration
+- [ ] #17: Multi-project workspace management
