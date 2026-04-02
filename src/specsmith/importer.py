@@ -545,11 +545,86 @@ def _extract_git_contributors(root: Path) -> list[str]:
     return []
 
 
+# Section heading keywords → governance file mapping.
+# Each list is checked with substring matching against lowercased ## headings.
+_RULES_KW: list[str] = [
+    "hard rule",
+    "stop condition",
+    "acceptance",
+    "forbidden",
+    "mandatory",
+    "pre-flight",
+    "preflight",
+    "critical rule",
+    "tool invocation",
+    "prohibition",
+    "enforcement",
+    "final rule",
+    "phase enforcement",
+    "phase 1",
+    "phase 2",
+    "repository structure",
+    ".work/",
+    ".work",
+    "path-length",
+    "directory structure",
+]
+_WORKFLOW_KW: list[str] = [
+    "session",
+    "lifecycle",
+    "quick command",
+    "ledger",
+    "new session",
+    "resume session",
+    "save session",
+    "git commit",
+    "git update",
+    "startup checklist",
+    "stop / save",
+    "stop/save",
+    "push-to-git",
+    "push to git",
+    "command handling",
+    "roadmap",
+]
+_ROLES_KW: list[str] = [
+    "agent role",
+    "drafting",
+    "agents are",
+    "drafting assistance",
+]
+_CTX_KW: list[str] = [
+    "context",
+    "window",
+    "budget",
+    "context window",
+    "token",
+]
+_VERIFY_KW: list[str] = [
+    "verification",
+    "conflict",
+    "consistency",
+    "solver",
+    "engine mode",
+    "benchmark",
+    "deployment",
+    "connectivity",
+    "target",
+]
+_DRIFT_KW: list[str] = [
+    "environment",
+    "platform",
+    "shell wrapper",
+    "bootstrap",
+    "scripts",
+]
+
+
 def _extract_governance_sections(root: Path) -> dict[str, str]:
     """Extract modular governance content from existing AGENTS.md.
 
-    If AGENTS.md exists and has relevant sections, extract them.
-    Otherwise return generic stubs.
+    If AGENTS.md exists and is large, extract sections into modular files.
+    Unmatched sections are collected into rules.md so nothing is lost.
     """
     defaults = {
         "rules": (
@@ -591,98 +666,71 @@ def _extract_governance_sections(root: Path) -> dict[str, str]:
     for line in content.splitlines():
         if line.startswith("## "):
             if current_heading and current_lines:
-                sections[current_heading.lower()] = "\n".join(current_lines).strip()
+                sections[current_heading] = "\n".join(current_lines).strip()
             current_heading = line[3:].strip()
             current_lines = []
         else:
             current_lines.append(line)
     if current_heading and current_lines:
-        sections[current_heading.lower()] = "\n".join(current_lines).strip()
+        sections[current_heading] = "\n".join(current_lines).strip()
 
-    # Map AGENTS.md sections to modular governance files
-    result = dict(defaults)  # Start with defaults
+    if not sections:
+        return defaults
 
-    # Rules: look for HARD RULES, STOP CONDITIONS, ACCEPTANCE STANDARD
-    rules_parts: list[str] = ["# Rules\n"]
-    for key in sections:
-        if any(kw in key for kw in ("hard rule", "stop condition", "acceptance", "forbidden")):
-            rules_parts.append(f"## {key.title()}\n")
-            rules_parts.append(sections[key])
-            rules_parts.append("")
-    if len(rules_parts) > 1:
-        result["rules"] = "\n".join(rules_parts) + "\n"
+    # Classify each section into a governance category
+    category_map: list[tuple[str, list[str]]] = [
+        ("rules", _RULES_KW),
+        ("workflow", _WORKFLOW_KW),
+        ("roles", _ROLES_KW),
+        ("context-budget", _CTX_KW),
+        ("verification", _VERIFY_KW),
+        ("drift-metrics", _DRIFT_KW),
+    ]
 
-    # Workflow: SESSION LIFECYCLE, QUICK COMMANDS, LEDGER format
-    wf_parts: list[str] = ["# Workflow\n"]
-    for key in sections:
-        if any(
-            kw in key
-            for kw in (
-                "session",
-                "lifecycle",
-                "quick command",
-                "ledger",
-                "new session",
-                "resume session",
-                "save session",
-                "git commit",
-                "git update",
-            )
-        ):
-            wf_parts.append(f"## {key.title()}\n")
-            wf_parts.append(sections[key])
-            wf_parts.append("")
-    if len(wf_parts) > 1:
-        result["workflow"] = "\n".join(wf_parts) + "\n"
+    buckets: dict[str, list[tuple[str, str]]] = {
+        "rules": [],
+        "workflow": [],
+        "roles": [],
+        "context-budget": [],
+        "verification": [],
+        "drift-metrics": [],
+    }
+    unmatched: list[tuple[str, str]] = []
 
-    # Roles: AGENT ROLE, DRAFTING ASSISTANCE
-    roles_parts: list[str] = ["# Roles\n"]
-    for key in sections:
-        if any(kw in key for kw in ("agent role", "drafting", "agents are")):
-            roles_parts.append(f"## {key.title()}\n")
-            roles_parts.append(sections[key])
-            roles_parts.append("")
-    if len(roles_parts) > 1:
-        result["roles"] = "\n".join(roles_parts) + "\n"
+    for heading, body in sections.items():
+        key_lower = heading.lower()
+        matched = False
+        for category, keywords in category_map:
+            if any(kw in key_lower for kw in keywords):
+                buckets[category].append((heading, body))
+                matched = True
+                break  # First match wins
+        if not matched:
+            unmatched.append((heading, body))
 
-    # Context budget: CONTEXT WINDOW MANAGEMENT
-    ctx_parts: list[str] = ["# Context Budget\n"]
-    for key in sections:
-        if any(kw in key for kw in ("context", "window", "budget")):
-            ctx_parts.append(f"## {key.title()}\n")
-            ctx_parts.append(sections[key])
-            ctx_parts.append("")
-    if len(ctx_parts) > 1:
-        result["context-budget"] = "\n".join(ctx_parts) + "\n"
+    # Unmatched sections go to rules.md as project-specific rules
+    if unmatched:
+        buckets["rules"].extend(unmatched)
 
-    # Verification: VERIFICATION MINIMUM, CONFLICT AND CONSISTENCY
-    ver_parts: list[str] = ["# Verification\n"]
-    for key in sections:
-        if any(kw in key for kw in ("verification", "conflict", "consistency")):
-            ver_parts.append(f"## {key.title()}\n")
-            ver_parts.append(sections[key])
-            ver_parts.append("")
-    if len(ver_parts) > 1:
-        result["verification"] = "\n".join(ver_parts) + "\n"
-
-    # Drift metrics: ENVIRONMENT, PLATFORM EXPECTATIONS, SHELL WRAPPER
-    drift_parts: list[str] = ["# Environment & Platform\n"]
-    for key in sections:
-        if any(
-            kw in key
-            for kw in (
-                "environment",
-                "platform",
-                "shell wrapper",
-                "bootstrap",
-                "scripts",
-            )
-        ):
-            drift_parts.append(f"## {key.title()}\n")
-            drift_parts.append(sections[key])
-            drift_parts.append("")
-    if len(drift_parts) > 1:
-        result["drift-metrics"] = "\n".join(drift_parts) + "\n"
+    # Build output
+    titles = {
+        "rules": "# Rules",
+        "workflow": "# Workflow",
+        "roles": "# Roles",
+        "context-budget": "# Context Budget",
+        "verification": "# Verification",
+        "drift-metrics": "# Environment & Platform",
+    }
+    result = dict(defaults)
+    for category, items in buckets.items():
+        if not items:
+            continue
+        parts: list[str] = [titles[category] + "\n"]
+        for heading, body in items:
+            parts.append(f"## {heading}\n")
+            parts.append(body)
+            parts.append("")
+        result[category] = "\n".join(parts) + "\n"
 
     return result
 
@@ -897,6 +945,52 @@ def generate_overlay(
     _write("docs/governance/context-budget.md", gov["context-budget"])
     _write("docs/governance/verification.md", gov["verification"])
     _write("docs/governance/drift-metrics.md", gov["drift-metrics"])
+
+    # If existing AGENTS.md is oversized, back it up and replace with a hub.
+    agents_path = target / "AGENTS.md"
+    if agents_path.exists():
+        agents_lines = len(agents_path.read_text(encoding="utf-8").splitlines())
+        if agents_lines > 200:
+            backup_path = target / "AGENTS.md.bak"
+            if not backup_path.exists():
+                import shutil
+
+                shutil.copy2(agents_path, backup_path)
+
+            hub = (
+                f"# {name} \u2014 Agent Governance\n\n"
+                f"**Type:** {ptype}  \n"
+                f"**Language:** {lang}  \n\n"
+                "---\n\n"
+                "## Governance File Registry\n\n"
+                "| File | Content | Load timing |\n"
+                "| ---- | ------- | ----------- |\n"
+                "| `docs/governance/rules.md` | Hard rules, stop conditions, "
+                "project-specific rules | Every session start |\n"
+                "| `docs/governance/workflow.md` | Session lifecycle, "
+                "save/push protocol | Every session start |\n"
+                "| `docs/governance/roles.md` | Agent role boundaries | "
+                "Every session start |\n"
+                "| `docs/governance/context-budget.md` | Context management | "
+                "Every session start |\n"
+                "| `docs/governance/verification.md` | Verification, "
+                "consistency | When verifying |\n"
+                "| `docs/governance/drift-metrics.md` | Environment, "
+                "platform | On audit |\n\n"
+                "Other project documents:\n\n"
+                "| File | Content |\n"
+                "| ---- | ------- |\n"
+                "| `LEDGER.md` | Append-only work record |\n"
+                "| `docs/REQUIREMENTS.md` | Formal requirements |\n"
+                "| `docs/TEST_SPEC.md` | Test cases |\n"
+                "| `docs/architecture.md` | Architecture |\n\n"
+                "---\n\n"
+                f"*Original AGENTS.md ({agents_lines} lines) backed up "
+                "to AGENTS.md.bak. Content extracted into modular "
+                "governance files above.*\n"
+            )
+            agents_path.write_text(hub, encoding="utf-8")
+            created.append(agents_path)
 
     # --- CI config (merge: only create if no CI detected) ---
     if not result.existing_ci and result.vcs_platform:
