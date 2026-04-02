@@ -246,6 +246,35 @@ def _sync_full(
             out.write_text(tmpl.render(**ctx), encoding="utf-8")
             synced.append(f"{output_rel} (created)")
 
+    # 6. Essential docs — create stubs if missing (these are needed for audit to pass)
+    if not (root / "LEDGER.md").exists():
+        (root / "LEDGER.md").write_text("# Ledger\n\nNo entries yet.\n", encoding="utf-8")
+        synced.append("LEDGER.md (created)")
+
+    if not (root / "docs" / "ARCHITECTURE.md").exists():
+        try:
+            from specsmith.architect import generate_architecture
+
+            generate_architecture(root)
+            synced.append("docs/ARCHITECTURE.md (generated from scan)")
+        except Exception:  # noqa: BLE001
+            arch_path = root / "docs" / "ARCHITECTURE.md"
+            arch_path.parent.mkdir(parents=True, exist_ok=True)
+            arch_path.write_text(
+                f"# Architecture \u2014 {config.name}\n\n[Run `specsmith architect` to populate]\n",
+                encoding="utf-8",
+            )
+            synced.append("docs/ARCHITECTURE.md (stub created)")
+
+    # Initialize credit tracking if not present
+    specsmith_dir = root / ".specsmith"
+    credit_budget = specsmith_dir / "credit-budget.json"
+    if not credit_budget.exists():
+        from specsmith.credits import CreditBudget, save_budget
+
+        save_budget(root, CreditBudget())
+        synced.append(".specsmith/credit-budget.json (created)")
+
     return synced
 
 
