@@ -8,6 +8,7 @@ from pathlib import Path
 
 import yaml
 from click.testing import CliRunner
+
 from specsmith.cli import main
 from specsmith.config import ProjectConfig, ProjectType
 from specsmith.scaffolder import scaffold_project

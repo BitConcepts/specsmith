@@ -138,8 +138,7 @@ def run_session_end(root: Path) -> SessionReport:
                     name="credits",
                     status="ok",
                     message=(
-                        f"Credits: ${cs.total_cost_usd:.4f} total, "
-                        f"{cs.session_count} session(s)"
+                        f"Credits: ${cs.total_cost_usd:.4f} total, {cs.session_count} session(s)"
                     ),
                 )
             )

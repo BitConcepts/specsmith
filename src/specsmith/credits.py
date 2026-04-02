@@ -167,9 +167,9 @@ def record_usage(
         provider=provider,
         tokens_in=tokens_in,
         tokens_out=tokens_out,
-        estimated_cost_usd=cost_usd if cost_usd is not None else estimate_cost(
-            model, tokens_in, tokens_out
-        ),
+        estimated_cost_usd=cost_usd
+        if cost_usd is not None
+        else estimate_cost(model, tokens_in, tokens_out),
         task=task,
         duration_seconds=duration_seconds,
     )
@@ -180,7 +180,10 @@ def record_usage(
 
 
 def get_summary(
-    root: Path, *, since: str = "", month: str = "",
+    root: Path,
+    *,
+    since: str = "",
+    month: str = "",
 ) -> CreditSummary:
     """Get aggregate credit summary with budget alerts."""
     entries = _load_entries(root)
@@ -222,8 +225,7 @@ def get_summary(
         pct = (month_cost / budget.monthly_cap_usd) * 100 if budget.monthly_cap_usd else 0
         if pct >= 100:
             summary.alerts.append(
-                f"BUDGET EXCEEDED: ${month_cost:.2f} / ${budget.monthly_cap_usd:.2f} "
-                f"({pct:.0f}%)"
+                f"BUDGET EXCEEDED: ${month_cost:.2f} / ${budget.monthly_cap_usd:.2f} ({pct:.0f}%)"
             )
         elif pct >= budget.alert_threshold_pct:
             summary.alerts.append(

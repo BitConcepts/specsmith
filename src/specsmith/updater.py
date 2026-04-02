@@ -19,7 +19,8 @@ def get_update_channel() -> str:
 
 
 def check_latest_version(
-    *, channel: str = "",
+    *,
+    channel: str = "",
 ) -> tuple[str, str, str]:
     """Check PyPI for the latest specsmith version.
 
@@ -60,7 +61,9 @@ def is_outdated() -> bool:
 
 
 def run_self_update(
-    *, channel: str = "", target_version: str = "",
+    *,
+    channel: str = "",
+    target_version: str = "",
 ) -> tuple[bool, str]:
     """Update specsmith via pip.
 

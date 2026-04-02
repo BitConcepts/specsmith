@@ -13,6 +13,7 @@ from textwrap import dedent
 
 import yaml
 from click.testing import CliRunner
+
 from specsmith.cli import main
 
 
@@ -337,14 +338,10 @@ class TestSandboxImport:
 
         docs = root / "docs"
         docs.mkdir(exist_ok=True)
-        (docs / "REQUIREMENTS.md").write_text(
-            "# Existing Requirements\n", encoding="utf-8"
-        )
+        (docs / "REQUIREMENTS.md").write_text("# Existing Requirements\n", encoding="utf-8")
 
         runner = CliRunner()
-        result = runner.invoke(
-            main, ["import", "--project-dir", str(root), "--force"], input="y\n"
-        )
+        result = runner.invoke(main, ["import", "--project-dir", str(root), "--force"], input="y\n")
         assert result.exit_code == 0
 
         reqs = (docs / "REQUIREMENTS.md").read_text(encoding="utf-8")

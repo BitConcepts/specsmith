@@ -4,9 +4,8 @@
 
 from importlib.metadata import version as _pkg_version
 
-from specsmith.config import Platform, ProjectConfig, ProjectType
-
 from specsmith import __version__
+from specsmith.config import Platform, ProjectConfig, ProjectType
 
 
 def test_version():

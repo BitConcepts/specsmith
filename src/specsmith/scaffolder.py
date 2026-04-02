@@ -406,9 +406,7 @@ def _build_community_files(config: ProjectConfig) -> list[tuple[str, str]]:
         files.append(("community/code_of_conduct.md.j2", "CODE_OF_CONDUCT.md"))
 
     if "pr-template" in cf and config.vcs_platform == "github":
-        files.append(
-            ("community/pull_request_template.md.j2", ".github/PULL_REQUEST_TEMPLATE.md")
-        )
+        files.append(("community/pull_request_template.md.j2", ".github/PULL_REQUEST_TEMPLATE.md"))
 
     if "issue-templates" in cf and config.vcs_platform == "github":
         files.extend(

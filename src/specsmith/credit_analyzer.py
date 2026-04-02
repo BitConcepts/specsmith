@@ -43,8 +43,7 @@ def analyze_spend(root: Path) -> AnalysisReport:
                 severity="info",
                 message="No credit data yet.",
                 recommendation=(
-                    "Record usage with `specsmith credits record` "
-                    "or integrate with your AI agent."
+                    "Record usage with `specsmith credits record` or integrate with your AI agent."
                 ),
             )
         )
@@ -112,8 +111,7 @@ def analyze_spend(root: Path) -> AnalysisReport:
                 category="governance",
                 severity="info",
                 message=(
-                    f"Governance files total {total_gov_lines} lines "
-                    f"across {len(gov_files)} files."
+                    f"Governance files total {total_gov_lines} lines across {len(gov_files)} files."
                 ),
                 recommendation=(
                     "Ensure agents lazy-load governance files. Only rules.md + workflow.md "

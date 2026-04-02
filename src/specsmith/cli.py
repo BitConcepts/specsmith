@@ -703,9 +703,7 @@ def architect(project_dir: str, non_interactive: bool) -> None:
             f"  [yellow]Note:[/yellow] Existing docs at {', '.join(existing)} "
             "are referenced but not merged. Review manually."
         )
-    console.print(
-        "  [dim]Run \"specsmith audit --project-dir .\" to verify governance health.[/dim]"
-    )
+    console.print('  [dim]Run "specsmith audit --project-dir ." to verify governance health.[/dim]')
 
 
 # ---------------------------------------------------------------------------
@@ -1463,7 +1461,10 @@ def credits_analyze(project_dir: str) -> None:
     "--watermarks", default=None, help="Comma-separated USD watermark alerts (e.g. 5,10,25,50)."
 )
 def credits_budget(
-    project_dir: str, cap: float | None, alert_pct: int | None, watermarks: str | None,
+    project_dir: str,
+    cap: float | None,
+    alert_pct: int | None,
+    watermarks: str | None,
 ) -> None:
     """View or set credit budget and alert thresholds."""
     from specsmith.credits import load_budget, save_budget

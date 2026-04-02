@@ -790,15 +790,31 @@ def _extract_governance_sections(root: Path) -> dict[str, str]:
     # Body-level content keywords for secondary classification.
     # Used when heading doesn't match — scan body text for strong signals.
     _BODY_ARCHITECTURE_KW = [
-        "register map", "address offset", "0x0", "register name",
-        "block diagram", "data flow", "interface spec",
-        "directory layout", "src/", "repository structure",
-        "milestone", "roadmap", "completion", "phase 2 target",
+        "register map",
+        "address offset",
+        "0x0",
+        "register name",
+        "block diagram",
+        "data flow",
+        "interface spec",
+        "directory layout",
+        "src/",
+        "repository structure",
+        "milestone",
+        "roadmap",
+        "completion",
+        "phase 2 target",
     ]
     _BODY_DRIFT_KW = [
-        "subst v:", "path-length", "one-time setup", "per-machine",
-        "environment variable", "install once", "bootstrap",
-        "windows path", "ntfs",
+        "subst v:",
+        "path-length",
+        "one-time setup",
+        "per-machine",
+        "environment variable",
+        "install once",
+        "bootstrap",
+        "windows path",
+        "ntfs",
     ]
 
     for heading, body in sections.items():

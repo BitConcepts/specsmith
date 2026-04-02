@@ -125,10 +125,14 @@ def check_governance_files(root: Path) -> list[AuditResult]:
         found = path.exists()
         # For architecture.md, also search subdirectories (e.g. docs/architecture/*.md)
         if not found and "architecture" in f:
-            found = bool(
-                list((root / "docs").glob("**/architecture*"))
-                + list((root / "docs").glob("**/ARCHITECTURE*"))
-            ) if (root / "docs").is_dir() else False
+            found = (
+                bool(
+                    list((root / "docs").glob("**/architecture*"))
+                    + list((root / "docs").glob("**/ARCHITECTURE*"))
+                )
+                if (root / "docs").is_dir()
+                else False
+            )
         results.append(
             AuditResult(
                 name=f"recommended:{f}",
@@ -580,8 +584,7 @@ def run_auto_fix(root: Path, report: AuditReport) -> list[str]:
                 path = root / "docs" / "ARCHITECTURE.md"
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(
-                    f"# Architecture — {root.name}\n\n"
-                    "[Run `specsmith architect` to populate]\n",
+                    f"# Architecture — {root.name}\n\n[Run `specsmith architect` to populate]\n",
                     encoding="utf-8",
                 )
                 fixed.append("Created stub docs/ARCHITECTURE.md")
