@@ -545,6 +545,150 @@ def _extract_git_contributors(root: Path) -> list[str]:
     return []
 
 
+def _extract_governance_sections(root: Path) -> dict[str, str]:
+    """Extract modular governance content from existing AGENTS.md.
+
+    If AGENTS.md exists and has relevant sections, extract them.
+    Otherwise return generic stubs.
+    """
+    defaults = {
+        "rules": (
+            "# Rules\n\n"
+            "H1: Never modify governance files without a proposal.\n"
+            "H2: All proposals require human approval.\n"
+            "H3: The ledger is append-only.\n"
+        ),
+        "workflow": (
+            "# Workflow\n\n"
+            "1. Propose changes\n2. Get approval\n"
+            "3. Execute\n4. Verify\n5. Record in ledger\n"
+        ),
+        "roles": (
+            "# Roles\n\n"
+            "- **Human**: Approves proposals\n"
+            "- **Agent**: Proposes and executes\n"
+        ),
+        "context-budget": (
+            "# Context Budget\n\n"
+            "Keep governance files small. Lazy-load per task.\n"
+        ),
+        "verification": (
+            "# Verification\n\n"
+            "Run verification tools before marking tasks complete.\n"
+        ),
+        "drift-metrics": (
+            "# Drift Metrics\n\n"
+            "Use `specsmith audit` to check governance health.\n"
+        ),
+    }
+
+    agents_path = root / "AGENTS.md"
+    if not agents_path.exists():
+        return defaults
+
+    content = agents_path.read_text(encoding="utf-8")
+    if len(content.splitlines()) < 50:
+        return defaults  # Too short to extract from
+
+    # Parse AGENTS.md into sections by ## headings
+    sections: dict[str, str] = {}
+    current_heading = ""
+    current_lines: list[str] = []
+
+    for line in content.splitlines():
+        if line.startswith("## "):
+            if current_heading and current_lines:
+                sections[current_heading.lower()] = "\n".join(current_lines).strip()
+            current_heading = line[3:].strip()
+            current_lines = []
+        else:
+            current_lines.append(line)
+    if current_heading and current_lines:
+        sections[current_heading.lower()] = "\n".join(current_lines).strip()
+
+    # Map AGENTS.md sections to modular governance files
+    result = dict(defaults)  # Start with defaults
+
+    # Rules: look for HARD RULES, STOP CONDITIONS, ACCEPTANCE STANDARD
+    rules_parts: list[str] = ["# Rules\n"]
+    for key in sections:
+        if any(
+            kw in key for kw in ("hard rule", "stop condition", "acceptance", "forbidden")
+        ):
+            rules_parts.append(f"## {key.title()}\n")
+            rules_parts.append(sections[key])
+            rules_parts.append("")
+    if len(rules_parts) > 1:
+        result["rules"] = "\n".join(rules_parts) + "\n"
+
+    # Workflow: SESSION LIFECYCLE, QUICK COMMANDS, LEDGER format
+    wf_parts: list[str] = ["# Workflow\n"]
+    for key in sections:
+        if any(
+            kw in key
+            for kw in (
+                "session", "lifecycle", "quick command", "ledger",
+                "new session", "resume session", "save session",
+                "git commit", "git update",
+            )
+        ):
+            wf_parts.append(f"## {key.title()}\n")
+            wf_parts.append(sections[key])
+            wf_parts.append("")
+    if len(wf_parts) > 1:
+        result["workflow"] = "\n".join(wf_parts) + "\n"
+
+    # Roles: AGENT ROLE, DRAFTING ASSISTANCE
+    roles_parts: list[str] = ["# Roles\n"]
+    for key in sections:
+        if any(kw in key for kw in ("agent role", "drafting", "agents are")):
+            roles_parts.append(f"## {key.title()}\n")
+            roles_parts.append(sections[key])
+            roles_parts.append("")
+    if len(roles_parts) > 1:
+        result["roles"] = "\n".join(roles_parts) + "\n"
+
+    # Context budget: CONTEXT WINDOW MANAGEMENT
+    ctx_parts: list[str] = ["# Context Budget\n"]
+    for key in sections:
+        if any(kw in key for kw in ("context", "window", "budget")):
+            ctx_parts.append(f"## {key.title()}\n")
+            ctx_parts.append(sections[key])
+            ctx_parts.append("")
+    if len(ctx_parts) > 1:
+        result["context-budget"] = "\n".join(ctx_parts) + "\n"
+
+    # Verification: VERIFICATION MINIMUM, CONFLICT AND CONSISTENCY
+    ver_parts: list[str] = ["# Verification\n"]
+    for key in sections:
+        if any(
+            kw in key for kw in ("verification", "conflict", "consistency")
+        ):
+            ver_parts.append(f"## {key.title()}\n")
+            ver_parts.append(sections[key])
+            ver_parts.append("")
+    if len(ver_parts) > 1:
+        result["verification"] = "\n".join(ver_parts) + "\n"
+
+    # Drift metrics: ENVIRONMENT, PLATFORM EXPECTATIONS, SHELL WRAPPER
+    drift_parts: list[str] = ["# Environment & Platform\n"]
+    for key in sections:
+        if any(
+            kw in key
+            for kw in (
+                "environment", "platform", "shell wrapper",
+                "bootstrap", "scripts",
+            )
+        ):
+            drift_parts.append(f"## {key.title()}\n")
+            drift_parts.append(sections[key])
+            drift_parts.append("")
+    if len(drift_parts) > 1:
+        result["drift-metrics"] = "\n".join(drift_parts) + "\n"
+
+    return result
+
+
 def _infer_type(result: DetectionResult) -> ProjectType:
     """Infer the best ProjectType from detection results."""
     lang = result.primary_language
@@ -745,34 +889,16 @@ def generate_overlay(
             arch += f"- {lang_name}: {count} files\n"
     _write("docs/architecture.md", arch)
 
-    # --- Modular governance files (merge: only create if missing) ---
-    _write(
-        "docs/governance/rules.md",
-        "# Rules\n\nH1: Never modify governance files without a proposal.\n"
-        "H2: All proposals require human approval.\n"
-        "H3: The ledger is append-only.\n",
-    )
-    _write(
-        "docs/governance/workflow.md",
-        "# Workflow\n\n1. Propose changes\n2. Get approval\n"
-        "3. Execute\n4. Verify\n5. Record in ledger\n",
-    )
-    _write(
-        "docs/governance/roles.md",
-        "# Roles\n\n- **Human**: Approves proposals\n- **Agent**: Proposes and executes\n",
-    )
-    _write(
-        "docs/governance/context-budget.md",
-        "# Context Budget\n\nKeep governance files small. Lazy-load per task.\n",
-    )
-    _write(
-        "docs/governance/verification.md",
-        "# Verification\n\nRun verification tools before marking tasks complete.\n",
-    )
-    _write(
-        "docs/governance/drift-metrics.md",
-        "# Drift Metrics\n\nUse `specsmith audit` to check governance health.\n",
-    )
+    # --- Modular governance files ---
+    # If AGENTS.md exists and is rich, extract sections from it.
+    # Otherwise use generic stubs.
+    gov = _extract_governance_sections(target)
+    _write("docs/governance/rules.md", gov["rules"])
+    _write("docs/governance/workflow.md", gov["workflow"])
+    _write("docs/governance/roles.md", gov["roles"])
+    _write("docs/governance/context-budget.md", gov["context-budget"])
+    _write("docs/governance/verification.md", gov["verification"])
+    _write("docs/governance/drift-metrics.md", gov["drift-metrics"])
 
     # --- CI config (merge: only create if no CI detected) ---
     if not result.existing_ci and result.vcs_platform:
