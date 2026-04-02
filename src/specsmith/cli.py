@@ -740,9 +740,7 @@ def req_list(project_dir: str) -> None:
 @click.option("--component", default="")
 @click.option("--priority", default="medium")
 @click.option("--description", default="")
-def req_add(
-    req_id: str, project_dir: str, component: str, priority: str, description: str
-) -> None:
+def req_add(req_id: str, project_dir: str, component: str, priority: str, description: str) -> None:
     """Add a new requirement."""
     from specsmith.requirements import add_req
 
@@ -1021,6 +1019,57 @@ def apply(project_dir: str) -> None:
         console.print(f"\n[bold green]{len(created)} file(s) regenerated.[/bold green]")
     else:
         console.print("[yellow]Nothing to regenerate.[/yellow]")
+
+
+# ---------------------------------------------------------------------------
+# Plugin system
+# ---------------------------------------------------------------------------
+
+
+@main.command(name="plugin")
+def plugin_list() -> None:
+    """List installed specsmith plugins."""
+    from specsmith.plugins import discover_plugins
+
+    plugins = discover_plugins()
+    if not plugins:
+        console.print("No plugins installed.")
+        console.print(
+            "\nPlugins register via pyproject.toml entry points:"
+            "\n  [project.entry-points.'specsmith.types']\n"
+            "  my-type = 'my_plugin:register_type'"
+        )
+        return
+
+    for p in plugins:
+        if p.loaded:
+            console.print(f"  [green]\u2713[/green] {p.group}/{p.name} ({p.module})")
+        else:
+            console.print(f"  [red]\u2717[/red] {p.group}/{p.name} \u2014 {p.error}")
+    console.print(f"\n  {len(plugins)} plugin(s)")
+
+
+# ---------------------------------------------------------------------------
+# Serve (API for React dashboard)
+# ---------------------------------------------------------------------------
+
+
+@main.command()
+@click.option("--port", default=8910, help="Port to serve on.")
+def serve(port: int) -> None:
+    """Start local API server for the web dashboard."""
+    console.print(f"[bold]Starting specsmith API server on port {port}...[/bold]")
+    console.print("[yellow]Not yet implemented. See issue #14.[/yellow]")
+    console.print(
+        "\nPlanned endpoints:\n"
+        "  GET  /api/projects          \u2014 list governed projects\n"
+        "  POST /api/projects/init     \u2014 scaffold new project\n"
+        "  POST /api/projects/import   \u2014 import existing project\n"
+        "  GET  /api/projects/:id/audit   \u2014 run audit\n"
+        "  GET  /api/projects/:id/export  \u2014 generate report\n"
+        "  GET  /api/types             \u2014 list all 30 project types\n"
+        "  GET  /api/tools/:type       \u2014 tool registry for a type"
+    )
 
 
 if __name__ == "__main__":

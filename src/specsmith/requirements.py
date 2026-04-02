@@ -88,8 +88,7 @@ def trace_reqs(root: Path) -> list[dict[str, object]]:
                         covered_by[rid].append(current_test)
 
     return [
-        {"req": r, "tests": tests, "covered": len(tests) > 0}
-        for r, tests in covered_by.items()
+        {"req": r, "tests": tests, "covered": len(tests) > 0} for r, tests in covered_by.items()
     ]
 
 
