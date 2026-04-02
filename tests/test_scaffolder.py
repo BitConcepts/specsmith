@@ -48,12 +48,12 @@ class TestScaffoldCLIPython:
 
         # Modular governance
         for gov in (
-            "rules.md",
-            "workflow.md",
-            "roles.md",
-            "context-budget.md",
-            "verification.md",
-            "drift-metrics.md",
+            "RULES.md",
+            "WORKFLOW.md",
+            "ROLES.md",
+            "CONTEXT-BUDGET.md",
+            "VERIFICATION.md",
+            "DRIFT-METRICS.md",
         ):
             assert f"docs\\governance\\{gov}" in rel_names or f"docs/governance/{gov}" in rel_names
 
@@ -99,7 +99,7 @@ class TestScaffoldFPGA:
         rel_names = {f.name for f in files}
         assert "AGENTS.md" in rel_names
         assert "LEDGER.md" in rel_names
-        assert "rules.md" in rel_names
+        assert "RULES.md" in rel_names
 
 
 class TestScaffoldLibrary:

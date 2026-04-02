@@ -193,7 +193,7 @@ class TestSandboxImport:
         assert "REQ-" in reqs
         assert "taskctl" in reqs.lower()
 
-        arch = (root / "docs" / "architecture.md").read_text(encoding="utf-8")
+        arch = (root / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
         assert "python" in arch.lower()
 
         test_spec = (root / "docs" / "TEST_SPEC.md").read_text(encoding="utf-8")
@@ -259,11 +259,11 @@ class TestSandboxImport:
         first_agents = (root / "AGENTS.md").read_text(encoding="utf-8")
 
         # Delete all governance files (simulate clean restart)
-        for f in ["AGENTS.md", "LEDGER.md", "scaffold.yml"]:
+        for f in ["AGENTS.md", "LEDGER.md", "scaffold.yml", "CONTRIBUTING.md", "SECURITY.md"]:
             p = root / f
             if p.exists():
                 p.unlink()
-        for f in ["REQUIREMENTS.md", "TEST_SPEC.md", "architecture.md"]:
+        for f in ["REQUIREMENTS.md", "TEST_SPEC.md", "ARCHITECTURE.md"]:
             p = root / "docs" / f
             if p.exists():
                 p.unlink()
@@ -272,6 +272,11 @@ class TestSandboxImport:
             import shutil
 
             shutil.rmtree(gov)
+        specsmith_dir = root / ".specsmith"
+        if specsmith_dir.exists():
+            import shutil
+
+            shutil.rmtree(specsmith_dir)
 
         # Re-import
         runner.invoke(main, ["import", "--project-dir", str(root), "--force"], input="y\n")
@@ -316,13 +321,13 @@ class TestSandboxImport:
         tests_content = (docs / "TEST_SPEC.md").read_text(encoding="utf-8")
         assert "TEST-CUSTOM-001" in tests_content
 
-        # architecture.md stub should NOT have been created (existing arch doc found)
-        assert not (docs / "architecture.md").exists()
+        # ARCHITECTURE.md stub should NOT have been created (existing arch doc found)
+        assert not (docs / "ARCHITECTURE.md").exists()
 
         # But governance files and scaffold.yml should still be created
         assert (root / "scaffold.yml").exists()
         assert (root / "LEDGER.md").exists()
-        assert (root / "docs" / "governance" / "rules.md").exists()
+        assert (root / "docs" / "governance" / "RULES.md").exists()
 
     def test_import_force_overwrites_existing_docs(self, tmp_path: Path) -> None:
         """Import with --force replaces existing docs with generated stubs."""

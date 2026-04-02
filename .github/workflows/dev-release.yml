@@ -62,3 +62,14 @@ jobs:
           path: dist/
       - name: Publish dev release to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  docs-build:
+    needs: dev-build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Trigger ReadTheDocs build for develop
+        run: |
+          curl -s -X POST \
+            -H "Authorization: Token ${{ secrets.RTD_TOKEN }}" \
+            "https://readthedocs.org/api/v3/projects/specsmith/versions/develop/builds/"
