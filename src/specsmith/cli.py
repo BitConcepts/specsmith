@@ -1544,5 +1544,92 @@ def serve(port: int) -> None:
     )
 
 
+# ---------------------------------------------------------------------------
+# Process execution and abort
+# ---------------------------------------------------------------------------
+
+
+@main.command(name="exec")
+@click.argument("command")
+@click.option("--timeout", default=120, help="Timeout in seconds (default: 120).")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def exec_cmd(command: str, timeout: int, project_dir: str) -> None:
+    """Execute a command with PID tracking and timeout enforcement.
+
+    Tracks the process in .specsmith/pids/ so it can be listed (specsmith ps)
+    or aborted (specsmith abort). Logs stdout/stderr to .specsmith/logs/.
+    Works cross-platform: Windows, Linux, macOS.
+    """
+    from specsmith.executor import run_tracked
+
+    root = Path(project_dir).resolve()
+    console.print(f"[bold]exec[/bold] {command} (timeout={timeout}s)")
+
+    result = run_tracked(root, command, timeout=timeout)
+
+    if result.timed_out:
+        console.print(f"[red]TIMEOUT[/red] after {timeout}s (PID {result.pid})")
+    elif result.exit_code == 0:
+        console.print(f"[green]OK[/green] ({result.duration:.1f}s) — exit code 0")
+    else:
+        console.print(f"[red]FAILED[/red] ({result.duration:.1f}s) — exit code {result.exit_code}")
+    if result.stdout_file:
+        console.print(f"  stdout: {result.stdout_file}")
+    if result.stderr_file:
+        console.print(f"  stderr: {result.stderr_file}")
+    raise SystemExit(result.exit_code)
+
+
+@main.command(name="ps")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def ps_cmd(project_dir: str) -> None:
+    """List tracked running processes."""
+    from specsmith.executor import list_processes
+
+    root = Path(project_dir).resolve()
+    procs = list_processes(root)
+    if not procs:
+        console.print("No tracked processes running.")
+        return
+    for p in procs:
+        elapsed = p.elapsed
+        remaining = max(0, p.timeout - elapsed)
+        status = "[red]EXPIRED[/red]" if p.is_expired else f"{remaining:.0f}s left"
+        console.print(f"  PID {p.pid}  {status}  {p.command}")
+    console.print(f"\n  {len(procs)} process(es)")
+
+
+@main.command(name="abort")
+@click.option("--pid", type=int, default=None, help="Abort a specific PID.")
+@click.option("--all", "abort_all_flag", is_flag=True, default=False, help="Abort all tracked.")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def abort_cmd(pid: int | None, abort_all_flag: bool, project_dir: str) -> None:
+    """Abort tracked process(es). Sends SIGTERM then SIGKILL (POSIX) or taskkill (Windows)."""
+    from specsmith.executor import abort_all, abort_process, list_processes
+
+    root = Path(project_dir).resolve()
+
+    if abort_all_flag:
+        killed = abort_all(root)
+        if killed:
+            console.print(f"[green]Aborted {len(killed)} process(es): {killed}[/green]")
+        else:
+            console.print("No tracked processes to abort.")
+    elif pid:
+        if abort_process(root, pid):
+            console.print(f"[green]Aborted PID {pid}[/green]")
+        else:
+            console.print(f"[red]Could not abort PID {pid}[/red]")
+    else:
+        procs = list_processes(root)
+        if not procs:
+            console.print("No tracked processes. Use --pid or --all.")
+            return
+        console.print("Tracked processes:")
+        for p in procs:
+            console.print(f"  PID {p.pid}  {p.command}")
+        console.print("\nUse --pid <N> or --all to abort.")
+
+
 if __name__ == "__main__":
     main()

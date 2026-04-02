@@ -1,0 +1,22 @@
+version: 2
+
+build:
+  os: ubuntu-22.04
+  tools:
+{% if project.language == 'python' %}
+    python: "3.12"
+{% elif project.language in ('javascript', 'typescript') %}
+    nodejs: "20"
+{% endif %}
+
+mkdocs:
+  configuration: mkdocs.yml
+
+{% if project.language == 'python' %}
+python:
+  install:
+    - method: pip
+      path: .
+      extra_requirements:
+        - docs
+{% endif %}

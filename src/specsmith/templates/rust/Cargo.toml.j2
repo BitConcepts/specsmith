@@ -1,0 +1,19 @@
+[package]
+name = "{{ package_name }}"
+version = "0.1.0"
+edition = "2021"
+description = "{{ project.description or project.name }}"
+license = "{{ project.license }}"
+
+[dependencies]
+{% if project.type.value == 'cli-rust' %}
+clap = { version = "4", features = ["derive"] }
+{% endif %}
+
+[dev-dependencies]
+
+{% if project.type.value == 'cli-rust' %}
+[[bin]]
+name = "{{ package_name }}"
+path = "src/main.rs"
+{% endif %}

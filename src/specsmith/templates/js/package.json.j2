@@ -1,0 +1,48 @@
+{
+  "name": "{{ package_name }}",
+  "version": "0.1.0",
+  "description": "{{ project.description or project.name }}",
+  "license": "{{ project.license }}",
+{% if project.type.value == 'web-frontend' %}
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint src/",
+    "test": "vitest"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vite": "^6.0.0",
+    "eslint": "^9.0.0",
+    "vitest": "^3.0.0"
+  }
+{% elif project.type.value == 'fullstack-js' %}
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "node server/src/index.js",
+    "dev:client": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "express": "^5.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "eslint": "^9.0.0",
+    "vitest": "^3.0.0"
+  }
+{% else %}
+  "scripts": {
+    "start": "node src/index.js",
+    "lint": "eslint src/",
+    "test": "vitest"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "vitest": "^3.0.0"
+  }
+{% endif %}
+}

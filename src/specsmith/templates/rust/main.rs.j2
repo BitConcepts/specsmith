@@ -1,0 +1,15 @@
+use clap::Parser;
+
+/// {{ project.description or project.name }}
+#[derive(Parser, Debug)]
+#[command(version, about)]
+struct Args {
+    /// Name to greet
+    #[arg(short, long, default_value = "world")]
+    name: String,
+}
+
+fn main() {
+    let args = Args::parse();
+    println!("Hello, {}!", args.name);
+}

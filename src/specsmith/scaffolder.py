@@ -137,7 +137,7 @@ def _build_file_map(config: ProjectConfig) -> list[tuple[str, str]]:
     # Community / compliance files
     files.extend(_build_community_files(config))
 
-    # Python project types get pyproject.toml and src layout
+    # Language-specific project files (#41)
     if config.type in (
         ProjectType.CLI_PYTHON,
         ProjectType.LIBRARY_PYTHON,
@@ -146,9 +146,37 @@ def _build_file_map(config: ProjectConfig) -> list[tuple[str, str]]:
     ):
         files.append(("pyproject.toml.j2", "pyproject.toml"))
         files.append(("python/init.py.j2", f"src/{config.package_name}/__init__.py"))
-
         if config.type == ProjectType.CLI_PYTHON:
             files.append(("python/cli.py.j2", f"src/{config.package_name}/cli.py"))
+
+    elif config.type in (ProjectType.CLI_RUST, ProjectType.LIBRARY_RUST):
+        files.append(("rust/Cargo.toml.j2", "Cargo.toml"))
+        if config.type == ProjectType.CLI_RUST:
+            files.append(("rust/main.rs.j2", "src/main.rs"))
+
+    elif config.type == ProjectType.CLI_GO:
+        files.append(("go/go.mod.j2", "go.mod"))
+        files.append(("go/main.go.j2", "cmd/main.go"))
+
+    elif config.type in (
+        ProjectType.WEB_FRONTEND,
+        ProjectType.FULLSTACK_JS,
+    ):
+        files.append(("js/package.json.j2", "package.json"))
+
+    # ReadTheDocs integration (#38) — Python and doc projects
+    if config.type in (
+        ProjectType.CLI_PYTHON,
+        ProjectType.LIBRARY_PYTHON,
+        ProjectType.SPEC_DOCUMENT,
+        ProjectType.USER_MANUAL,
+    ):
+        files.append(("docs/readthedocs.yaml.j2", ".readthedocs.yaml"))
+        files.append(("docs/mkdocs.yml.j2", "mkdocs.yml"))
+
+    # Release workflow template (#44) — gitflow + GitHub projects
+    if config.vcs_platform == "github" and config.branching_strategy == "gitflow":
+        files.append(("workflows/release.yml.j2", ".github/workflows/release.yml"))
 
     return files
 

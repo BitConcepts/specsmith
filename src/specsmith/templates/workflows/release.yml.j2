@@ -1,0 +1,101 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    steps:
+      - uses: actions/checkout@v6
+{% if project.language == 'python' %}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+{% for cmd in tools.lint %}
+      - run: {{ cmd }}
+{% endfor %}
+{% for cmd in tools.typecheck %}
+      - run: {{ cmd }}
+{% endfor %}
+{% for cmd in tools.test %}
+      - run: {{ cmd }}
+{% endfor %}
+{% elif project.language == 'rust' %}
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo clippy -- -D warnings
+      - run: cargo test
+{% elif project.language == 'go' %}
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - run: golangci-lint run
+      - run: go test ./...
+{% endif %}
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+{% if project.language == 'python' %}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install build
+      - run: python -m build
+{% elif project.language == 'rust' %}
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo build --release
+{% elif project.language == 'go' %}
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - run: go build -o dist/ ./...
+{% endif %}
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+  github-release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: {{ '${{ github.token }}' }}
+        run: |
+          gh release create "{{ '${{ github.ref_name }}' }}" dist/* \
+            --title "{{ '${{ github.ref_name }}' }}" \
+            --generate-notes
+{% if project.language == 'python' %}
+
+  pypi-publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+{% endif %}
