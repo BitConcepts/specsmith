@@ -28,6 +28,10 @@ When you run `specsmith init` or `specsmith import`, your project gets:
 - **Dependency management** — Dependabot or Renovate configured for the correct package ecosystem.
 - **Agent integration files** — Warp SKILL.md, CLAUDE.md, Copilot instructions, Cursor rules, etc.
 
+!!! note "Documentation Versions"
+    **Stable:** [specsmith.readthedocs.io/en/stable/](https://specsmith.readthedocs.io/en/stable/) — matches `pip install specsmith`
+    **Dev (latest):** [specsmith.readthedocs.io/en/latest/](https://specsmith.readthedocs.io/en/latest/) — matches `pip install --pre specsmith`
+
 ## Quick Start
 
 ```bash
@@ -39,12 +43,28 @@ specsmith init
 # Adopt an existing project
 specsmith import --project-dir ./my-project
 
+# Generate architecture docs
+specsmith architect --project-dir ./my-project
+
 # Check governance health
 specsmith audit --project-dir ./my-project
+
+# Track AI credit spend
+specsmith credits summary --project-dir ./my-project
 
 # Generate compliance report
 specsmith export --project-dir ./my-project
 ```
+
+### Starting an AI Agent Session
+
+From any specsmith-governed project root, the universal command to begin a session:
+
+```
+/agent AGENTS.md
+```
+
+This loads the governance hub, session state from LEDGER.md, and project rules. Works in Warp/Oz, Claude Code, Cursor, Copilot, and any agent that reads markdown context.
 
 ## Documentation Guide
 

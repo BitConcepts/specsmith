@@ -35,7 +35,7 @@ class WindsurfAdapter(AgentAdapter):
             f"## Required reading\n"
             f"1. Read `AGENTS.md` — governance hub\n"
             f"2. Read `LEDGER.md` — session state\n"
-            f"3. Read `docs/governance/rules.md` — hard rules\n\n"
+            f"3. Read `docs/governance/RULES.md` \u2014 hard rules\n\n"
             f"## Workflow\n"
             f"All changes: propose → check → execute → verify → record.\n\n"
             f"## Constraints\n"

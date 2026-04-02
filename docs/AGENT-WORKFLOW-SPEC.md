@@ -53,12 +53,12 @@ Detailed governance rules are split into focused, referenceable documents under 
 
 | File | Content | Load timing |
 | ---- | ------- | ----------- |
-| `docs/governance/rules.md` | Hard rules, stop conditions | Every session start |
-| `docs/governance/workflow.md` | Session lifecycle, proposal format, ledger format | Every session start |
-| `docs/governance/roles.md` | Agent role definition, behavioral rules | Every session start |
-| `docs/governance/context-budget.md` | Context window management, credit optimization | Every session start |
-| `docs/governance/verification.md` | Verification standards, acceptance criteria | When performing verification |
-| `docs/governance/drift-metrics.md` | Drift detection, feedback loops, health signals | On `audit` command or session start |
+| `docs/governance/RULES.md` | Hard rules, stop conditions | Every session start |
+| `docs/governance/WORKFLOW.md` | Session lifecycle, proposal format, ledger format | Every session start |
+| `docs/governance/ROLES.md` | Agent role definition, behavioral rules | Every session start |
+| `docs/governance/CONTEXT-BUDGET.md` | Context window management, credit optimization | Every session start |
+| `docs/governance/VERIFICATION.md` | Verification standards, acceptance criteria | When performing verification |
+| `docs/governance/DRIFT-METRICS.md` | Drift detection, feedback loops, health signals | On `audit` command or session start |
 
 Agents read AGENTS.md in full on every session. The governance docs listed with "Every session start" timing are read immediately after. Other governance docs are loaded on demand when the task requires them. This lazy-loading approach minimizes credit consumption (see Section 25).
 
@@ -80,11 +80,11 @@ Rules:
 
 Project overview, architecture summary, component descriptions, repository structure, near-term goals, and current status. Must be kept in sync with architectural reality.
 
-### 2.4 docs/architecture.md
+### 2.4 docs/ARCHITECTURE.md
 
 System architecture: components, boundaries, interfaces, runtime modes, platform expectations, constraints, and design principles.
 
-### 2.5 docs/workflow.md
+### 2.5 docs/WORKFLOW.md
 
 Development workflow: the work loop, proposal rules, PR expectations, cross-platform rules, documentation rules, verification rules, and milestones.
 
@@ -109,10 +109,10 @@ When documents conflict, precedence is resolved top-down:
 1. **AGENTS.md + docs/governance/*** — behavioral rules, hard constraints, stop conditions (highest). Governance docs inherit AGENTS.md's authority because AGENTS.md explicitly delegates to them.
 2. **README.md** — project intent and scope
 3. **docs/REQUIREMENTS.md** — what the system must do
-4. **docs/architecture.md** — how the system is structured
+4. **docs/ARCHITECTURE.md** — how the system is structured
 5. **docs/TEST_SPEC.md** — how the system is verified
 6. **LEDGER.md** — what has been done and what remains (sole authority for session state)
-7. **docs/workflow.md** — how work proceeds
+7. **docs/WORKFLOW.md** — how work proceeds
 8. **docs/services.md** — platform-specific startup/service behavior
 
 If a requirement contradicts the architecture, the requirement wins. If AGENTS.md contradicts a requirement, AGENTS.md wins.
@@ -130,7 +130,7 @@ Agents MUST follow structured session flows. Five session types are defined.
 Trigger: fresh conversation targeting the repository.
 
 ```
-Load AGENTS.md, README.md, docs/architecture.md, docs/workflow.md,
+Load AGENTS.md, README.md, docs/ARCHITECTURE.md, docs/WORKFLOW.md,
 docs/services.md (if it exists), docs/REQUIREMENTS.md, docs/TEST_SPEC.md, and LEDGER.md.
 
 Output:
@@ -899,16 +899,16 @@ When an agent is asked to scaffold a new project using this workflow:
 
 ### Step 3: Create governance files
 - **AGENTS.md** — focused hub (~100–150 lines): project identity, platform, tech stack, file registry pointing to `docs/governance/*`, quick command reference, and project-type-specific rules from the relevant Section 17 subsection.
-- **docs/governance/rules.md** — hard rules (H1–H9) and stop conditions, adapted from Sections 8–9
-- **docs/governance/workflow.md** — session lifecycle, proposal format, ledger format, adapted from Sections 4–6
-- **docs/governance/roles.md** — agent role definition and behavioral rules, adapted from Section 7
-- **docs/governance/context-budget.md** — context window management and credit optimization, adapted from Sections 10 and 25
-- **docs/governance/verification.md** — verification and acceptance standards, adapted from Sections 11–12
-- **docs/governance/drift-metrics.md** — drift detection and feedback loop protocol, adapted from Section 26
+- **docs/governance/RULES.md** — hard rules (H1–H9) and stop conditions, adapted from Sections 8–9
+- **docs/governance/WORKFLOW.md** — session lifecycle, proposal format, ledger format, adapted from Sections 4–6
+- **docs/governance/ROLES.md** — agent role definition and behavioral rules, adapted from Section 7
+- **docs/governance/CONTEXT-BUDGET.md** — context window management and credit optimization, adapted from Sections 10 and 25
+- **docs/governance/VERIFICATION.md** — verification and acceptance standards, adapted from Sections 11–12
+- **docs/governance/DRIFT-METRICS.md** — drift detection and feedback loop protocol, adapted from Section 26
 - **README.md** — project overview, architecture summary, component descriptions, structure, goals, status
 - **LEDGER.md** — bootstrap entry recording the scaffold creation
-- **docs/architecture.md** — component model, boundaries, interfaces, platform expectations, runtime modes
-- **docs/workflow.md** — work loop, proposal rules, milestones, cross-platform rules, verification rules
+- **docs/ARCHITECTURE.md** — component model, boundaries, interfaces, platform expectations, runtime modes
+- **docs/WORKFLOW.md** — work loop, proposal rules, milestones, cross-platform rules, verification rules
 - **docs/services.md** — (if applicable) platform service/startup expectations
 - **docs/REQUIREMENTS.md** — initial requirements derived from architecture (may be sparse)
 - **docs/TEST_SPEC.md** — initial test specifications linked to requirements (may be sparse)
@@ -1165,15 +1165,15 @@ This is an estimate of actual session cost, useful for identifying wasteful task
 
 On session start, agents SHOULD load only:
 - `AGENTS.md`
-- `docs/governance/rules.md`
-- `docs/governance/context-budget.md`
+- `docs/governance/RULES.md`
+- `docs/governance/CONTEXT-BUDGET.md`
 - recent `LEDGER.md`
 
 Load these on demand:
-- `docs/governance/workflow.md` when preparing proposals or ledger entries
-- `docs/governance/roles.md` when role boundaries are relevant
-- `docs/governance/verification.md` when testing, auditing, or accepting work
-- `docs/governance/drift-metrics.md` when running `audit` or diagnosing process health
+- `docs/governance/WORKFLOW.md` when preparing proposals or ledger entries
+- `docs/governance/ROLES.md` when role boundaries are relevant
+- `docs/governance/VERIFICATION.md` when testing, auditing, or accepting work
+- `docs/governance/DRIFT-METRICS.md` when running `audit` or diagnosing process health
 
 ### 25.5 Response economy rules
 

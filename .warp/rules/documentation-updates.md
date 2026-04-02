@@ -54,6 +54,16 @@ Before every release:
 - Verify install commands say `pip install specsmith` (no `--pre` for stable)
 - Follow the full checklist in `docs/site/releasing.md`
 
+## Branch Protection
+
+- **NEVER tag a stable release on develop.** Tags must only be created on main.
+- **NEVER push tags from develop.** The stable release workflow publishes to PyPI — only main branch releases are allowed.
+- All feature work happens on develop. Stable releases merge develop → main first, then tag on main.
+- **Dev releases are automatic.** Every push to develop triggers `.devN` pre-release to PyPI.
+- Dev releases use `X.Y.(Z+1).devN` version suffix — always the NEXT patch version, not the current.
+- Example: if stable is `0.1.3`, dev builds are `0.1.4.dev1`, `0.1.4.dev2`, etc.
+- Install dev builds: `pip install --pre specsmith`
+
 ## Rule
 
 If any documentation update is needed, make the updates in the SAME commit as the code changes — do not defer documentation to a separate commit.

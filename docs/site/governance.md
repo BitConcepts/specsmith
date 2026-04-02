@@ -23,10 +23,10 @@ Every specsmith-governed project has this authority hierarchy — higher files o
 1. **AGENTS.md + docs/governance/*** — Highest. Governance rules are law.
 2. **README.md** — Project intent and scope.
 3. **docs/REQUIREMENTS.md** — What the system must do.
-4. **docs/architecture.md** — How the system is structured.
+4. **docs/ARCHITECTURE.md** — How the system is structured.
 5. **docs/TEST_SPEC.md** — How the system is verified.
 6. **LEDGER.md** — Sole authority for session state (what's been done, what's next).
-7. **docs/workflow.md** — How work proceeds (milestones, PR expectations).
+7. **docs/WORKFLOW.md** — How work proceeds (milestones, PR expectations).
 
 ## AGENTS.md — The Governance Hub
 
@@ -46,14 +46,14 @@ When AGENTS.md is kept small (~100-150 lines), governance details are delegated 
 
 | File | Content | When Loaded |
 |------|---------|-------------|
-| `rules.md` | Hard rules H1-H9, stop conditions | Every session start |
-| `workflow.md` | Session lifecycle, proposal format, ledger format | Every session start |
-| `roles.md` | Agent role boundaries, behavioral rules | Every session start |
-| `context-budget.md` | Context management, credit optimization | Every session start |
-| `verification.md` | Verification standards, tools listing, acceptance criteria | When performing verification |
-| `drift-metrics.md` | Drift detection, feedback loops, health signals | On audit or session start |
+| `RULES.md` | Hard rules H1-H9, stop conditions | Every session start |
+|| `WORKFLOW.md` | Session lifecycle, proposal format, ledger format | Every session start |
+|| `ROLES.md` | Agent role boundaries, behavioral rules | Every session start |
+|| `CONTEXT-BUDGET.md` | Context management, credit optimization | Every session start |
+|| `VERIFICATION.md` | Verification standards, tools listing, acceptance criteria | When performing verification |
+|| `DRIFT-METRICS.md` | Drift detection, feedback loops, health signals | On audit or session start |
 
-This lazy-loading approach minimizes token consumption — agents only load verification.md when they're actually running tests, not at every session start.
+This lazy-loading approach minimizes token consumption — agents only load VERIFICATION.md when they're actually running tests, not at every session start.
 
 ## LEDGER.md — The Session Memory
 

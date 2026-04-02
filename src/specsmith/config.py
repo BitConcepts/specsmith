@@ -145,6 +145,18 @@ class ProjectConfig(BaseModel):
         default="", description="Test framework detected by import"
     )
 
+    # License
+    license: str = Field(
+        default="MIT",
+        description="SPDX license identifier (MIT, Apache-2.0, GPL-3.0-only, etc.)",
+    )
+
+    # Community files
+    community_files: list[str] = Field(
+        default=["contributing", "license", "security", "coc", "pr-template", "issue-templates"],
+        description="Community/compliance files to generate",
+    )
+
     # Agent integrations
     integrations: list[str] = Field(
         default=["agents-md"],

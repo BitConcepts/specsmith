@@ -136,11 +136,11 @@ def run_export(root: Path) -> str:
         "scaffold.yml",
         "docs/REQUIREMENTS.md",
         "docs/TEST_SPEC.md",
-        "docs/architecture.md",
-        "docs/governance/rules.md",
-        "docs/governance/workflow.md",
-        "docs/governance/roles.md",
-        "docs/governance/verification.md",
+        "docs/ARCHITECTURE.md",
+        "docs/governance/RULES.md",
+        "docs/governance/WORKFLOW.md",
+        "docs/governance/ROLES.md",
+        "docs/governance/VERIFICATION.md",
     ]
     for gf in gov_files:
         exists = (root / gf).exists()

@@ -1,6 +1,6 @@
 # CLI Commands
 
-specsmith has 11 commands. Every command that operates on a project accepts `--project-dir PATH` (default: current directory).
+specsmith has 40+ commands. Every command that operates on a project accepts `--project-dir PATH` (default: current directory).
 
 ## `specsmith init`
 
@@ -157,9 +157,60 @@ Reads scaffold.yml, looks up the ToolSet for the project type, and checks if eac
 
 See [Doctor](doctor.md) for details.
 
+## `specsmith architect`
+
+Generate or enrich architecture documentation by scanning the project and interviewing you.
+
+```bash
+specsmith architect --project-dir ./my-project
+specsmith architect --project-dir ./my-project --non-interactive
+```
+
+**What it does:** Scans for modules, languages, dependencies, git history, and existing architecture docs. In interactive mode, prompts for component names, purposes, interfaces, data flow, and deployment notes. Generates a rich `docs/ARCHITECTURE.md`.
+
+**Options:**
+
+- `--non-interactive` — Skip prompts, auto-generate from scan data only.
+
+## `specsmith self-update`
+
+Update specsmith itself.
+
+```bash
+specsmith self-update                       # Auto-detect channel
+specsmith self-update --channel dev          # Force dev channel
+specsmith self-update --version 0.1.3        # Pin specific version
+```
+
+Auto-detects whether you're on stable or dev and upgrades accordingly.
+
+## `specsmith credits`
+
+AI credit/token spend tracking and analysis.
+
+```bash
+specsmith credits summary                                # Spend overview
+specsmith credits summary --month 2026-04                # Monthly view
+specsmith credits record --model claude-sonnet \          # Record usage
+  --provider anthropic --tokens-in 5000 --tokens-out 2000 --task "import"
+specsmith credits report --output credits-report.md      # Markdown report
+specsmith credits analyze                                # Optimization insights
+specsmith credits budget --cap 50 --alert-pct 80         # Set budget
+```
+
+**Subcommands:**
+
+- `summary` — Aggregate spend by model, provider, task. Shows budget alerts.
+- `record` — Log a credit usage entry (model, provider, tokens, task, cost).
+- `report` — Generate markdown credit report.
+- `analyze` — Detect model inefficiency, token waste, cost trends. Recommendations.
+- `budget` — View/set monthly cap, alert threshold, watermark levels.
+
+Credit data stored locally at `.specsmith/credits.json` (gitignored).
+
 ## `specsmith --version`
 
 ```bash
 specsmith --version
-# specsmith, version 0.1.2
+# specsmith, version {{ version }}
 ```

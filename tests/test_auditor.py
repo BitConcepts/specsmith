@@ -7,7 +7,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from specsmith.auditor import run_audit
 
 
@@ -20,19 +19,21 @@ def governed_project(tmp_path: Path) -> Path:
     gov = tmp_path / "docs" / "governance"
     gov.mkdir(parents=True)
     for f in (
-        "rules.md",
-        "workflow.md",
-        "roles.md",
-        "context-budget.md",
-        "verification.md",
-        "drift-metrics.md",
+        "RULES.md",
+        "WORKFLOW.md",
+        "ROLES.md",
+        "CONTEXT-BUDGET.md",
+        "VERIFICATION.md",
+        "DRIFT-METRICS.md",
     ):
         (gov / f).write_text(f"# {f}\nContent.\n", encoding="utf-8")
 
     docs = tmp_path / "docs"
     (docs / "REQUIREMENTS.md").write_text("# Reqs\n", encoding="utf-8")
     (docs / "TEST_SPEC.md").write_text("# Tests\n", encoding="utf-8")
-    (docs / "architecture.md").write_text("# Arch\n", encoding="utf-8")
+    (docs / "ARCHITECTURE.md").write_text("# Arch\n", encoding="utf-8")
+    (tmp_path / "CONTRIBUTING.md").write_text("# Contributing\n", encoding="utf-8")
+    (tmp_path / "LICENSE").write_text("MIT License\n", encoding="utf-8")
 
     return tmp_path
 

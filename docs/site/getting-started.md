@@ -20,7 +20,7 @@ pip install -e ".[dev]"
 
 ```bash
 specsmith --version
-# specsmith, version 0.1.2
+# specsmith, version {{ version }}
 
 # Or via python module
 python -m specsmith --version
@@ -57,19 +57,23 @@ my-tool/
 ├── AGENTS.md                          # Governance hub
 ├── LEDGER.md                          # Change ledger
 ├── README.md                          # Project readme
+├── CONTRIBUTING.md                    # Contribution guide
+├── SECURITY.md                        # Vulnerability reporting
+├── CODE_OF_CONDUCT.md                 # Contributor Covenant
+├── LICENSE                            # MIT (configurable)
 ├── pyproject.toml                     # Python project config
 ├── scaffold.yml                       # specsmith config (saved)
 ├── .gitignore / .gitattributes
 ├── docs/
 │   ├── governance/
-│   │   ├── rules.md                   # Hard rules H1-H9
-│   │   ├── workflow.md                # Session lifecycle
-│   │   ├── roles.md                   # Agent boundaries
-│   │   ├── context-budget.md          # Token optimization
-│   │   ├── verification.md            # Tools: ruff, mypy, pytest
-│   │   └── drift-metrics.md           # Health signals
-│   ├── architecture.md
-│   ├── workflow.md
+│   │   ├── RULES.md                   # Hard rules H1-H9
+│   │   ├── WORKFLOW.md                # Session lifecycle
+│   │   ├── ROLES.md                   # Agent boundaries
+│   │   ├── CONTEXT-BUDGET.md          # Token optimization
+│   │   ├── VERIFICATION.md            # Tools: ruff, mypy, pytest
+│   │   └── DRIFT-METRICS.md           # Health signals
+│   ├── ARCHITECTURE.md
+│   ├── WORKFLOW.md
 │   ├── REQUIREMENTS.md
 │   └── TEST_SPEC.md
 ├── src/my_tool/
@@ -82,7 +86,9 @@ my-tool/
 │   └── exec.cmd / exec.sh
 ├── .github/
 │   ├── workflows/ci.yml               # ruff + mypy + pytest + pip-audit
-│   └── dependabot.yml                 # pip + github-actions
+│   ├── dependabot.yml                 # pip + github-actions
+│   ├── PULL_REQUEST_TEMPLATE.md        # Governance-aware PR template
+│   └── ISSUE_TEMPLATE/                # Bug report + feature request
 ├── .warp/skills/SKILL.md              # Warp/Oz governance skill
 └── CLAUDE.md                          # Claude Code governance
 ```
@@ -106,7 +112,15 @@ specsmith doctor --project-dir my-tool
 
 ### Step 5: Open in Your AI Agent
 
-Open the project in Warp, Claude Code, Cursor, or your preferred agent. The agent reads `AGENTS.md` and knows the governance rules. Type `start` to begin a governed session.
+From the project root, use the universal session start command:
+
+```
+/agent AGENTS.md
+```
+
+This works in Warp/Oz, Claude Code, Cursor, and any agent that reads context files. The agent reads `AGENTS.md` (the governance hub), loads `LEDGER.md` for session state, and follows the closed-loop workflow.
+
+After the agent is loaded, you can use the quick command `start` to trigger the full session start protocol (sync, update check, branch check).
 
 ## Tutorial: Import an Existing Project
 

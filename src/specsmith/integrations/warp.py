@@ -31,16 +31,29 @@ class WarpAdapter(AgentAdapter):
         return [skill_path]
 
     def _render_skill(self, config: ProjectConfig) -> str:
+        from specsmith.tools import get_tools
+
+        tools = get_tools(config)
+        tool_cmds = []
+        if tools.lint:
+            tool_cmds.append(tools.lint[0])
+        if tools.test:
+            tool_cmds.append(tools.test[0])
+        if tools.typecheck:
+            tool_cmds.append(tools.typecheck[0])
+        verify_line = ", ".join(tool_cmds) if tool_cmds else "project-specific tools"
+
         return f"""# {config.name} — Governed Project Skill
 
 ## Context
 This project follows the Agentic AI Development Workflow Specification (v{config.spec_version}).
 Project type: {config.type_label} (Section {config.section_ref}).
+Description: {config.description or "See README.md"}.
 
 ## Session Start
 1. Read `AGENTS.md` — the governance hub
 2. Read `LEDGER.md` — check last session state and open TODOs
-3. Read `docs/governance/rules.md` — hard rules and stop conditions
+3. Read `docs/governance/RULES.md` — hard rules and stop conditions
 
 ## Workflow
 All changes follow: **propose → check → execute → verify → record**.
@@ -54,12 +67,30 @@ All changes follow: **propose → check → execute → verify → record**.
 - `docs/governance/` — modular governance docs (load on demand)
 - `docs/REQUIREMENTS.md` — formal requirements
 - `docs/TEST_SPEC.md` — test specifications
-- `docs/architecture.md` — system architecture
+- `docs/ARCHITECTURE.md` — system architecture
+
+## Session Start
+Before any work, run: `specsmith update --check --project-dir .`
+If outdated, run: `specsmith update --yes`
 
 ## Commands
-- `specsmith audit` — run health checks
-- `specsmith validate` — check governance consistency
-- `specsmith compress` — archive old ledger entries
+When user says `commit`: run `specsmith commit --project-dir .`
+When user says `push`: run `specsmith push --project-dir .`
+When user says `sync`: run `specsmith sync --project-dir .`
+When user says `pr`: run `specsmith pr --project-dir .`
+When user says `audit`: run `specsmith audit --project-dir .`
+When user says `session-end`: run `specsmith session-end --project-dir .`
+
+## Verification
+Before marking any task complete, run: {verify_line}
+
+## Credit Tracking
+After completing tasks, record token usage:
+```
+specsmith credits record --model <model> --provider <provider> \
+  --tokens-in <N> --tokens-out <N> --task "<desc>"
+```
+Check budget: `specsmith credits summary`
 
 ## Rules
 - Proposals before changes (no exceptions)
@@ -67,4 +98,5 @@ All changes follow: **propose → check → execute → verify → record**.
 - Use execution shims (`scripts/exec.cmd` / `scripts/exec.sh`) for external commands
 - Keep AGENTS.md under 200 lines
 - Record every session in the ledger
+- Record credit usage at session end
 """

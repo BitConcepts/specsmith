@@ -28,14 +28,27 @@ class ClaudeCodeAdapter(AgentAdapter):
         return [claude_path]
 
     def _render(self, config: ProjectConfig) -> str:
+        from specsmith.tools import get_tools
+
+        tools = get_tools(config)
+        tool_cmds = []
+        if tools.lint:
+            tool_cmds.append(tools.lint[0])
+        if tools.test:
+            tool_cmds.append(tools.test[0])
+        if tools.typecheck:
+            tool_cmds.append(tools.typecheck[0])
+        verify_line = ", ".join(tool_cmds) if tool_cmds else "project-specific tools"
+
         return f"""# CLAUDE.md
 
 This project follows the Agentic AI Development Workflow Specification (v{config.spec_version}).
+Project type: {config.type_label}. Description: {config.description or "See README.md"}.
 
 ## Start here
 1. Read `AGENTS.md` for project identity, governance hub, and file registry
 2. Read `LEDGER.md` for session state and open TODOs
-3. Read `docs/governance/rules.md` for hard rules
+3. Read `docs/governance/RULES.md` for hard rules
 
 ## Workflow
 All changes follow: propose → check → execute → verify → record.
@@ -51,8 +64,24 @@ Never modify code without a proposal in the ledger first.
 - Use `scripts/exec.cmd` or `scripts/exec.sh` for bounded execution
 - Record every session in LEDGER.md
 
-## Health commands
-- `specsmith audit` — drift and health checks
-- `specsmith validate` — governance consistency
-- `specsmith compress` — archive old ledger entries
+## Verification
+Before marking any task complete, run: {verify_line}
+
+## Session Start
+Before any work, run: `specsmith update --check --project-dir .`
+If outdated, run: `specsmith update --yes`
+
+## Commands
+When user says `commit`: run `specsmith commit --project-dir .`
+When user says `push`: run `specsmith push --project-dir .`
+When user says `sync`: run `specsmith sync --project-dir .`
+When user says `pr`: run `specsmith pr --project-dir .`
+When user says `audit`: run `specsmith audit --project-dir .`
+When user says `session-end`: run `specsmith session-end --project-dir .`
+
+## Credit Tracking
+At session end, record token usage:
+`specsmith credits record --model <model> --provider anthropic \
+  --tokens-in <N> --tokens-out <N> --task "<desc>"`
+Check budget: `specsmith credits summary`
 """

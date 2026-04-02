@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-02
+
+### Added
+- **Community templates** (#42): `CONTRIBUTING.md`, `LICENSE` (MIT/Apache-2.0), `SECURITY.md`, `CODE_OF_CONDUCT.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `.github/ISSUE_TEMPLATE/` (bug report + feature request). Config fields: `license` (default MIT), `community_files` list.
+- **AI credit tracking** (#50): `specsmith credits` subcommand group — record, summary, report, analyze, budget. Tracks tokens/cost per session, model, provider, and task. JSON storage at `.specsmith/credits.json`.
+- **Credit spend analysis** (#51): `specsmith credits analyze` detects model inefficiency, token waste, governance bloat, cost trends. Generates optimization recommendations with estimated savings.
+- **Credit budget/watermarks**: `specsmith credits budget --cap 50 --watermarks 5,10,25,50`. Monthly caps, alert thresholds, watermark notifications.
+- **Auto-init credit tracking**: `init`, `import`, and `upgrade` all create `.specsmith/credit-budget.json` with unlimited default budget. `.specsmith/` gitignored.
+- **`specsmith architect`** (#49): interactive architecture generation — scans project, interviews user about components/data flow/deployment, generates rich `docs/ARCHITECTURE.md`.
+- **`specsmith self-update`**: auto-detects channel (stable/dev), supports `--channel` override and `--version` pinning.
+- **Multi-language detection**: importer detects and reports all significant languages (primary + secondary).
+- **Dynamic versioning**: `__version__` reads from `importlib.metadata`. Docs use `{{ version }}` hook. Tests are version-agnostic.
+- **Dev-release workflow for managed projects** (#35): gitflow + GitHub + Python generates `.github/workflows/dev-release.yml`.
+- **Type-specific templates**: .gitattributes (#39) for 15 language types, .gitignore (#40) expanded for all 30 types, .editorconfig (#43) with per-language indent settings.
+- **Yocto/bitbake/devicetree/markdown**: `.bbclass`, `.inc`, `.dts`, `.dtsi` in language detection; `kas.yml` build system; enhanced CI metadata.
+- **No-hardcoded-versions rule** (H10): governance template and WARP rule.
+- **Agent credit instructions**: Warp and Claude adapters include credit recording commands.
+- **Session-end credit summary**: `session-end` shows total spend and budget alerts.
+- **VCS commands**: `specsmith commit`, `push`, `sync`, `branch`, `pr`, `session-end` for governed git workflows.
+- **Structured ledger CLI**: `specsmith ledger add/list/stats` for append-only change tracking.
+- **Requirements CLI**: `specsmith req list/add/trace/coverage` for requirements management.
+- **Test gap analysis**: `specsmith test gaps/orphans/summary` for REQ↔TEST coverage.
+- **Plugin system scaffold**: `specsmith plugin list`, entry-point-based extensibility.
+
+### Fixed
+- **Import with large AGENTS.md** (#46): broader keyword extraction, diff marker stripping, paragraph dedup, existing doc detection.
+- **UnboundLocalError on import** with existing docs: scoping fix for REQUIREMENTS/TEST_SPEC/architecture skip logic.
+- **Audit false positive**: architecture docs found in subdirectories (e.g., `docs/architecture/DESIGN.md`).
+- **`audit --fix`** now generates missing recommended files (ARCHITECTURE.md from scan, REQUIREMENTS.md, TEST_SPEC.md stubs).
+- **Topic-aware section classification** (#47): body content keywords route sections to correct governance files.
+- **Type-specific audit thresholds** (#48): FPGA/embedded get higher limits (rules=1000, verification=600).
+
+### Changed
+- **Uppercase governance filenames**: all scaffolded markdown files use uppercase stems (RULES.md, WORKFLOW.md, ROLES.md, CONTEXT-BUDGET.md, VERIFICATION.md, DRIFT-METRICS.md, ARCHITECTURE.md). Upgrader auto-migrates legacy lowercase filenames on both case-sensitive and case-insensitive filesystems.
+- Auditor now recommends `CONTRIBUTING.md` and `LICENSE`.
+- RTD default version set to `stable`, default branch set to `develop`.
+- Docs version references use dynamic `{{ version }}` instead of hardcoded strings.
+- `init.py.j2` template for managed projects uses `importlib.metadata` pattern.
+- Governance file size thresholds raised globally (rules=800, verification=400).
+- Yocto toolset: added `testimage`, `yocto-check-layer` compliance.
+- Release workflow now runs full test suite before building.
+
 ## [0.1.3] - 2026-04-01
 
 ### Fixed
@@ -129,7 +171,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **G9**: Session start file list now marks services.md as conditional ("if it exists").
 - **G10**: Open TODOs format specified as `- [ ]` / `- [x]` checkbox syntax.
 
-[Unreleased]: https://github.com/BitConcepts/specsmith/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/BitConcepts/specsmith/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/BitConcepts/specsmith/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/BitConcepts/specsmith/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/BitConcepts/specsmith/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/BitConcepts/specsmith/compare/v0.1.0...v0.1.1

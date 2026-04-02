@@ -40,7 +40,7 @@ class GeminiAdapter(AgentAdapter):
             f"## Required reading\n"
             f"1. `AGENTS.md` — governance hub\n"
             f"2. `LEDGER.md` — session state and open TODOs\n"
-            f"3. `docs/governance/rules.md` — hard rules and stop conditions\n\n"
+            f"3. `docs/governance/RULES.md` \u2014 hard rules and stop conditions\n\n"
             f"## Constraints\n"
             f"- Keep AGENTS.md under 200 lines\n"
             f"- All agent-invoked commands must have timeouts\n"

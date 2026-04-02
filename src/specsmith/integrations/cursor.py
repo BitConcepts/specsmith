@@ -49,7 +49,7 @@ Project type: {config.type_label} (Section {config.section_ref}).
 ## Required reading
 1. `AGENTS.md` — governance hub
 2. `LEDGER.md` — session state
-3. `docs/governance/rules.md` — hard rules
+3. `docs/governance/RULES.md` — hard rules
 
 ## Workflow
 All changes: propose → check → execute → verify → record.

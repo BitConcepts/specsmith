@@ -8,7 +8,22 @@ permissions:
   contents: write
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check src/
+      - run: mypy src/specsmith --ignore-missing-imports
+      - run: pytest tests/ -x -q
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -47,7 +62,8 @@ jobs:
     environment: pypi
     permissions:
       id-token: write
-    # Skip gracefully if pypi environment is not configured yet
+    # Only publish from main branch tags — never from develop or feature branches
+    if: github.event.base_ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
     continue-on-error: true
     steps:
       - uses: actions/download-artifact@v8

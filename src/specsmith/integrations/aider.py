@@ -34,5 +34,5 @@ class AiderAdapter(AgentAdapter):
             f"read:\n"
             f"  - AGENTS.md\n"
             f"  - LEDGER.md\n"
-            f"  - docs/governance/rules.md\n"
+            f"  - docs/governance/RULES.md\n"
         )

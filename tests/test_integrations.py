@@ -7,7 +7,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from specsmith.config import ProjectConfig, ProjectType
 from specsmith.integrations import get_adapter, list_adapters
 from specsmith.integrations.claude_code import ClaudeCodeAdapter

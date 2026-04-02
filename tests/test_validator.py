@@ -31,18 +31,18 @@ class TestValidateScaffoldYml:
 class TestValidateAgentsRefs:
     def test_broken_ref(self, tmp_path: Path) -> None:
         (tmp_path / "AGENTS.md").write_text(
-            "See [rules](docs/governance/rules.md) for details.\n",
+            "See [rules](docs/governance/RULES.md) for details.\n",
             encoding="utf-8",
         )
         report = run_validate(tmp_path)
         failed = [r for r in report.results if not r.passed]
-        assert any("rules.md" in r.message for r in failed)
+        assert any("RULES.md" in r.message for r in failed)
 
     def test_valid_refs(self, tmp_path: Path) -> None:
         (tmp_path / "docs" / "governance").mkdir(parents=True)
-        (tmp_path / "docs" / "governance" / "rules.md").write_text("# Rules\n", encoding="utf-8")
+        (tmp_path / "docs" / "governance" / "RULES.md").write_text("# Rules\n", encoding="utf-8")
         (tmp_path / "AGENTS.md").write_text(
-            "See [rules](docs/governance/rules.md).\n",
+            "See [rules](docs/governance/RULES.md).\n",
             encoding="utf-8",
         )
         report = run_validate(tmp_path)

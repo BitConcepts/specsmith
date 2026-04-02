@@ -361,12 +361,23 @@ def status(project_dir: str) -> None:
     default=".",
     help="Project root directory.",
 )
-def diff(project_dir: str) -> None:
+@click.option(
+    "--html", "html_output", type=click.Path(), default=None, help="Generate HTML diff report."
+)
+def diff(project_dir: str, html_output: str | None) -> None:
     """Compare governance files against spec templates."""
     from specsmith.differ import run_diff
 
     root = Path(project_dir).resolve()
     results = run_diff(root)
+
+    if html_output:
+        from specsmith.differ import run_diff_html
+
+        html = run_diff_html(root)
+        Path(html_output).write_text(html, encoding="utf-8")
+        console.print(f"[bold green]HTML diff written to {html_output}[/bold green]")
+        return
 
     if not results:
         console.print("[bold green]All governance files match templates.[/bold green]")
@@ -374,11 +385,11 @@ def diff(project_dir: str) -> None:
 
     for name, status in results:
         if status == "match":
-            console.print(f"  [green]✓[/green] {name}")
+            console.print(f"  [green]\u2713[/green] {name}")
         elif status == "missing":
-            console.print(f"  [red]✗[/red] {name} — missing")
+            console.print(f"  [red]\u2717[/red] {name} \u2014 missing")
         else:
-            console.print(f"  [yellow]~[/yellow] {name} — differs from template")
+            console.print(f"  [yellow]~[/yellow] {name} \u2014 differs from template")
 
 
 @main.command()
@@ -454,7 +465,10 @@ def export(project_dir: str, output: str | None) -> None:
 )
 @click.option("--force", is_flag=True, default=False, help="Overwrite existing governance files.")
 @click.option("--guided", is_flag=True, default=False, help="Run guided architecture after import.")
-def import_project(project_dir: str, force: bool, guided: bool) -> None:
+@click.option(
+    "--dry-run", is_flag=True, default=False, help="Show what would be done without writing."
+)
+def import_project(project_dir: str, force: bool, guided: bool, dry_run: bool) -> None:
     """Import an existing project and generate governance overlay."""
     from specsmith.importer import detect_project, generate_import_config, generate_overlay
 
@@ -464,7 +478,10 @@ def import_project(project_dir: str, force: bool, guided: bool) -> None:
     result = detect_project(root)
 
     console.print(f"  Files: {result.file_count}")
-    console.print(f"  Language: [cyan]{result.primary_language or 'unknown'}[/cyan]")
+    lang_display = result.primary_language or "unknown"
+    if result.secondary_languages:
+        lang_display += f" + {', '.join(result.secondary_languages)}"
+    console.print(f"  Languages: [cyan]{lang_display}[/cyan]")
     console.print(f"  Build system: {result.build_system or 'not detected'}")
     console.print(f"  Test framework: {result.test_framework or 'not detected'}")
     console.print(f"  CI: {result.existing_ci or 'not detected'}")
@@ -476,7 +493,48 @@ def import_project(project_dir: str, force: bool, guided: bool) -> None:
         console.print(f"  Modules: {', '.join(result.modules)}")
     if result.existing_governance:
         console.print(f"  Existing governance: {', '.join(result.existing_governance)}")
+    if result.test_files:
+        console.print(f"  Test files: {len(result.test_files)}")
+    if result.dependencies:
+        console.print(f"  Dependencies: {len(result.dependencies)}")
+    if result.readme_summary:
+        console.print(f"  README: {result.readme_summary[:80]}...")
+    if result.detected_ci_tools:
+        tools_str = ", ".join(
+            f"{cat}: {'/'.join(t)}" for cat, t in result.detected_ci_tools.items()
+        )
+        console.print(f"  CI tools: {tools_str}")
+    if result.ci_tool_gaps:
+        console.print(f"  [yellow]CI gaps: {', '.join(result.ci_tool_gaps)}[/yellow]")
+    if result.git_contributors:
+        console.print(f"  Contributors: {len(result.git_contributors)}")
     console.print()
+
+    if dry_run:
+        console.print("[bold]Dry run — no files will be written.[/bold]\n")
+        overlay_files = [
+            "AGENTS.md",
+            "LEDGER.md",
+            "docs/REQUIREMENTS.md",
+            "docs/TEST_SPEC.md",
+            "docs/ARCHITECTURE.md",
+            "scaffold.yml",
+            "docs/governance/RULES.md",
+            "docs/governance/WORKFLOW.md",
+            "docs/governance/ROLES.md",
+            "docs/governance/CONTEXT-BUDGET.md",
+            "docs/governance/VERIFICATION.md",
+            "docs/governance/DRIFT-METRICS.md",
+        ]
+        for f in overlay_files:
+            exists = (root / f).exists()
+            action = "SKIP (exists)" if exists and not force else "CREATE"
+            icon = "[yellow]—[/yellow]" if exists and not force else "[green]\u2713[/green]"
+            console.print(f"  {icon} {action:14s} {f}")
+        ci_msg = "SKIP (CI exists)" if result.existing_ci else "GENERATE"
+        ci_icon = "[yellow]\u2014[/yellow]" if result.existing_ci else "[green]\u2713[/green]"
+        console.print(f"  {ci_icon} {ci_msg:14s} CI config")
+        return
 
     # Allow override
     if not click.confirm("Proceed with these settings?", default=True):
@@ -586,6 +644,903 @@ def _run_guided_architecture(cfg: ProjectConfig, target: Path) -> list[Path]:
     created.append(arch_path)
 
     return created
+
+
+@main.command()
+@click.option("--project-dir", type=click.Path(exists=True), default=".", help="Project root.")
+@click.option("--non-interactive", is_flag=True, default=False, help="Skip prompts, auto-generate.")
+def architect(project_dir: str, non_interactive: bool) -> None:
+    """Generate or enrich architecture documentation.
+
+    Scans the project for modules, languages, dependencies, git history,
+    then optionally interviews you about components and data flow.
+    """
+    from specsmith.architect import generate_architecture, scan_project_structure
+
+    root = Path(project_dir).resolve()
+    console.print(f"[bold]Scanning[/bold] {root}...\n")
+    scan = scan_project_structure(root)
+
+    modules: list[str] = list(scan.get("modules", []) or [])  # type: ignore[call-overload]
+    deps_list: list[str] = list(scan.get("dependencies", []) or [])  # type: ignore[call-overload]
+    eps_list: list[str] = list(scan.get("entry_points", []) or [])  # type: ignore[call-overload]
+    existing: list[str] = list(scan.get("existing_arch_docs", []) or [])  # type: ignore[call-overload]
+
+    console.print(f"  Languages: {scan.get('primary_language', '?')}")
+    console.print(f"  Modules: {', '.join(modules) or 'none'}")
+    console.print(f"  Dependencies: {len(deps_list)}")
+    console.print(f"  Entry points: {', '.join(eps_list) or 'none'}")
+    if existing:
+        console.print(f"  Existing arch docs: {', '.join(existing)}")
+    console.print()
+
+    components: list[dict[str, str]] | None = None
+    data_flow = ""
+    deployment = ""
+
+    if not non_interactive:
+        console.print("[bold]Architecture Interview[/bold]\n")
+        comp_str = click.prompt(
+            "Major components (comma-separated)",
+            default=", ".join(modules or ["core"]),
+        )
+        components = []
+        for name in [c.strip() for c in comp_str.split(",") if c.strip()]:
+            purpose = click.prompt(f"  {name} purpose", default="")
+            interfaces = click.prompt(f"  {name} interfaces", default="")
+            components.append({"name": name, "purpose": purpose, "interfaces": interfaces})
+
+        data_flow = click.prompt("\nData flow description", default="")
+        deployment = click.prompt("Deployment notes", default="")
+
+    path = generate_architecture(
+        root, components=components, data_flow=data_flow, deployment=deployment, scan=scan
+    )
+    rel = path.relative_to(root)
+    console.print(f"\n[green]\u2713[/green] Generated {rel}")
+    if existing:
+        console.print(
+            f"  [yellow]Note:[/yellow] Existing docs at {', '.join(existing)} "
+            "are referenced but not merged. Review manually."
+        )
+    console.print(
+        "  [dim]Run \"specsmith audit --project-dir .\" to verify governance health.[/dim]"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Ledger subcommands
+# ---------------------------------------------------------------------------
+
+
+@main.group()
+def ledger() -> None:
+    """Manage the change ledger."""
+
+
+@ledger.command(name="add")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+@click.option("--type", "entry_type", default="task", help="Entry type (task, feature, fix, etc.)")
+@click.option("--author", default="agent")
+@click.option("--reqs", default="", help="Affected REQ IDs (comma-separated).")
+@click.argument("description")
+def ledger_add(project_dir: str, entry_type: str, author: str, reqs: str, description: str) -> None:
+    """Add a structured entry to LEDGER.md."""
+    from specsmith.ledger import add_entry
+
+    root = Path(project_dir).resolve()
+    entry = add_entry(
+        root, description=description, entry_type=entry_type, author=author, reqs=reqs
+    )
+    console.print(f"[green]Added:[/green] {entry.splitlines()[0]}")
+
+
+@ledger.command(name="list")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+@click.option("--since", default="", help="Show entries since date (YYYY-MM-DD).")
+def ledger_list(project_dir: str, since: str) -> None:
+    """List ledger entries."""
+    from specsmith.ledger import list_entries
+
+    root = Path(project_dir).resolve()
+    entries = list_entries(root, since=since)
+    if not entries:
+        console.print("[yellow]No entries found.[/yellow]")
+        return
+    for e in entries:
+        heading = e.get("heading", "")
+        status = e.get("status", "")
+        console.print(f"  {heading}" + (f" [{status}]" if status else ""))
+
+
+@ledger.command(name="stats")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def ledger_stats(project_dir: str) -> None:
+    """Show ledger statistics."""
+    from specsmith.ledger import get_stats
+
+    root = Path(project_dir).resolve()
+    stats = get_stats(root)
+    console.print(f"  Entries: {stats['total_entries']}")
+    authors = stats.get("authors", {})
+    if isinstance(authors, dict):
+        for name, count in authors.items():
+            console.print(f"  {name}: {count} entries")
+
+
+main.add_command(ledger)
+
+
+# ---------------------------------------------------------------------------
+# Requirements subcommands
+# ---------------------------------------------------------------------------
+
+
+@main.group()
+def req() -> None:
+    """Manage requirements."""
+
+
+@req.command(name="list")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def req_list(project_dir: str) -> None:
+    """List all requirements."""
+    from specsmith.requirements import list_reqs
+
+    reqs = list_reqs(Path(project_dir).resolve())
+    if not reqs:
+        console.print("[yellow]No requirements found.[/yellow]")
+        return
+    for r in reqs:
+        status = r.get("status", "")
+        priority = r.get("priority", "")
+        desc = r.get("description", "")[:60]
+        console.print(f"  {r['id']:20s} {status:12s} {priority:8s} {desc}")
+    console.print(f"\n  {len(reqs)} requirement(s)")
+
+
+@req.command(name="add")
+@click.argument("req_id")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+@click.option("--component", default="")
+@click.option("--priority", default="medium")
+@click.option("--description", default="")
+def req_add(req_id: str, project_dir: str, component: str, priority: str, description: str) -> None:
+    """Add a new requirement."""
+    from specsmith.requirements import add_req
+
+    add_req(
+        Path(project_dir).resolve(),
+        req_id,
+        component=component,
+        priority=priority,
+        description=description,
+    )
+    console.print(f"[green]Added {req_id}[/green]")
+
+
+@req.command(name="trace")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def req_trace(project_dir: str) -> None:
+    """Show REQ → TEST traceability."""
+    from specsmith.requirements import trace_reqs
+
+    traces = trace_reqs(Path(project_dir).resolve())
+    for t in traces:
+        icon = "[green]\u2713[/green]" if t["covered"] else "[red]\u2717[/red]"
+        tests = ", ".join(t["tests"]) if t["tests"] else "(none)"  # type: ignore[arg-type]
+        console.print(f"  {icon} {t['req']:20s} \u2192 {tests}")
+
+
+@req.command(name="gaps")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def req_gaps(project_dir: str) -> None:
+    """List requirements without test coverage."""
+    from specsmith.requirements import get_gaps
+
+    gaps = get_gaps(Path(project_dir).resolve())
+    if not gaps:
+        console.print("[bold green]All requirements have test coverage.[/bold green]")
+        return
+    for g in gaps:
+        console.print(f"  [red]\u2717[/red] {g}")
+    console.print(f"\n  {len(gaps)} uncovered requirement(s)")
+
+
+@req.command(name="orphans")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def req_orphans(project_dir: str) -> None:
+    """List tests referencing non-existent requirements."""
+    from specsmith.requirements import get_orphan_tests
+
+    orphans = get_orphan_tests(Path(project_dir).resolve())
+    if not orphans:
+        console.print("[bold green]No orphaned test references.[/bold green]")
+        return
+    for o in orphans:
+        console.print(f"  [yellow]\u26a0[/yellow] {o}")
+
+
+main.add_command(req)
+
+
+# ---------------------------------------------------------------------------
+# Migrate command
+# ---------------------------------------------------------------------------
+
+
+@main.command()
+@click.option("--to", "new_type", required=True, help="Target project type.")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def migrate(new_type: str, project_dir: str) -> None:
+    """Change the project type and regenerate type-dependent files."""
+    root = Path(project_dir).resolve()
+    scaffold_path = root / "scaffold.yml"
+
+    if not scaffold_path.exists():
+        console.print("[red]No scaffold.yml found.[/red]")
+        raise SystemExit(1)
+
+    with open(scaffold_path) as f:
+        raw = yaml.safe_load(f)
+
+    old_type = raw.get("type", "unknown")
+    raw["type"] = new_type
+
+    # Validate new type
+    try:
+        config = ProjectConfig(**raw)
+    except Exception as e:
+        console.print(f"[red]Invalid type '{new_type}': {e}[/red]")
+        raise SystemExit(1) from e
+
+    # Save updated scaffold.yml
+    with open(scaffold_path, "w") as f:
+        yaml.dump(raw, f, default_flow_style=False, sort_keys=False)
+    console.print(f"  [green]\u2713[/green] scaffold.yml: {old_type} \u2192 {new_type}")
+
+    # Add missing directories for new type
+    from specsmith.scaffolder import _get_empty_dirs
+
+    for empty_dir in _get_empty_dirs(config, root):
+        gitkeep = empty_dir / ".gitkeep"
+        if not gitkeep.exists():
+            gitkeep.parent.mkdir(parents=True, exist_ok=True)
+            gitkeep.write_text("", encoding="utf-8")
+            console.print(f"  [green]\u2713[/green] {empty_dir.relative_to(root)}/")
+
+    # Regenerate CI + agent files
+    from specsmith.cli import apply as apply_cmd
+
+    ctx = click.Context(apply_cmd, info_name="apply")
+    ctx.invoke(apply_cmd, project_dir=project_dir)
+
+    # Ledger entry
+    from specsmith.ledger import add_entry
+
+    add_entry(
+        root, description=f"Migrated type: {old_type} \u2192 {new_type}", entry_type="migration"
+    )
+    console.print(f"\n[bold green]Migrated to {config.type_label}.[/bold green]")
+
+
+@main.command()
+@click.argument("version")
+@click.option(
+    "--project-dir",
+    type=click.Path(exists=True),
+    default=".",
+    help="Project root directory.",
+)
+def release(version: str, project_dir: str) -> None:
+    """Bump version in all locations and scan for stale refs."""
+    from specsmith.releaser import bump_version, scan_stale_refs
+
+    root = Path(project_dir).resolve()
+
+    console.print(f"[bold]Bumping to {version}[/bold]\n")
+    updated = bump_version(root, version)
+    for f in updated:
+        console.print(f"  [green]\u2713[/green] {f}")
+
+    console.print("\n[bold]Scanning for stale references...[/bold]\n")
+    issues = scan_stale_refs(root, version)
+    if issues:
+        for issue in issues:
+            console.print(f"  [yellow]\u26a0[/yellow] {issue}")
+        console.print(f"\n[bold yellow]{len(issues)} issue(s) found.[/bold yellow]")
+    else:
+        console.print("  No stale references found.")
+
+    console.print(
+        f"\n[bold]Next steps:[/bold]\n"
+        f"  1. Update CHANGELOG.md with [{version}] section\n"
+        f"  2. git add -A && git commit -m 'release: v{version}'\n"
+        f"  3. git checkout main && git merge develop\n"
+        f"  4. git tag -a v{version} -m 'v{version}'\n"
+        f"  5. git push origin main develop --tags"
+    )
+
+
+@main.command(name="verify-release")
+def verify_release() -> None:
+    """Check PyPI, RTD, and GitHub release status after a release."""
+    import subprocess
+    import urllib.request
+
+    from specsmith import __version__
+
+    console.print(f"[bold]Verifying release v{__version__}[/bold]\n")
+    checks_passed = 0
+    checks_failed = 0
+
+    # PyPI
+    try:
+        url = "https://pypi.org/pypi/specsmith/json"
+        resp = urllib.request.urlopen(url, timeout=10)  # noqa: S310
+        import json
+
+        data = json.loads(resp.read())
+        pypi_version = data["info"]["version"]
+        if pypi_version == __version__:
+            console.print(f"  [green]\u2713[/green] PyPI: v{pypi_version}")
+            checks_passed += 1
+        else:
+            console.print(f"  [red]\u2717[/red] PyPI: v{pypi_version} (expected {__version__})")
+            checks_failed += 1
+    except Exception:  # noqa: BLE001
+        console.print("  [red]\u2717[/red] PyPI: could not reach pypi.org")
+        checks_failed += 1
+
+    # RTD
+    try:
+        resp = urllib.request.urlopen(  # noqa: S310
+            "https://specsmith.readthedocs.io/en/latest/", timeout=10
+        )
+        if resp.status == 200:
+            console.print("  [green]\u2713[/green] RTD: site is live")
+            checks_passed += 1
+        else:
+            console.print(f"  [red]\u2717[/red] RTD: status {resp.status}")
+            checks_failed += 1
+    except Exception:  # noqa: BLE001
+        console.print("  [red]\u2717[/red] RTD: could not reach readthedocs.io")
+        checks_failed += 1
+
+    # GitHub release
+    try:
+        result = subprocess.run(
+            ["gh", "release", "view", f"v{__version__}", "--json", "tagName"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if result.returncode == 0:
+            console.print(f"  [green]\u2713[/green] GitHub Release: v{__version__}")
+            checks_passed += 1
+        else:
+            console.print(f"  [red]\u2717[/red] GitHub Release: v{__version__} not found")
+            checks_failed += 1
+    except Exception:  # noqa: BLE001
+        console.print("  [yellow]\u2014[/yellow] GitHub Release: gh CLI not available")
+
+    console.print()
+    if checks_failed == 0:
+        console.print(f"[bold green]All {checks_passed} checks passed.[/bold green]")
+    else:
+        console.print(
+            f"[bold red]{checks_failed} check(s) failed.[/bold red] {checks_passed} passed."
+        )
+
+
+@main.command()
+@click.option(
+    "--project-dir",
+    type=click.Path(exists=True),
+    default=".",
+    help="Project root directory.",
+)
+def apply(project_dir: str) -> None:
+    """Regenerate CI and agent files from current scaffold.yml."""
+    root = Path(project_dir).resolve()
+    scaffold_path = root / "scaffold.yml"
+
+    if not scaffold_path.exists():
+        console.print("[red]No scaffold.yml found.[/red]")
+        raise SystemExit(1)
+
+    with open(scaffold_path) as f:
+        raw = yaml.safe_load(f)
+
+    config = ProjectConfig(**raw)
+    created: list[Path] = []
+
+    # Regenerate VCS platform files
+    if config.vcs_platform:
+        from specsmith.vcs import get_platform
+
+        try:
+            platform = get_platform(config.vcs_platform)
+            created.extend(platform.generate_all(config, root))
+        except ValueError:
+            pass
+
+    # Regenerate agent integration files
+    for integration_name in config.integrations:
+        if integration_name == "agents-md":
+            continue
+        try:
+            from specsmith.integrations import get_adapter
+
+            adapter = get_adapter(integration_name)
+            created.extend(adapter.generate(config, root))
+        except ValueError:
+            pass
+
+    if created:
+        for path in created:
+            rel = path.relative_to(root)
+            console.print(f"  [green]\u2713[/green] {rel}")
+        console.print(f"\n[bold green]{len(created)} file(s) regenerated.[/bold green]")
+    else:
+        console.print("[yellow]Nothing to regenerate.[/yellow]")
+
+
+# ---------------------------------------------------------------------------
+# VCS commands
+# ---------------------------------------------------------------------------
+
+
+@main.command(name="commit")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+@click.option("--message", "-m", default="", help="Override commit message.")
+@click.option("--no-audit", is_flag=True, default=False, help="Skip pre-commit audit.")
+@click.option("--auto-push", is_flag=True, default=False, help="Push after commit.")
+def commit_cmd(project_dir: str, message: str, no_audit: bool, auto_push: bool) -> None:
+    """Stage, audit, and commit with governance-aware message."""
+    from specsmith.vcs_commands import (
+        has_uncommitted_changes,
+        is_ledger_modified_since_last_commit,
+        run_commit,
+    )
+
+    root = Path(project_dir).resolve()
+
+    if not has_uncommitted_changes(root):
+        console.print("[yellow]Nothing to commit.[/yellow]")
+        return
+
+    if not is_ledger_modified_since_last_commit(root):
+        console.print("[yellow]\u26a0 LEDGER.md not updated since last commit.[/yellow]")
+        if not click.confirm("Commit anyway?", default=False):
+            return
+
+    if not no_audit:
+        from specsmith.auditor import run_audit
+
+        report = run_audit(root)
+        if not report.healthy:
+            console.print(f"[yellow]\u26a0 Audit: {report.failed} issue(s)[/yellow]")
+
+    result = run_commit(root, message=message, auto_push=auto_push)
+    if result.success:
+        console.print(f"[green]\u2713[/green] {result.message}")
+    else:
+        console.print(f"[red]\u2717[/red] {result.message}")
+
+
+@main.command(name="push")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+@click.option("--force", is_flag=True, default=False, help="Override safety checks.")
+def push_cmd(project_dir: str, force: bool) -> None:
+    """Push current branch with safety checks."""
+    from specsmith.vcs_commands import run_push
+
+    result = run_push(Path(project_dir).resolve(), force=force)
+    if result.success:
+        console.print(f"[green]\u2713[/green] {result.message}")
+    else:
+        console.print(f"[red]\u2717[/red] {result.message}")
+
+
+@main.group(name="branch")
+def branch_group() -> None:
+    """Branch management."""
+
+
+@branch_group.command(name="create")
+@click.argument("name")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def branch_create(name: str, project_dir: str) -> None:
+    """Create a branch following the branching strategy."""
+    root = Path(project_dir).resolve()
+    scaffold_path = root / "scaffold.yml"
+    strategy = "gitflow"
+    main_branch = "main"
+    if scaffold_path.exists():
+        with open(scaffold_path) as f:
+            raw = yaml.safe_load(f) or {}
+        strategy = raw.get("branching_strategy", "gitflow")
+        main_branch = raw.get("default_branch", "main")
+
+    from specsmith.vcs_commands import create_branch
+
+    result = create_branch(root, name, strategy=strategy, main_branch=main_branch)
+    if result.success:
+        console.print(f"[green]\u2713[/green] {result.message}")
+    else:
+        console.print(f"[red]\u2717[/red] {result.message}")
+
+
+@branch_group.command(name="list")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def branch_list(project_dir: str) -> None:
+    """List branches with strategy context."""
+    from specsmith.vcs_commands import list_branches
+
+    branches = list_branches(Path(project_dir).resolve())
+    for b in branches:
+        marker = "*" if b["current"] else " "
+        role = f" ({b['role']})" if b["role"] else ""
+        console.print(f"  {marker} {b['name']}{role}")
+
+
+main.add_command(branch_group)
+
+
+@main.command(name="pr")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+@click.option("--title", default="", help="PR title.")
+@click.option("--draft", is_flag=True, default=False, help="Create as draft.")
+def pr_cmd(project_dir: str, title: str, draft: bool) -> None:
+    """Create a PR with governance context."""
+    from specsmith.exporter import run_export
+    from specsmith.vcs_commands import create_pr
+
+    root = Path(project_dir).resolve()
+    summary = run_export(root)[:2000]  # Cap for PR body
+    result = create_pr(root, title=title, draft=draft, governance_summary=summary)
+    if result.success:
+        console.print(f"[green]\u2713[/green] {result.message}")
+    else:
+        console.print(f"[red]\u2717[/red] {result.message}")
+
+
+@main.command(name="sync")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def sync_cmd(project_dir: str) -> None:
+    """Pull latest and check for governance conflicts."""
+    from specsmith.vcs_commands import run_sync
+
+    result = run_sync(Path(project_dir).resolve())
+    if result.success:
+        console.print(f"[green]\u2713[/green] {result.message}")
+    else:
+        console.print(f"[red]\u2717[/red] {result.message}")
+
+
+# ---------------------------------------------------------------------------
+# Update and migration
+# ---------------------------------------------------------------------------
+
+
+@main.command(name="update")
+@click.option("--check", "check_only", is_flag=True, default=False, help="Check only.")
+@click.option("--yes", "auto_yes", is_flag=True, default=False, help="Skip confirmation.")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def update_cmd(check_only: bool, auto_yes: bool, project_dir: str) -> None:
+    """Check for updates and optionally install + migrate."""
+    from specsmith.updater import (
+        check_latest_version,
+        needs_migration,
+        run_migration,
+        run_self_update,
+    )
+
+    current, latest, channel = check_latest_version()
+    if not latest:
+        console.print("[yellow]Could not reach PyPI.[/yellow]")
+        return
+
+    if current == latest:
+        console.print(f"[green]\u2713[/green] specsmith {current} is up to date ({channel}).")
+    else:
+        console.print(f"  Current: {current} ({channel})")
+        console.print(f"  Latest:  {latest}")
+
+        if check_only:
+            console.print("[yellow]Update available.[/yellow] Run: specsmith update")
+            return
+
+        if auto_yes or click.confirm(f"Update to {latest}?", default=True):
+            success, msg = run_self_update(channel=channel)
+            if success:
+                console.print(f"[green]\u2713[/green] Updated to {latest}")
+            else:
+                console.print(f"[red]\u2717[/red] Update failed: {msg}")
+                return
+
+    # Check project migration
+    root = Path(project_dir).resolve()
+    if needs_migration(root):
+        console.print("\n[yellow]Project needs migration.[/yellow]")
+        if auto_yes or click.confirm("Run migrate-project?", default=True):
+            actions = run_migration(root)
+            for a in actions:
+                console.print(f"  [green]\u2713[/green] {a}")
+
+
+@main.command(name="self-update")
+@click.option(
+    "--channel",
+    type=click.Choice(["stable", "dev"]),
+    default=None,
+    help="Force channel (default: auto-detect from installed version).",
+)
+@click.option("--version", "target_version", default="", help="Install a specific version.")
+def self_update_cmd(channel: str | None, target_version: str) -> None:
+    """Update specsmith to the latest version.
+
+    Auto-detects channel: stable builds upgrade to latest stable,
+    dev builds upgrade to latest dev. Use --channel to override.
+    Use --version to pin a specific version.
+    """
+    from specsmith.updater import check_latest_version, get_update_channel, run_self_update
+
+    current_channel = get_update_channel()
+    effective_channel = channel or current_channel
+
+    if target_version:
+        console.print(f"[bold]Installing specsmith {target_version}...[/bold]")
+        success, msg = run_self_update(target_version=target_version)
+    else:
+        current, latest, effective_channel = check_latest_version(channel=effective_channel)
+        if not latest:
+            console.print("[yellow]Could not reach PyPI.[/yellow]")
+            return
+        if current == latest:
+            console.print(
+                f"[green]\u2713[/green] specsmith {current} is up to date ({effective_channel})."
+            )
+            return
+        console.print(f"  Current: {current} ({current_channel})")
+        console.print(f"  Latest:  {latest} ({effective_channel})")
+        success, msg = run_self_update(channel=effective_channel)
+
+    if success:
+        console.print("[green]\u2713[/green] Updated successfully.")
+        console.print("  Restart your shell to use the new version.")
+    else:
+        console.print(f"[red]\u2717[/red] Update failed: {msg}")
+
+
+@main.command(name="migrate-project")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+@click.option("--dry-run", is_flag=True, default=False, help="Show changes without writing.")
+def migrate_project_cmd(project_dir: str, dry_run: bool) -> None:
+    """Migrate project to current specsmith version."""
+    from specsmith.updater import run_migration
+
+    root = Path(project_dir).resolve()
+    actions = run_migration(root, dry_run=dry_run)
+    prefix = "[dim](dry run)[/dim] " if dry_run else ""
+    for a in actions:
+        console.print(f"  {prefix}{a}")
+
+
+@main.command(name="session-end")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def session_end_cmd(project_dir: str) -> None:
+    """Run session-end checklist."""
+    from specsmith.session import run_session_end
+
+    root = Path(project_dir).resolve()
+    report = run_session_end(root)
+
+    console.print("[bold]Session End Checklist[/bold]\n")
+    for check in report.checks:
+        if check.status == "ok":
+            console.print(f"  [green]\u2713[/green] {check.message}")
+        elif check.status == "warn":
+            console.print(f"  [yellow]\u26a0[/yellow] {check.message}")
+        else:
+            console.print(f"  [red]\u2717[/red] {check.message}")
+
+    console.print()
+    if report.action_count > 0:
+        console.print(
+            f"[bold red]{report.action_count} action(s) needed before ending session.[/bold red]"
+        )
+    elif report.warn_count > 0:
+        console.print(f"[bold yellow]{report.warn_count} warning(s).[/bold yellow]")
+    else:
+        console.print("[bold green]Session clean. Ready to end.[/bold green]")
+
+
+# ---------------------------------------------------------------------------
+# Credits
+# ---------------------------------------------------------------------------
+
+
+@main.group()
+def credits() -> None:
+    """AI credit/token spend tracking and analysis."""
+
+
+@credits.command(name="summary")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+@click.option("--month", default="", help="Filter by month (YYYY-MM).")
+def credits_summary(project_dir: str, month: str) -> None:
+    """Show credit spend summary."""
+    from specsmith.credits import get_summary
+
+    root = Path(project_dir).resolve()
+    s = get_summary(root, month=month)
+    console.print(f"  Tokens in:  {s.total_tokens_in:,}")
+    console.print(f"  Tokens out: {s.total_tokens_out:,}")
+    console.print(f"  Cost:       ${s.total_cost_usd:.4f}")
+    console.print(f"  Sessions:   {s.session_count}")
+    console.print(f"  Entries:    {s.entry_count}")
+    if s.by_model:
+        console.print("\n  By model:")
+        for model, cost in sorted(s.by_model.items(), key=lambda x: -x[1]):
+            console.print(f"    {model}: ${cost:.4f}")
+    if s.alerts:
+        console.print()
+        for alert in s.alerts:
+            console.print(f"  [yellow]\u26a0[/yellow] {alert}")
+
+
+@credits.command(name="record")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+@click.option("--model", default="unknown", help="AI model used.")
+@click.option("--provider", default="unknown", help="AI provider (openai, anthropic, etc.).")
+@click.option("--tokens-in", type=int, default=0, help="Input tokens.")
+@click.option("--tokens-out", type=int, default=0, help="Output tokens.")
+@click.option("--task", default="", help="Task description.")
+@click.option("--cost", type=float, default=None, help="Actual cost in USD (overrides estimate).")
+def credits_record(
+    project_dir: str,
+    model: str,
+    provider: str,
+    tokens_in: int,
+    tokens_out: int,
+    task: str,
+    cost: float | None,
+) -> None:
+    """Record a credit usage entry."""
+    from specsmith.credits import record_usage
+
+    root = Path(project_dir).resolve()
+    entry = record_usage(
+        root,
+        model=model,
+        provider=provider,
+        tokens_in=tokens_in,
+        tokens_out=tokens_out,
+        task=task,
+        cost_usd=cost,
+    )
+    console.print(
+        f"[green]\u2713[/green] Recorded: {entry.model} "
+        f"{entry.tokens_in:,}+{entry.tokens_out:,} tokens "
+        f"(${entry.estimated_cost_usd:.4f})"
+    )
+
+
+@credits.command(name="report")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+@click.option("--output", default="", help="Write to file instead of stdout.")
+def credits_report(project_dir: str, output: str) -> None:
+    """Generate credit spend report."""
+    from specsmith.credits import generate_report
+
+    root = Path(project_dir).resolve()
+    report = generate_report(root)
+    if output:
+        Path(output).write_text(report, encoding="utf-8")
+        console.print(f"[green]\u2713[/green] Report written to {output}")
+    else:
+        console.print(report)
+
+
+@credits.command(name="analyze")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def credits_analyze(project_dir: str) -> None:
+    """Analyze spend patterns and get optimization recommendations."""
+    from specsmith.credit_analyzer import generate_analysis_report
+
+    root = Path(project_dir).resolve()
+    report = generate_analysis_report(root)
+    console.print(report)
+
+
+@credits.command(name="budget")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+@click.option("--cap", type=float, default=None, help="Monthly cap in USD (0=unlimited).")
+@click.option("--alert-pct", type=int, default=None, help="Alert at this % of cap.")
+@click.option(
+    "--watermarks", default=None, help="Comma-separated USD watermark alerts (e.g. 5,10,25,50)."
+)
+def credits_budget(
+    project_dir: str, cap: float | None, alert_pct: int | None, watermarks: str | None,
+) -> None:
+    """View or set credit budget and alert thresholds."""
+    from specsmith.credits import load_budget, save_budget
+
+    root = Path(project_dir).resolve()
+    budget = load_budget(root)
+
+    if cap is not None:
+        budget.monthly_cap_usd = cap
+    if alert_pct is not None:
+        budget.alert_threshold_pct = alert_pct
+    if watermarks is not None:
+        budget.alert_watermarks_usd = [float(w.strip()) for w in watermarks.split(",") if w.strip()]
+
+    if any(x is not None for x in (cap, alert_pct, watermarks)):
+        save_budget(root, budget)
+        console.print("[green]\u2713[/green] Budget updated.")
+
+    cap_note = " (unlimited)" if budget.monthly_cap_usd == 0 else ""
+    console.print(f"  Monthly cap:   ${budget.monthly_cap_usd:.2f}{cap_note}")
+    console.print(f"  Alert at:      {budget.alert_threshold_pct}%")
+    console.print(f"  Watermarks:    {', '.join(f'${w:.2f}' for w in budget.alert_watermarks_usd)}")
+    console.print(f"  Enabled:       {budget.enabled}")
+
+
+main.add_command(credits)
+
+
+# ---------------------------------------------------------------------------
+# Plugin system
+# ---------------------------------------------------------------------------
+
+
+@main.command(name="plugin")
+def plugin_list() -> None:
+    """List installed specsmith plugins."""
+    from specsmith.plugins import discover_plugins
+
+    plugins = discover_plugins()
+    if not plugins:
+        console.print("No plugins installed.")
+        console.print(
+            "\nPlugins register via pyproject.toml entry points:"
+            "\n  [project.entry-points.'specsmith.types']\n"
+            "  my-type = 'my_plugin:register_type'"
+        )
+        return
+
+    for p in plugins:
+        if p.loaded:
+            console.print(f"  [green]\u2713[/green] {p.group}/{p.name} ({p.module})")
+        else:
+            console.print(f"  [red]\u2717[/red] {p.group}/{p.name} \u2014 {p.error}")
+    console.print(f"\n  {len(plugins)} plugin(s)")
+
+
+# ---------------------------------------------------------------------------
+# Serve (API for React dashboard)
+# ---------------------------------------------------------------------------
+
+
+@main.command()
+@click.option("--port", default=8910, help="Port to serve on.")
+def serve(port: int) -> None:
+    """Start local API server for the web dashboard."""
+    console.print(f"[bold]Starting specsmith API server on port {port}...[/bold]")
+    console.print("[yellow]Not yet implemented. See issue #14.[/yellow]")
+    console.print(
+        "\nPlanned endpoints:\n"
+        "  GET  /api/projects          \u2014 list governed projects\n"
+        "  POST /api/projects/init     \u2014 scaffold new project\n"
+        "  POST /api/projects/import   \u2014 import existing project\n"
+        "  GET  /api/projects/:id/audit   \u2014 run audit\n"
+        "  GET  /api/projects/:id/export  \u2014 generate report\n"
+        "  GET  /api/types             \u2014 list all 30 project types\n"
+        "  GET  /api/tools/:type       \u2014 tool registry for a type"
+    )
 
 
 if __name__ == "__main__":

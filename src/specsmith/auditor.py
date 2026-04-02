@@ -56,18 +56,20 @@ REQUIRED_FILES = [
 ]
 
 GOVERNANCE_FILES = [
-    "docs/governance/rules.md",
-    "docs/governance/workflow.md",
-    "docs/governance/roles.md",
-    "docs/governance/context-budget.md",
-    "docs/governance/verification.md",
-    "docs/governance/drift-metrics.md",
+    "docs/governance/RULES.md",
+    "docs/governance/WORKFLOW.md",
+    "docs/governance/ROLES.md",
+    "docs/governance/CONTEXT-BUDGET.md",
+    "docs/governance/VERIFICATION.md",
+    "docs/governance/DRIFT-METRICS.md",
 ]
 
 RECOMMENDED_FILES = [
     "docs/REQUIREMENTS.md",
     "docs/TEST_SPEC.md",
-    "docs/architecture.md",
+    "docs/ARCHITECTURE.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
 ]
 
 
@@ -120,11 +122,19 @@ def check_governance_files(root: Path) -> list[AuditResult]:
 
     for f in RECOMMENDED_FILES:
         path = root / f
+        found = path.exists()
+        # For architecture.md, also search subdirectories (e.g. docs/architecture/*.md)
+        if not found and "architecture" in f:
+            found = bool(
+                list((root / "docs").glob("**/architecture*"))
+                + list((root / "docs").glob("**/ARCHITECTURE*"))
+            ) if (root / "docs").is_dir() else False
         results.append(
             AuditResult(
                 name=f"recommended:{f}",
-                passed=path.exists(),
-                message=f"Recommended file {f} {'exists' if path.exists() else 'missing'}",
+                passed=found,
+                message=f"Recommended file {f} {'exists' if found else 'missing'}",
+                fixable=not found,
             )
         )
 
@@ -137,7 +147,11 @@ def check_governance_files(root: Path) -> list[AuditResult]:
 
 _REQ_PATTERN = re.compile(r"\b(REQ-[A-Z]+-\d+)\b")
 _TEST_PATTERN = re.compile(r"\b(TEST-[A-Z]+-\d+)\b")
-_TEST_COVERS_PATTERN = re.compile(r"Covers:\s*(REQ-[A-Z]+-\d+(?:\s*,\s*REQ-[A-Z]+-\d+)*)")
+# Match 'Covers: REQ-xxx', '**Requirement:** REQ-xxx', 'Requirement: REQ-xxx'
+_TEST_COVERS_PATTERN = re.compile(
+    r"(?:Covers|\*\*Requirement:?\*\*|Requirement):?\s*"
+    r"(REQ-[A-Z]+-\d+(?:\s*,\s*REQ-[A-Z]+-\d+)*)"
+)
 
 
 def check_req_test_consistency(root: Path) -> list[AuditResult]:
@@ -279,18 +293,62 @@ def check_ledger_health(root: Path) -> list[AuditResult]:
 # ---------------------------------------------------------------------------
 
 
+# Default thresholds (used when no project type is detected)
+_DEFAULT_THRESHOLDS: dict[str, int] = {
+    "AGENTS.md": 200,
+    "docs/governance/RULES.md": 800,
+    "docs/governance/WORKFLOW.md": 400,
+    "docs/governance/ROLES.md": 300,
+    "docs/governance/CONTEXT-BUDGET.md": 300,
+    "docs/governance/VERIFICATION.md": 400,
+    "docs/governance/DRIFT-METRICS.md": 300,
+}
+
+# Type-specific overrides — hardware/embedded projects have denser rules.
+_TYPE_THRESHOLD_OVERRIDES: dict[str, dict[str, int]] = {
+    "fpga-rtl": {
+        "docs/governance/RULES.md": 1000,
+        "docs/governance/WORKFLOW.md": 500,
+        "docs/governance/VERIFICATION.md": 600,
+    },
+    "yocto-bsp": {
+        "docs/governance/RULES.md": 1000,
+        "docs/governance/WORKFLOW.md": 500,
+        "docs/governance/VERIFICATION.md": 500,
+    },
+    "embedded-hardware": {
+        "docs/governance/RULES.md": 1000,
+        "docs/governance/VERIFICATION.md": 500,
+    },
+    "pcb-hardware": {
+        "docs/governance/RULES.md": 900,
+        "docs/governance/VERIFICATION.md": 500,
+    },
+}
+
+
+def _get_thresholds(root: Path) -> dict[str, int]:
+    """Get governance size thresholds, scaled by project type if available."""
+    thresholds = dict(_DEFAULT_THRESHOLDS)
+    scaffold_path = root / "scaffold.yml"
+    if scaffold_path.exists():
+        try:
+            import yaml
+
+            with open(scaffold_path) as f:
+                raw = yaml.safe_load(f) or {}
+            ptype = raw.get("type", "")
+            overrides = _TYPE_THRESHOLD_OVERRIDES.get(ptype, {})
+            thresholds.update(overrides)
+        except Exception:  # noqa: BLE001
+            pass  # Use defaults on any error
+    return thresholds
+
+
 def check_context_size(root: Path) -> list[AuditResult]:
-    """Check governance file sizes against thresholds."""
+    """Check governance file sizes against type-aware thresholds."""
     results: list[AuditResult] = []
-    thresholds = {
-        "AGENTS.md": 200,
-        "docs/governance/rules.md": 300,
-        "docs/governance/workflow.md": 300,
-        "docs/governance/roles.md": 200,
-        "docs/governance/context-budget.md": 200,
-        "docs/governance/verification.md": 200,
-        "docs/governance/drift-metrics.md": 200,
-    }
+    thresholds = _get_thresholds(root)
 
     for rel_path, max_lines in thresholds.items():
         path = root / rel_path
@@ -391,6 +449,48 @@ def check_tool_configuration(root: Path) -> list[AuditResult]:
     return results
 
 
+def check_type_mismatch(root: Path) -> list[AuditResult]:
+    """Check if scaffold.yml type matches actual detected project type."""
+    results: list[AuditResult] = []
+    scaffold_path = root / "scaffold.yml"
+    if not scaffold_path.exists():
+        return results
+
+    import yaml
+
+    from specsmith.config import ProjectConfig
+    from specsmith.importer import detect_project
+
+    try:
+        with open(scaffold_path) as f:
+            raw = yaml.safe_load(f)
+        config = ProjectConfig(**raw)
+        detected = detect_project(root)
+        if detected.inferred_type and detected.inferred_type != config.type:
+            results.append(
+                AuditResult(
+                    name="type-mismatch",
+                    passed=False,
+                    message=(
+                        f"scaffold.yml type is {config.type.value} but detected "
+                        f"{detected.inferred_type.value} from project files"
+                    ),
+                )
+            )
+        else:
+            results.append(
+                AuditResult(
+                    name="type-mismatch",
+                    passed=True,
+                    message=f"Project type {config.type.value} matches detected structure",
+                )
+            )
+    except Exception:  # noqa: BLE001
+        pass
+
+    return results
+
+
 def run_audit(root: Path) -> AuditReport:
     """Run all audit checks and return a report."""
     report = AuditReport()
@@ -399,6 +499,7 @@ def run_audit(root: Path) -> AuditReport:
     report.results.extend(check_ledger_health(root))
     report.results.extend(check_context_size(root))
     report.results.extend(check_tool_configuration(root))
+    report.results.extend(check_type_mismatch(root))
     return report
 
 
@@ -466,5 +567,43 @@ def run_auto_fix(root: Path, report: AuditReport) -> list[str]:
                         )
                 except Exception:  # noqa: BLE001
                     pass  # Best-effort
+
+        # Fix missing recommended files
+        elif result.name == "recommended:docs/ARCHITECTURE.md" and not result.passed:
+            from specsmith.architect import generate_architecture
+
+            try:
+                generate_architecture(root)
+                fixed.append("Generated docs/ARCHITECTURE.md from project scan")
+            except Exception:  # noqa: BLE001
+                # Fallback stub
+                path = root / "docs" / "ARCHITECTURE.md"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(
+                    f"# Architecture — {root.name}\n\n"
+                    "[Run `specsmith architect` to populate]\n",
+                    encoding="utf-8",
+                )
+                fixed.append("Created stub docs/ARCHITECTURE.md")
+
+        elif result.name == "recommended:docs/REQUIREMENTS.md" and not result.passed:
+            path = root / "docs" / "REQUIREMENTS.md"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "# Requirements\n\nNo requirements defined yet.\n\n"
+                "## REQ-CORE-001\n- **Component**: core\n"
+                "- **Status**: Draft\n- **Description**: [Define]\n",
+                encoding="utf-8",
+            )
+            fixed.append("Created stub docs/REQUIREMENTS.md")
+
+        elif result.name == "recommended:docs/TEST_SPEC.md" and not result.passed:
+            path = root / "docs" / "TEST_SPEC.md"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                "# Test Specification\n\nNo tests defined yet.\n",
+                encoding="utf-8",
+            )
+            fixed.append("Created stub docs/TEST_SPEC.md")
 
     return fixed

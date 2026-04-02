@@ -66,9 +66,10 @@ _TOOL_REGISTRY: dict[ProjectType, ToolSet] = {
     ),
     ProjectType.YOCTO_BSP: ToolSet(
         lint=["oelint-adv"],
-        test=["bitbake"],
+        test=["bitbake -c testimage"],
         build=["kas build", "bitbake"],
         security=[],
+        compliance=["yocto-check-layer"],
     ),
     ProjectType.PCB_HARDWARE: ToolSet(
         lint=[],
@@ -362,10 +363,28 @@ LANG_CI_META: dict[str, dict[str, str]] = {
         "docker_image": "verilator/verilator:latest",
         "install": "",
     },
-    "markdown": {
+    "systemverilog": {
         "gh_setup": "",
+        "docker_image": "verilator/verilator:latest",
+        "install": "",
+    },
+    "bitbake": {
+        "gh_setup": "",
+        "docker_image": "crops/poky:latest",
+        "install": "pip install oelint-adv",
+    },
+    "devicetree": {
+        "gh_setup": "",
+        "docker_image": "gcc:latest",
+        "install": "",
+    },
+    "markdown": {
+        "gh_setup": (
+            "      - uses: actions/setup-python@v6\n"
+            '        with:\n          python-version: "3.12"\n'
+        ),
         "docker_image": "pandoc/core:latest",
-        "install": "pip install vale mkdocs",
+        "install": "pip install vale mkdocs markdownlint-cli2 cspell",
     },
     "latex": {
         "gh_setup": "",

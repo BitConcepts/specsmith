@@ -13,12 +13,12 @@ This project uses the modular governance layout. Read this file in full on every
 
 | File | Content | Load timing |
 | ---- | ------- | ----------- |
-| `docs/governance/rules.md` | Hard rules H1–H9, stop conditions | Every session start |
-| `docs/governance/workflow.md` | Session lifecycle, proposal format, ledger format | Every session start |
-| `docs/governance/roles.md` | Agent role boundaries, behavioral rules | Every session start |
-| `docs/governance/context-budget.md` | Context management, credit optimization | Every session start |
-| `docs/governance/verification.md` | Verification standards, acceptance criteria | When performing verification |
-| `docs/governance/drift-metrics.md` | Drift detection, feedback loops, health signals | On `audit` or session start |
+| `docs/governance/RULES.md` | Hard rules H1–H9, stop conditions | Every session start |
+| `docs/governance/WORKFLOW.md` | Session lifecycle, proposal format, ledger format | Every session start |
+| `docs/governance/ROLES.md` | Agent role boundaries, behavioral rules | Every session start |
+| `docs/governance/CONTEXT-BUDGET.md` | Context management, credit optimization | Every session start |
+| `docs/governance/VERIFICATION.md` | Verification standards, acceptance criteria | When performing verification |
+| `docs/governance/DRIFT-METRICS.md` | Drift detection, feedback loops, health signals | On `audit` or session start |
 
 Other project documents:
 
@@ -26,8 +26,8 @@ Other project documents:
 | ---- | ------- |
 | `README.md` | Project overview, structure, goals, status |
 | `LEDGER.md` | Append-only work record (sole authority for session state) |
-| `docs/architecture.md` | Components, boundaries, interfaces, platform expectations |
-| `docs/workflow.md` | Work loop, milestones, PR expectations |
+| `docs/ARCHITECTURE.md` | Components, boundaries, interfaces, platform expectations |
+| `docs/WORKFLOW.md` | Work loop, milestones, PR expectations |
 | `docs/REQUIREMENTS.md` | Formal, numbered, testable requirements |
 | `docs/TEST_SPEC.md` | Test cases linked to requirements |
 
@@ -38,10 +38,10 @@ Other project documents:
 1. **AGENTS.md + docs/governance/*** — highest (governance docs inherit this file's authority)
 2. **README.md** — project intent and scope
 3. **docs/REQUIREMENTS.md** — what the system must do
-4. **docs/architecture.md** — how the system is structured
+4. **docs/ARCHITECTURE.md** — how the system is structured
 5. **docs/TEST_SPEC.md** — how the system is verified
 6. **LEDGER.md** — sole authority for session state
-7. **docs/workflow.md** — how work proceeds
+7. **docs/WORKFLOW.md** — how work proceeds
 
 ---
 
@@ -147,13 +147,39 @@ Other project documents:
 
 ---
 
+## Session Lifecycle
+
+### Start Protocol
+1. `specsmith sync` — pull latest changes
+2. `specsmith update --check` — verify specsmith is current
+3. Check branch: verify you're on the correct branch for the task
+4. Read AGENTS.md, LEDGER.md — load governance and session state
+5. Propose next task
+
+### During Work
+- After each task: `save` → `specsmith commit` (if verification passes)
+- Propose commit after successful verification + ledger save
+- Batch pushes: push after milestones, not every commit
+- Refuse to work on main directly (use feature branches)
+
+### End Protocol
+1. `specsmith session-end` — run checklist
+2. Commit any uncommitted work
+3. Push all unpushed commits
+4. If feature complete: propose PR
+
 ## Quick Command Reference
 
-| Command  | Meaning                          |
-| -------- | -------------------------------- |
-| `start`  | New session                      |
-| `resume` | Resume from ledger               |
-| `save`   | Write ledger entry               |
-| `commit` | Prepare git commit               |
-| `sync`   | Pull latest changes              |
-| `audit`  | Run drift/health checks          |
+| Command        | Meaning                                        |
+| -------------- | ---------------------------------------------- |
+| `start`        | New session (sync + update check + branch check) |
+| `resume`       | Resume from ledger                             |
+| `save`         | Write ledger entry                             |
+| `commit`       | `specsmith commit` (audit + commit)            |
+| `push`         | `specsmith push` (with safety checks)          |
+| `sync`         | `specsmith sync` (pull + conflict warning)     |
+| `audit`        | `specsmith audit`                              |
+| `branch`       | `specsmith branch create`                      |
+| `pr`           | `specsmith pr` (create PR with governance)     |
+| `update`       | `specsmith update` (check + install + migrate) |
+| `session-end`  | `specsmith session-end` (end checklist)        |

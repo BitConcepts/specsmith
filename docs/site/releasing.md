@@ -92,15 +92,21 @@ git branch -d hotfix/description
 git push origin main develop --tags
 ```
 
-## Version Locations (5 places)
+## Version Locations
 
-Every release must update version in ALL of these:
+The version has a **single source of truth**: `pyproject.toml`.
 
-1. `pyproject.toml` → `version = "X.Y.Z"`
-2. `src/specsmith/__init__.py` → `__version__ = "X.Y.Z"`
-3. `src/specsmith/config.py` → `spec_version` Field default
-4. `tests/test_smoke.py` → version assertion
-5. `tests/test_cli.py` → version output assertion + upgrade test version
+All other code reads it dynamically via `importlib.metadata.version()`.
+
+| File | How version is obtained |
+|------|------------------------|
+| `pyproject.toml` | **Source of truth** — `version = "X.Y.Z"` |
+| `src/specsmith/__init__.py` | `importlib.metadata.version("specsmith")` at runtime |
+| `src/specsmith/config.py` | `spec_version` default (for new scaffolds) |
+| `docs/site/*.md` | `{{ version }}` replaced by MkDocs hook at build time |
+| Tests | Compare against `importlib.metadata.version()` |
+
+When releasing, `specsmith release X.Y.Z` updates `pyproject.toml` and `config.py`.
 
 ## CHANGELOG Format
 
@@ -148,11 +154,27 @@ After pushing the tag:
 
 ## Automated Publishing
 
+### Stable Releases (main branch)
 When a tag matching `v*` is pushed to `main`, the release workflow automatically:
 
 1. **Builds** sdist + wheel
 2. **Publishes to PyPI** via OIDC trusted publishing (no tokens needed)
 3. **Creates GitHub Release** with auto-generated notes and artifacts
+
+Install: `pip install specsmith`
+
+### Dev Releases (develop branch)
+Every push to `develop` triggers the dev-release workflow:
+
+1. **Calculates** dev version: `X.Y.(Z+1).devN` where Z is the current patch and N is commits since last tag
+2. **Builds** sdist + wheel with dev version
+3. **Publishes to PyPI** as a pre-release
+
+Example: if stable is `0.1.3`, dev builds are `0.1.4.dev1`, `0.1.4.dev2`, etc.
+
+Install: `pip install --pre specsmith`
+
+Dev releases let users test features before they ship in a stable release. The next-patch `.devN` suffix ensures they sort correctly between stable versions.
 
 ## Lessons Learned
 

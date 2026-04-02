@@ -26,12 +26,24 @@ class UpgradeResult:
 
 # Governance templates that get regenerated on upgrade
 _GOVERNANCE_TEMPLATES: list[tuple[str, str]] = [
-    ("governance/rules.md.j2", "docs/governance/rules.md"),
-    ("governance/workflow.md.j2", "docs/governance/workflow.md"),
-    ("governance/roles.md.j2", "docs/governance/roles.md"),
-    ("governance/context-budget.md.j2", "docs/governance/context-budget.md"),
-    ("governance/verification.md.j2", "docs/governance/verification.md"),
-    ("governance/drift-metrics.md.j2", "docs/governance/drift-metrics.md"),
+    ("governance/rules.md.j2", "docs/governance/RULES.md"),
+    ("governance/workflow.md.j2", "docs/governance/WORKFLOW.md"),
+    ("governance/roles.md.j2", "docs/governance/ROLES.md"),
+    ("governance/context-budget.md.j2", "docs/governance/CONTEXT-BUDGET.md"),
+    ("governance/verification.md.j2", "docs/governance/VERIFICATION.md"),
+    ("governance/drift-metrics.md.j2", "docs/governance/DRIFT-METRICS.md"),
+]
+
+# Migration: old lowercase filenames → new uppercase filenames
+_LEGACY_RENAMES: list[tuple[str, str]] = [
+    ("docs/governance/rules.md", "docs/governance/RULES.md"),
+    ("docs/governance/workflow.md", "docs/governance/WORKFLOW.md"),
+    ("docs/governance/roles.md", "docs/governance/ROLES.md"),
+    ("docs/governance/context-budget.md", "docs/governance/CONTEXT-BUDGET.md"),
+    ("docs/governance/verification.md", "docs/governance/VERIFICATION.md"),
+    ("docs/governance/drift-metrics.md", "docs/governance/DRIFT-METRICS.md"),
+    ("docs/architecture.md", "docs/ARCHITECTURE.md"),
+    ("docs/workflow.md", "docs/WORKFLOW.md"),
 ]
 
 
@@ -92,6 +104,9 @@ def run_upgrade(
 
     result = UpgradeResult()
 
+    # Migrate legacy lowercase filenames to uppercase
+    _migrate_legacy_filenames(root, result)
+
     for template_name, output_rel in _GOVERNANCE_TEMPLATES:
         output_path = root / output_rel
 
@@ -110,9 +125,47 @@ def run_upgrade(
         yaml.dump(raw, f, default_flow_style=False, sort_keys=False)
     result.updated_files.append("scaffold.yml")
 
+    # Initialize credit tracking if not present
+    specsmith_dir = root / ".specsmith"
+    if not specsmith_dir.exists():
+        from specsmith.credits import CreditBudget, save_budget
+
+        save_budget(root, CreditBudget())
+        result.updated_files.append(".specsmith/credit-budget.json")
+
     result.message = (
         f"Upgraded from {old_version} to {new_version}. "
         f"{len(result.updated_files)} files updated, {len(result.skipped_files)} skipped."
     )
 
     return result
+
+
+def _migrate_legacy_filenames(root: Path, result: UpgradeResult) -> None:
+    """Rename legacy lowercase governance files to uppercase.
+
+    Handles both case-sensitive (Linux) and case-insensitive (Windows/macOS)
+    filesystems. On case-insensitive FS, uses a two-step rename via a
+    temporary name to avoid conflicts.
+    """
+    import shutil
+
+    for old_rel, new_rel in _LEGACY_RENAMES:
+        old_path = root / old_rel
+        new_path = root / new_rel
+        if not old_path.exists():
+            continue
+        if old_path == new_path:
+            continue  # Already correct
+        # Case-insensitive FS: old and new resolve to the same inode.
+        # Use a temp name to force the rename.
+        if new_path.exists() and old_path.samefile(new_path):
+            tmp_path = old_path.with_suffix(".md.migrating")
+            shutil.move(str(old_path), str(tmp_path))
+            shutil.move(str(tmp_path), str(new_path))
+        elif not new_path.exists():
+            new_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(old_path), str(new_path))
+        else:
+            continue  # Both exist as truly separate files — skip
+        result.updated_files.append(f"{old_rel} → {new_rel}")

@@ -80,6 +80,12 @@ def scaffold_project(config: ProjectConfig, target: Path) -> list[Path]:
         except ValueError:
             pass  # Unknown platform — skip silently
 
+    # Initialize credit tracking with unlimited budget
+    from specsmith.credits import CreditBudget, save_budget
+
+    save_budget(target, CreditBudget())  # unlimited by default
+    created.append(target / ".specsmith" / "credit-budget.json")
+
     # Git init
     if config.git_init:
         subprocess.run(  # noqa: S603
@@ -100,16 +106,17 @@ def _build_file_map(config: ProjectConfig) -> list[tuple[str, str]]:
         ("readme.md.j2", "README.md"),
         ("gitignore.j2", ".gitignore"),
         ("gitattributes.j2", ".gitattributes"),
+        ("editorconfig.j2", ".editorconfig"),
         # Modular governance
-        ("governance/rules.md.j2", "docs/governance/rules.md"),
-        ("governance/workflow.md.j2", "docs/governance/workflow.md"),
-        ("governance/roles.md.j2", "docs/governance/roles.md"),
-        ("governance/context-budget.md.j2", "docs/governance/context-budget.md"),
-        ("governance/verification.md.j2", "docs/governance/verification.md"),
-        ("governance/drift-metrics.md.j2", "docs/governance/drift-metrics.md"),
+        ("governance/rules.md.j2", "docs/governance/RULES.md"),
+        ("governance/workflow.md.j2", "docs/governance/WORKFLOW.md"),
+        ("governance/roles.md.j2", "docs/governance/ROLES.md"),
+        ("governance/context-budget.md.j2", "docs/governance/CONTEXT-BUDGET.md"),
+        ("governance/verification.md.j2", "docs/governance/VERIFICATION.md"),
+        ("governance/drift-metrics.md.j2", "docs/governance/DRIFT-METRICS.md"),
         # Project docs
-        ("docs/architecture.md.j2", "docs/architecture.md"),
-        ("docs/workflow.md.j2", "docs/workflow.md"),
+        ("docs/architecture.md.j2", "docs/ARCHITECTURE.md"),
+        ("docs/workflow.md.j2", "docs/WORKFLOW.md"),
         ("docs/requirements.md.j2", "docs/REQUIREMENTS.md"),
         ("docs/test-spec.md.j2", "docs/TEST_SPEC.md"),
         # Scripts
@@ -126,6 +133,9 @@ def _build_file_map(config: ProjectConfig) -> list[tuple[str, str]]:
                 ("scripts/exec.sh.j2", "scripts/exec.sh"),
             ]
         )
+
+    # Community / compliance files
+    files.extend(_build_community_files(config))
 
     # Python project types get pyproject.toml and src layout
     if config.type in (
@@ -366,6 +376,49 @@ def _get_empty_dirs(config: ProjectConfig, target: Path) -> list[Path]:
         )
 
     return dirs
+
+
+# License template mapping: SPDX ID → template filename
+_LICENSE_TEMPLATES: dict[str, str] = {
+    "MIT": "community/license-MIT.j2",
+    "Apache-2.0": "community/license-Apache-2.0.j2",
+}
+
+
+def _build_community_files(config: ProjectConfig) -> list[tuple[str, str]]:
+    """Build community/compliance file map based on config.community_files."""
+    files: list[tuple[str, str]] = []
+    cf = set(config.community_files)
+
+    if "contributing" in cf:
+        files.append(("community/contributing.md.j2", "CONTRIBUTING.md"))
+
+    if "license" in cf:
+        tmpl = _LICENSE_TEMPLATES.get(config.license)
+        if tmpl:
+            files.append((tmpl, "LICENSE"))
+        # Unsupported license → skip (user provides their own)
+
+    if "security" in cf:
+        files.append(("community/security.md.j2", "SECURITY.md"))
+
+    if "coc" in cf:
+        files.append(("community/code_of_conduct.md.j2", "CODE_OF_CONDUCT.md"))
+
+    if "pr-template" in cf and config.vcs_platform == "github":
+        files.append(
+            ("community/pull_request_template.md.j2", ".github/PULL_REQUEST_TEMPLATE.md")
+        )
+
+    if "issue-templates" in cf and config.vcs_platform == "github":
+        files.extend(
+            [
+                ("community/bug_report.md.j2", ".github/ISSUE_TEMPLATE/bug_report.md"),
+                ("community/feature_request.md.j2", ".github/ISSUE_TEMPLATE/feature_request.md"),
+            ]
+        )
+
+    return files
 
 
 def _init_commands(config: ProjectConfig) -> None:
