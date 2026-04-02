@@ -8,7 +8,10 @@ import re
 from pathlib import Path
 
 _REQ_PATTERN = re.compile(r"\b(REQ-[A-Z]+-\d+)\b")
-_TEST_COVERS_PATTERN = re.compile(r"Covers:\s*(REQ-[A-Z]+-\d+(?:\s*,\s*REQ-[A-Z]+-\d+)*)")
+_TEST_COVERS_PATTERN = re.compile(
+    r"(?:Covers|\*\*Requirement:?\*\*|Requirement):?\s*"
+    r"(REQ-[A-Z]+-\d+(?:\s*,\s*REQ-[A-Z]+-\d+)*)"
+)
 _TEST_ID_PATTERN = re.compile(r"\b(TEST-[A-Z]+-\d+)\b")
 
 

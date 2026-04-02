@@ -137,7 +137,11 @@ def check_governance_files(root: Path) -> list[AuditResult]:
 
 _REQ_PATTERN = re.compile(r"\b(REQ-[A-Z]+-\d+)\b")
 _TEST_PATTERN = re.compile(r"\b(TEST-[A-Z]+-\d+)\b")
-_TEST_COVERS_PATTERN = re.compile(r"Covers:\s*(REQ-[A-Z]+-\d+(?:\s*,\s*REQ-[A-Z]+-\d+)*)")
+# Match 'Covers: REQ-xxx', '**Requirement:** REQ-xxx', 'Requirement: REQ-xxx'
+_TEST_COVERS_PATTERN = re.compile(
+    r"(?:Covers|\*\*Requirement:?\*\*|Requirement):?\s*"
+    r"(REQ-[A-Z]+-\d+(?:\s*,\s*REQ-[A-Z]+-\d+)*)"
+)
 
 
 def check_req_test_consistency(root: Path) -> list[AuditResult]:
