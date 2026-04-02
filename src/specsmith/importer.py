@@ -634,11 +634,75 @@ _DRIFT_KW: list[str] = [
 ]
 
 
+def _clean_diff_markers(text: str) -> str:
+    """Strip git diff/merge conflict artifacts from text.
+
+    Removes leading |-, |+, || prefixes and <<<<<<< / >>>>>>> markers.
+    """
+    import re
+
+    cleaned_lines: list[str] = []
+    skip_block = False
+    for line in text.splitlines():
+        # Skip merge conflict markers entirely
+        if line.startswith(("<<<<<<", ">>>>>>", "======")):
+            skip_block = not skip_block if line.startswith("<<<<<<") else skip_block
+            if line.startswith(">>>>>>>"):
+                skip_block = False
+            continue
+        if skip_block:
+            continue
+        # Strip diff marker prefixes: |-, |+, ||, leading +, leading -
+        stripped = re.sub(r"^\|{1,2}[-+]\s?", "", line)
+        stripped = re.sub(r"^[-+]\s(?=[A-Z])", "", stripped)  # +/- before prose
+        cleaned_lines.append(stripped)
+    return "\n".join(cleaned_lines)
+
+
+def _detect_content_issues(text: str) -> list[str]:
+    """Detect quality issues in source text. Returns list of warnings."""
+    import re
+
+    warnings: list[str] = []
+    lines = text.splitlines()
+    diff_marker_count = 0
+    for i, line in enumerate(lines, 1):
+        # Diff markers
+        if re.match(r"^\|{1,2}[-+]", line):
+            diff_marker_count += 1
+        # Merge conflict markers
+        if line.startswith(("<<<<<<", ">>>>>>")):
+            warnings.append(f"  Line {i}: unresolved merge conflict marker")
+    if diff_marker_count > 0:
+        warnings.append(
+            f"  {diff_marker_count} line(s) with git diff markers (|-, |+) — auto-stripped"
+        )
+    return warnings
+
+
+def _deduplicate_paragraphs(text: str) -> str:
+    """Remove duplicate paragraphs within a text block."""
+    paragraphs = text.split("\n\n")
+    seen: set[str] = set()
+    unique: list[str] = []
+    for para in paragraphs:
+        normalized = para.strip()
+        if not normalized:
+            continue
+        # Use first 200 chars as dedup key (handles minor formatting diffs)
+        key = normalized[:200].lower()
+        if key not in seen:
+            seen.add(key)
+            unique.append(para)
+    return "\n\n".join(unique)
+
+
 def _extract_governance_sections(root: Path) -> dict[str, str]:
     """Extract modular governance content from existing AGENTS.md.
 
     If AGENTS.md exists and is large, extract sections into modular files.
     Unmatched sections are collected into rules.md so nothing is lost.
+    Diff markers are stripped and duplicate paragraphs are removed.
     """
     defaults = {
         "rules": (
@@ -668,9 +732,20 @@ def _extract_governance_sections(root: Path) -> dict[str, str]:
     if not agents_path.exists():
         return defaults
 
-    content = agents_path.read_text(encoding="utf-8")
-    if len(content.splitlines()) < 50:
+    raw_content = agents_path.read_text(encoding="utf-8")
+    if len(raw_content.splitlines()) < 50:
         return defaults  # Too short to extract from
+
+    # P0: Detect and report content issues, then clean diff markers
+    issues = _detect_content_issues(raw_content)
+    if issues:
+        import sys
+
+        print("\n[specsmith] Content quality warnings in AGENTS.md:", file=sys.stderr)  # noqa: T201
+        for w in issues:
+            print(w, file=sys.stderr)  # noqa: T201
+
+    content = _clean_diff_markers(raw_content)
 
     # Parse AGENTS.md into sections by ## headings
     sections: dict[str, str] = {}
@@ -744,7 +819,8 @@ def _extract_governance_sections(root: Path) -> dict[str, str]:
             parts.append(f"## {heading}\n")
             parts.append(body)
             parts.append("")
-        result[category] = "\n".join(parts) + "\n"
+        # P1: Deduplicate paragraphs within each governance file
+        result[category] = _deduplicate_paragraphs("\n".join(parts)) + "\n"
 
     return result
 
@@ -896,8 +972,14 @@ def generate_overlay(
         f"- Build system: {result.build_system}\n",
     )
 
-    # docs/REQUIREMENTS.md
-    reqs = "# Requirements\n\nRequirements auto-generated from project detection.\n\n"
+    # docs/REQUIREMENTS.md — skip if project already has one (anywhere under docs/)
+    existing_reqs = list(target.glob("docs/**/REQUIREMENTS*")) + list(
+        target.glob("docs/**/requirements*")
+    )
+    if existing_reqs and not force:
+        pass  # Preserve existing requirements doc
+    else:
+        reqs = "# Requirements\n\nRequirements auto-generated from project detection.\n\n"
     for module in result.modules:
         mu = module.upper().replace(" ", "-")
         reqs += (
@@ -913,10 +995,16 @@ def generate_overlay(
             "- **Status**: Draft\n"
             f"- **Description**: Project builds successfully with {result.build_system}\n\n"
         )
-    _write("docs/REQUIREMENTS.md", reqs)
+        _write("docs/REQUIREMENTS.md", reqs)
 
-    # docs/TEST_SPEC.md
-    tests = "# Test Specification\n\nTests auto-generated from project detection.\n\n"
+    # docs/TEST_SPEC.md — skip if project already has one
+    existing_tests = list(target.glob("docs/**/TEST_SPEC*")) + list(
+        target.glob("docs/**/test_spec*")
+    )
+    if existing_tests and not force:
+        pass  # Preserve existing test spec
+    else:
+        tests = "# Test Specification\n\nTests auto-generated from project detection.\n\n"
     for i, test_file in enumerate(result.test_files[:20], 1):
         tests += f"## TEST-{i:03d}\n- **File**: {test_file}\n- **Status**: Detected\n"
         for module in result.modules:
@@ -924,10 +1012,16 @@ def generate_overlay(
                 tests += f"- **Requirement**: REQ-{module.upper()}-001\n"
                 break
         tests += "\n"
-    _write("docs/TEST_SPEC.md", tests)
+        _write("docs/TEST_SPEC.md", tests)
 
-    # docs/architecture.md
-    arch = (
+    # docs/architecture.md — skip if project has architecture doc anywhere under docs/
+    existing_arch = list(target.glob("docs/**/architecture*")) + list(
+        target.glob("docs/**/ARCHITECTURE*")
+    )
+    if existing_arch and not force:
+        pass  # Preserve existing architecture doc
+    else:
+        arch = (
         f"# Architecture — {name}\n\n"
         "Architecture auto-generated from project detection.\n\n"
         "## Overview\n"
@@ -949,7 +1043,7 @@ def generate_overlay(
         arch += "## Language Distribution\n"
         for lang_name, count in sorted(result.languages.items(), key=lambda x: -x[1]):
             arch += f"- {lang_name}: {count} files\n"
-    _write("docs/architecture.md", arch)
+        _write("docs/architecture.md", arch)
 
     # --- Modular governance files ---
     # If AGENTS.md exists and is rich, extract sections from it.
