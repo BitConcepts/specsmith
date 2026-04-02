@@ -246,6 +246,41 @@ def _sync_full(
             out.write_text(tmpl.render(**ctx), encoding="utf-8")
             synced.append(f"{output_rel} (created)")
 
+    # 6. Essential docs — create stubs only if truly missing (check alternate paths)
+    has_ledger = (root / "LEDGER.md").exists() or (root / "docs" / "LEDGER.md").exists()
+    if not has_ledger:
+        (root / "LEDGER.md").write_text("# Ledger\n\nNo entries yet.\n", encoding="utf-8")
+        synced.append("LEDGER.md (created)")
+
+    has_arch = (root / "docs" / "ARCHITECTURE.md").exists()
+    if not has_arch and (root / "docs").is_dir():
+        # Check subdirectories (e.g. docs/architecture/CPSC-RE-ARCHITECTURE.md)
+        has_arch = bool(
+            list((root / "docs").glob("**/architecture*"))
+            + list((root / "docs").glob("**/ARCHITECTURE*"))
+        )
+    if not has_arch:
+        try:
+            from specsmith.architect import generate_architecture
+
+            generate_architecture(root)
+            synced.append("docs/ARCHITECTURE.md (generated from scan)")
+        except Exception:  # noqa: BLE001
+            arch_path = root / "docs" / "ARCHITECTURE.md"
+            arch_path.parent.mkdir(parents=True, exist_ok=True)
+            arch_path.write_text(
+                f"# Architecture \u2014 {config.name}\n\n[Run `specsmith architect` to populate]\n",
+                encoding="utf-8",
+            )
+            synced.append("docs/ARCHITECTURE.md (stub created)")
+    specsmith_dir = root / ".specsmith"
+    credit_budget = specsmith_dir / "credit-budget.json"
+    if not credit_budget.exists():
+        from specsmith.credits import CreditBudget, save_budget
+
+        save_budget(root, CreditBudget())
+        synced.append(".specsmith/credit-budget.json (created)")
+
     return synced
 
 
@@ -255,8 +290,12 @@ def _migrate_legacy_filenames(root: Path, result: UpgradeResult) -> None:
     Handles both case-sensitive (Linux) and case-insensitive (Windows/macOS)
     filesystems. On case-insensitive FS, uses a two-step rename via a
     temporary name to avoid conflicts.
+
+    Also updates references in AGENTS.md so the hub links stay valid.
     """
     import shutil
+
+    renamed: list[tuple[str, str]] = []
 
     for old_rel, new_rel in _LEGACY_RENAMES:
         old_path = root / old_rel
@@ -276,4 +315,41 @@ def _migrate_legacy_filenames(root: Path, result: UpgradeResult) -> None:
             shutil.move(str(old_path), str(new_path))
         else:
             continue  # Both exist as truly separate files — skip
+        renamed.append((old_rel, new_rel))
         result.updated_files.append(f"{old_rel} → {new_rel}")
+
+    # Update references in user-owned docs that point to renamed files
+    if renamed:
+        _update_references(root, renamed, result)
+
+
+def _update_references(
+    root: Path,
+    renames: list[tuple[str, str]],
+    result: UpgradeResult,
+) -> None:
+    """Rewrite old paths to new paths in AGENTS.md and other hub files.
+
+    Only performs safe string replacement of exact path references.
+    """
+    docs_to_patch = [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "GEMINI.md",
+        ".warp/skills/SKILL.md",
+        ".cursor/rules/governance.mdc",
+        ".windsurfrules",
+        ".aider.conf.yml",
+    ]
+
+    for doc_name in docs_to_patch:
+        doc_path = root / doc_name
+        if not doc_path.exists():
+            continue
+        content = doc_path.read_text(encoding="utf-8")
+        original = content
+        for old_rel, new_rel in renames:
+            content = content.replace(old_rel, new_rel)
+        if content != original:
+            doc_path.write_text(content, encoding="utf-8")
+            result.updated_files.append(f"{doc_name} (references updated)")

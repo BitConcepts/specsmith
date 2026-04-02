@@ -2,8 +2,8 @@
 
 [![CI](https://github.com/BitConcepts/specsmith/actions/workflows/ci.yml/badge.svg)](https://github.com/BitConcepts/specsmith/actions/workflows/ci.yml)
 [![Docs](https://readthedocs.org/projects/specsmith/badge/?version=stable)](https://specsmith.readthedocs.io/en/stable/)
-[![PyPI Stable](https://img.shields.io/pypi/v/specsmith?label=stable&style=flat&color=blue)](https://pypi.org/project/specsmith/)
-[![PyPI Dev](https://img.shields.io/pypi/v/specsmith?include_prereleases&label=dev&style=flat&color=orange)](https://pypi.org/project/specsmith/#history)
+[![PyPI Stable](https://img.shields.io/pypi/v/specsmith?label=stable&style=flat&color=blue&cacheSeconds=60)](https://pypi.org/project/specsmith/)
+[![PyPI Dev](https://img.shields.io/pypi/v/specsmith?include_prereleases&label=dev&style=flat&color=orange&cacheSeconds=60)](https://pypi.org/project/specsmith/#history)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
