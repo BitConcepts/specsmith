@@ -283,20 +283,62 @@ def check_ledger_health(root: Path) -> list[AuditResult]:
 # ---------------------------------------------------------------------------
 
 
+# Default thresholds (used when no project type is detected)
+_DEFAULT_THRESHOLDS: dict[str, int] = {
+    "AGENTS.md": 200,
+    "docs/governance/rules.md": 800,
+    "docs/governance/workflow.md": 400,
+    "docs/governance/roles.md": 300,
+    "docs/governance/context-budget.md": 300,
+    "docs/governance/verification.md": 400,
+    "docs/governance/drift-metrics.md": 300,
+}
+
+# Type-specific overrides — hardware/embedded projects have denser rules.
+_TYPE_THRESHOLD_OVERRIDES: dict[str, dict[str, int]] = {
+    "fpga-rtl": {
+        "docs/governance/rules.md": 1000,
+        "docs/governance/workflow.md": 500,
+        "docs/governance/verification.md": 600,
+    },
+    "yocto-bsp": {
+        "docs/governance/rules.md": 1000,
+        "docs/governance/workflow.md": 500,
+        "docs/governance/verification.md": 500,
+    },
+    "embedded-hardware": {
+        "docs/governance/rules.md": 1000,
+        "docs/governance/verification.md": 500,
+    },
+    "pcb-hardware": {
+        "docs/governance/rules.md": 900,
+        "docs/governance/verification.md": 500,
+    },
+}
+
+
+def _get_thresholds(root: Path) -> dict[str, int]:
+    """Get governance size thresholds, scaled by project type if available."""
+    thresholds = dict(_DEFAULT_THRESHOLDS)
+    scaffold_path = root / "scaffold.yml"
+    if scaffold_path.exists():
+        try:
+            import yaml
+
+            with open(scaffold_path) as f:
+                raw = yaml.safe_load(f) or {}
+            ptype = raw.get("type", "")
+            overrides = _TYPE_THRESHOLD_OVERRIDES.get(ptype, {})
+            thresholds.update(overrides)
+        except Exception:  # noqa: BLE001
+            pass  # Use defaults on any error
+    return thresholds
+
+
 def check_context_size(root: Path) -> list[AuditResult]:
-    """Check governance file sizes against thresholds."""
+    """Check governance file sizes against type-aware thresholds."""
     results: list[AuditResult] = []
-    # AGENTS.md is strict (loaded every session). Modular governance files
-    # are lazily loaded per task type so can be larger.
-    thresholds = {
-        "AGENTS.md": 200,
-        "docs/governance/rules.md": 800,
-        "docs/governance/workflow.md": 400,
-        "docs/governance/roles.md": 300,
-        "docs/governance/context-budget.md": 300,
-        "docs/governance/verification.md": 400,
-        "docs/governance/drift-metrics.md": 300,
-    }
+    thresholds = _get_thresholds(root)
 
     for rel_path, max_lines in thresholds.items():
         path = root / rel_path

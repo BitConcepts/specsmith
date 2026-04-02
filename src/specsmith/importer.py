@@ -786,6 +786,20 @@ def _extract_governance_sections(root: Path) -> dict[str, str]:
     }
     unmatched: list[tuple[str, str]] = []
 
+    # Body-level content keywords for secondary classification.
+    # Used when heading doesn't match — scan body text for strong signals.
+    _BODY_ARCHITECTURE_KW = [
+        "register map", "address offset", "0x0", "register name",
+        "block diagram", "data flow", "interface spec",
+        "directory layout", "src/", "repository structure",
+        "milestone", "roadmap", "completion", "phase 2 target",
+    ]
+    _BODY_DRIFT_KW = [
+        "subst v:", "path-length", "one-time setup", "per-machine",
+        "environment variable", "install once", "bootstrap",
+        "windows path", "ntfs",
+    ]
+
     for heading, body in sections.items():
         key_lower = heading.lower()
         matched = False
@@ -795,7 +809,14 @@ def _extract_governance_sections(root: Path) -> dict[str, str]:
                 matched = True
                 break  # First match wins
         if not matched:
-            unmatched.append((heading, body))
+            # Secondary pass: scan body content for strong topic signals
+            body_lower = body[:2000].lower()  # Cap scan for performance
+            if any(kw in body_lower for kw in _BODY_ARCHITECTURE_KW):
+                buckets["verification"].append((heading, body))  # technical reference
+            elif any(kw in body_lower for kw in _BODY_DRIFT_KW):
+                buckets["drift-metrics"].append((heading, body))
+            else:
+                unmatched.append((heading, body))
 
     # Unmatched sections go to rules.md as project-specific rules
     if unmatched:
