@@ -246,12 +246,20 @@ def _sync_full(
             out.write_text(tmpl.render(**ctx), encoding="utf-8")
             synced.append(f"{output_rel} (created)")
 
-    # 6. Essential docs — create stubs if missing (these are needed for audit to pass)
-    if not (root / "LEDGER.md").exists():
+    # 6. Essential docs — create stubs only if truly missing (check alternate paths)
+    has_ledger = (root / "LEDGER.md").exists() or (root / "docs" / "LEDGER.md").exists()
+    if not has_ledger:
         (root / "LEDGER.md").write_text("# Ledger\n\nNo entries yet.\n", encoding="utf-8")
         synced.append("LEDGER.md (created)")
 
-    if not (root / "docs" / "ARCHITECTURE.md").exists():
+    has_arch = (root / "docs" / "ARCHITECTURE.md").exists()
+    if not has_arch and (root / "docs").is_dir():
+        # Check subdirectories (e.g. docs/architecture/CPSC-RE-ARCHITECTURE.md)
+        has_arch = bool(
+            list((root / "docs").glob("**/architecture*"))
+            + list((root / "docs").glob("**/ARCHITECTURE*"))
+        )
+    if not has_arch:
         try:
             from specsmith.architect import generate_architecture
 
@@ -265,8 +273,6 @@ def _sync_full(
                 encoding="utf-8",
             )
             synced.append("docs/ARCHITECTURE.md (stub created)")
-
-    # Initialize credit tracking if not present
     specsmith_dir = root / ".specsmith"
     credit_budget = specsmith_dir / "credit-budget.json"
     if not credit_budget.exists():

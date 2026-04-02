@@ -79,11 +79,15 @@ def check_governance_files(root: Path) -> list[AuditResult]:
 
     for f in REQUIRED_FILES:
         path = root / f
+        found = path.exists()
+        # LEDGER.md: also check docs/LEDGER.md (some imported projects place it there)
+        if not found and f == "LEDGER.md":
+            found = (root / "docs" / "LEDGER.md").exists()
         results.append(
             AuditResult(
                 name=f"file-exists:{f}",
-                passed=path.exists(),
-                message=f"Required file {f} {'exists' if path.exists() else 'MISSING'}",
+                passed=found,
+                message=f"Required file {f} {'exists' if found else 'MISSING'}",
             )
         )
 
@@ -232,16 +236,20 @@ def check_ledger_health(root: Path) -> list[AuditResult]:
     """Check ledger quality and staleness."""
     results: list[AuditResult] = []
     ledger_path = root / "LEDGER.md"
-
     if not ledger_path.exists():
-        results.append(
-            AuditResult(
-                name="ledger-exists",
-                passed=False,
-                message="LEDGER.md not found",
+        # Also check docs/LEDGER.md (some imported projects place it there)
+        alt = root / "docs" / "LEDGER.md"
+        if alt.exists():
+            ledger_path = alt
+        else:
+            results.append(
+                AuditResult(
+                    name="ledger-exists",
+                    passed=False,
+                    message="LEDGER.md not found",
+                )
             )
-        )
-        return results
+            return results
 
     text = ledger_path.read_text(encoding="utf-8")
     lines = text.splitlines()
