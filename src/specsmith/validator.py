@@ -39,6 +39,30 @@ class ValidationReport:
 
 _REQ_PATTERN = re.compile(r"\b(REQ-[A-Z]+-\d+)\b")
 
+# Infinite-loop patterns (Python, PowerShell, shell)
+_INFINITE_LOOP_PATTERNS = (
+    re.compile(r"while\s+True\s*:"),  # Python
+    re.compile(r"while\s*\(\s*\$true\s*\)", re.IGNORECASE),  # PowerShell
+    re.compile(r"while\s+true\s*[;{]", re.IGNORECASE),  # bash/sh
+    re.compile(r"while\s+:\s*[;{\n]"),  # bash/sh `while :`
+    re.compile(r"for\s*\(\s*;;\s*\)"),  # C-style for(;;)
+)
+
+# Deadline/timeout guard keywords — presence anywhere in the file suppresses the warning
+_DEADLINE_GUARD_PATTERNS = (
+    re.compile(r"deadline", re.IGNORECASE),
+    re.compile(r"timeout", re.IGNORECASE),
+    re.compile(r"max_iter", re.IGNORECASE),
+    re.compile(r"max_attempt", re.IGNORECASE),
+    re.compile(r"time\.monotonic\("),
+    re.compile(r"time\.time\("),
+    re.compile(r"Get-Date", re.IGNORECASE),
+    re.compile(r"\$SECONDS"),
+)
+
+# Script file extensions to scan (exclude general source dirs to avoid false positives)
+_SCRIPT_EXTENSIONS = {".sh", ".cmd", ".ps1", ".bash"}
+
 
 def _check_scaffold_yml(root: Path) -> list[ValidationResult]:
     """Check that scaffold.yml exists and is valid YAML."""
@@ -208,6 +232,74 @@ def _check_architecture_reqs(root: Path) -> list[ValidationResult]:
     return results
 
 
+def _check_blocking_loops(root: Path) -> list[ValidationResult]:
+    """Scan script files for unbounded loops without a deadline/timeout guard.
+
+    Checks .sh, .cmd, .ps1, .bash files under scripts/ and the project root.
+    A file is flagged only when it contains an infinite-loop pattern AND lacks
+    any recognised deadline/timeout guard anywhere in the file body.
+    This is a heuristic check; results are warnings rather than hard failures.
+    """
+    results: list[ValidationResult] = []
+
+    # Collect script files: root-level + scripts/ subdirectory
+    candidates: list[Path] = []
+    for path in root.iterdir():
+        if path.is_file() and path.suffix.lower() in _SCRIPT_EXTENSIONS:
+            candidates.append(path)
+    scripts_dir = root / "scripts"
+    if scripts_dir.is_dir():
+        for path in scripts_dir.rglob("*"):
+            if path.is_file() and path.suffix.lower() in _SCRIPT_EXTENSIONS:
+                candidates.append(path)
+
+    if not candidates:
+        return results
+
+    flagged: list[str] = []
+    for script_path in candidates:
+        try:
+            text = script_path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+
+        has_infinite_loop = any(p.search(text) for p in _INFINITE_LOOP_PATTERNS)
+        if not has_infinite_loop:
+            continue
+
+        has_deadline_guard = any(p.search(text) for p in _DEADLINE_GUARD_PATTERNS)
+        if not has_deadline_guard:
+            try:
+                rel = script_path.relative_to(root)
+            except ValueError:
+                rel = script_path
+            flagged.append(str(rel))
+
+    if flagged:
+        for name in flagged:
+            results.append(
+                ValidationResult(
+                    name=f"blocking-loop:{name}",
+                    passed=False,
+                    message=(
+                        f"{name}: unbounded loop detected without a deadline/timeout guard "
+                        "(H11 violation). Add an explicit deadline, iteration cap, and "
+                        "fallback exit path."
+                    ),
+                )
+            )
+    else:
+        results.append(
+            ValidationResult(
+                name="blocking-loops",
+                passed=True,
+                message=f"{len(candidates)} script file(s) checked — no unbounded loops found",
+            )
+        )
+
+    return results
+
+
 def run_validate(root: Path) -> ValidationReport:
     """Run all validation checks and return a report."""
     report = ValidationReport()
@@ -215,4 +307,5 @@ def run_validate(root: Path) -> ValidationReport:
     report.results.extend(_check_agents_md_refs(root))
     report.results.extend(_check_req_ids_unique(root))
     report.results.extend(_check_architecture_reqs(root))
+    report.results.extend(_check_blocking_loops(root))
     return report

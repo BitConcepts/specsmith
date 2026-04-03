@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-04-03
+
+### Fixed
+- **Governance RTD table rendering** (#55): rows 2–6 of the Modular Governance table in `docs/site/governance.md` started with `||` instead of `|`, breaking layout. Introduced during the uppercase filename migration.
+
+### Added
+- **RTD commands page complete** (#56): `docs/site/commands.md` now documents all 40+ commands — previously 13 of 40+ were documented. Added sections for `exec`/`ps`/`abort`, `commit`/`push`/`sync`/`branch`/`pr`, `session-end`, `update`, `apply`, `migrate-project`, `release`, `verify-release`, `ledger add/list/stats`, `req list/add/trace/gaps/orphans`, `plugin`, `serve`, and `credits limits`.
+- **H11/H12 governance rules and blocking-loop enforcement** (#58): two new hard rules added to the `RULES.md` governance template. H11 requires every loop or blocking wait in agent-written scripts to have a deadline, fallback exit, and diagnostic message. H12 requires Windows multi-step automation to use `.cmd` files. `specsmith validate` now scans `.sh`/`.cmd`/`.ps1`/`.bash` files under `scripts/` and the project root and flags infinite-loop patterns without a recognised deadline/timeout guard.
+- **Proactive per-model rate-limit pacing** (#59): `BUILTIN_PROFILES` constant ships conservative RPM/TPM defaults for OpenAI (gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-3.5-turbo, o1, o1-mini, o3-mini, gpt-5.4, wildcard), Anthropic (claude-opus-4, claude-sonnet-4, claude-haiku-3-5, claude-3-5-sonnet, wildcard), and Google (gemini-1.5-pro, gemini-1.5-flash, gemini-2.0-flash, gemini-2.5-pro, wildcard). Two new `credits limits` subcommands: `status` (rolling-window RPM/TPM/concurrency snapshot) and `defaults` (list or `--install` built-in profiles). Local overrides always take precedence over built-ins.
+- **Rate Limit Pacing RTD page**: new `docs/site/rate-limits.md` documents the scheduler model, built-in profiles table, CLI commands, persistent state, and the Python API.
+- **README updated**: new sections for Governance Rules (H11/H12) and Proactive Rate Limit Pacing with RTD links. Commands table expanded to all major command groups.
+- **Dev release CI fixed**: workflow now uses `pyproject.toml` version directly (no patch bump) so dev builds publish as `0.2.3.devN` — PEP 440 compliant pre-releases of the upcoming stable version.
+
 ## [0.2.2] - 2026-04-02
 
 ### Fixed
@@ -194,7 +207,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **G9**: Session start file list now marks services.md as conditional ("if it exists").
 - **G10**: Open TODOs format specified as `- [ ]` / `- [x]` checkbox syntax.
 
-[Unreleased]: https://github.com/BitConcepts/specsmith/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/BitConcepts/specsmith/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/BitConcepts/specsmith/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/BitConcepts/specsmith/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/BitConcepts/specsmith/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/BitConcepts/specsmith/compare/v0.1.3...v0.2.0

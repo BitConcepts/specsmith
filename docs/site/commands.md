@@ -208,6 +208,268 @@ specsmith credits budget --cap 50 --alert-pct 80         # Set budget
 
 Credit data stored locally at `.specsmith/credits.json` (gitignored).
 
+## `specsmith exec`
+
+Execute a command with PID tracking and timeout enforcement.
+
+```bash
+specsmith exec "pytest tests/" --timeout 300
+specsmith exec "make build" --timeout 120 --project-dir ./my-project
+```
+
+**Options:**
+
+- `--timeout INT` — Maximum seconds to wait (default: 120). Process is killed when deadline fires.
+- `--project-dir PATH` — Project root (default: `.`). PID and log files go under `.specsmith/`.
+
+Tracks the process in `.specsmith/pids/<pid>.json` and logs stdout/stderr to `.specsmith/logs/`. Works on Windows (taskkill), Linux, and macOS (SIGTERM → SIGKILL).
+
+**Exit codes:** Mirrors the child process exit code. Returns 124 on timeout.
+
+## `specsmith ps`
+
+List tracked running processes.
+
+```bash
+specsmith ps --project-dir ./my-project
+```
+
+Shows PID, time remaining to timeout, and command for every tracked process. Prunes stale PID files for processes that already exited.
+
+## `specsmith abort`
+
+Kill tracked process(es).
+
+```bash
+specsmith abort --pid 12345
+specsmith abort --all
+```
+
+**Options:**
+
+- `--pid INT` — Kill a specific tracked PID.
+- `--all` — Kill every tracked process.
+
+Without `--pid` or `--all`, prints the current process list and instructions.
+
+## `specsmith commit`
+
+Governance-aware commit: checks ledger, optionally audits, then commits.
+
+```bash
+specsmith commit -m "feat: add export command"
+specsmith commit --no-audit --auto-push
+```
+
+**Options:**
+
+- `-m / --message TEXT` — Override the commit message (default: last ledger entry heading).
+- `--no-audit` — Skip the pre-commit audit check.
+- `--auto-push` — Push after a successful commit.
+
+Warns if `LEDGER.md` was not updated since the last commit.
+
+## `specsmith push`
+
+Push the current branch with safety checks.
+
+```bash
+specsmith push
+specsmith push --force
+```
+
+**Options:**
+
+- `--force` — Skip branch-protection checks.
+
+## `specsmith sync`
+
+Pull latest and warn about governance conflicts.
+
+```bash
+specsmith sync --project-dir ./my-project
+```
+
+Runs `git pull` and checks for conflicts in governance files (AGENTS.md, LEDGER.md, docs/governance/*).
+
+## `specsmith branch`
+
+Strategy-aware branch management.
+
+```bash
+specsmith branch create feature/my-feature
+specsmith branch list
+```
+
+**Subcommands:**
+
+- `create NAME` — Create a branch following the configured branching strategy (gitflow / trunk-based / GitHub Flow). Reads strategy from `scaffold.yml`.
+- `list` — List branches with their role annotation (main, develop, feature, hotfix, etc.).
+
+## `specsmith pr`
+
+Create a PR with governance context in the body.
+
+```bash
+specsmith pr --title "Add export command"
+specsmith pr --draft
+```
+
+**Options:**
+
+- `--title TEXT` — PR title.
+- `--draft` — Create as a draft PR.
+
+Appends the first 2000 characters of `specsmith export` output to the PR body. Requires `gh` (GitHub), `glab` (GitLab), or `bb` (Bitbucket) CLI.
+
+## `specsmith session-end`
+
+Run the end-of-session checklist.
+
+```bash
+specsmith session-end --project-dir ./my-project
+```
+
+Checks: uncommitted changes, ledger updated, open TODOs count, audit health. Reports items that need action before ending the session.
+
+## `specsmith update`
+
+Check for updates and optionally install the latest version + migrate the project.
+
+```bash
+specsmith update
+specsmith update --check            # Check only, don't install
+specsmith update --yes              # Skip confirmation prompt
+```
+
+**Options:**
+
+- `--check` — Print available version and exit without installing.
+- `--yes` — Auto-confirm update and migration prompts.
+
+Auto-detects channel (stable vs dev) from the installed version. Runs `migrate-project` if the project scaffold needs migration after the update.
+
+## `specsmith apply`
+
+Regenerate CI and agent integration files from the current `scaffold.yml`.
+
+```bash
+specsmith apply --project-dir ./my-project
+```
+
+Re-renders GitHub Actions / GitLab CI / Bitbucket Pipelines config and agent integration files (CLAUDE.md, GEMINI.md, `.warp/`, etc.). Safe: never overwrites AGENTS.md, LEDGER.md, or user-authored docs.
+
+## `specsmith migrate-project`
+
+Migrate project scaffold to the current specsmith version.
+
+```bash
+specsmith migrate-project --project-dir ./my-project
+specsmith migrate-project --dry-run
+```
+
+**Options:**
+
+- `--dry-run` — Show what would change without writing.
+
+## `specsmith release`
+
+Bump the version string everywhere and scan for stale references.
+
+```bash
+specsmith release 0.3.0
+specsmith release 0.3.0 --project-dir ./my-project
+```
+
+Updates version in `pyproject.toml`, `Cargo.toml`, `package.json`, `src/**/__init__.py`, README badges, and CHANGELOG. Scans for references to the old version that may need updating. Prints the next manual steps (CHANGELOG, git tag, push).
+
+## `specsmith verify-release`
+
+Post-release smoke check: verify PyPI, RTD, and GitHub release are live.
+
+```bash
+specsmith verify-release
+```
+
+Checks that the installed version is published on PyPI, that the RTD site is reachable, and that the GitHub Release tag exists. Requires `gh` CLI for the GitHub check.
+
+## `specsmith ledger`
+
+Structured ledger management.
+
+```bash
+specsmith ledger add "Implemented export command" --type feature --reqs REQ-CLI-005
+specsmith ledger list --since 2026-03-01
+specsmith ledger stats
+```
+
+**Subcommands:**
+
+- `add DESCRIPTION` — Append a structured entry. Options: `--type` (task/feature/fix/migration), `--author`, `--reqs` (comma-separated REQ IDs).
+- `list` — List ledger entries. Option: `--since YYYY-MM-DD`.
+- `stats` — Show entry count and per-author breakdown.
+
+## `specsmith req`
+
+Requirements management.
+
+```bash
+specsmith req list
+specsmith req add REQ-CLI-010 --component cli --priority high --description "Add export"
+specsmith req trace
+specsmith req gaps
+specsmith req orphans
+```
+
+**Subcommands:**
+
+- `list` — List all requirements with status, priority, and description.
+- `add REQ_ID` — Add a new requirement stub to `docs/REQUIREMENTS.md`.
+- `trace` — Show REQ → TEST traceability matrix (which tests cover each requirement).
+- `gaps` — List requirements that have no test coverage.
+- `orphans` — List tests that reference non-existent requirement IDs.
+
+## `specsmith plugin`
+
+List installed specsmith plugins.
+
+```bash
+specsmith plugin
+```
+
+Plugins extend project types and tool registries. They register via `pyproject.toml` entry points under `specsmith.types`. Shows each plugin's load status and any import errors.
+
+## `specsmith serve`
+
+Start the local API server for the web dashboard (placeholder).
+
+```bash
+specsmith serve --port 8910
+```
+
+Not yet fully implemented. See project roadmap for the planned REST API.
+
+## `specsmith credits limits`
+
+Manage persisted per-model RPM/TPM rate-limit profiles.
+
+```bash
+specsmith credits limits list
+specsmith credits limits set --provider openai --model gpt-4o --rpm 500 --tpm 30000000
+specsmith credits limits status --provider openai --model gpt-4o
+specsmith credits limits defaults
+specsmith credits limits defaults --install
+```
+
+**Subcommands:**
+
+- `list` — Print all locally saved profiles (provider, model, RPM, TPM, utilization target, concurrency).
+- `set` — Create or replace a local profile. Options: `--provider`, `--model`, `--rpm`, `--tpm`, `--target FLOAT` (default 0.70), `--concurrency INT` (default 1).
+- `status` — Show the rolling-window snapshot for a model: requests and tokens used in the current 60-second window, concurrency, moving averages.
+- `defaults` — List built-in profiles for common OpenAI, Anthropic, and Google models. Use `--install` to merge them into the local project config (existing overrides are preserved).
+
+Profiles are stored at `.specsmith/model-rate-limits.json` (gitignored). The scheduler uses these to pace requests before dispatch and to apply exponential backoff after a 429.
+
 ## `specsmith --version`
 
 ```bash

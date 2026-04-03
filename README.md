@@ -86,7 +86,7 @@ Each type gets: tool-aware CI (correct lint/test/security/build tools), domain-s
 | `import` | Adopt an existing project (merge mode) |
 | `audit` | Drift detection and health checks (`--fix` to auto-repair) |
 | `architect` | Interactive architecture generation |
-| `validate` | Governance file consistency checks |
+| `validate` | Governance consistency + H11 blocking-loop detection |
 | `compress` | Archive old ledger entries |
 | `upgrade` | Update governance to new spec version |
 | `status` | CI/PR/alert status from VCS platform |
@@ -94,7 +94,13 @@ Each type gets: tool-aware CI (correct lint/test/security/build tools), domain-s
 | `export` | Compliance report with REQ↔TEST coverage |
 | `doctor` | Check if verification tools are installed |
 | `self-update` | Update specsmith (channel-aware) |
-| `credits` | AI credit tracking, analysis, and budgets |
+| `credits` | AI credit tracking, analysis, budgets, and rate-limit pacing |
+| `exec` / `ps` / `abort` | Tracked process execution with PID tracking and timeout |
+| `commit` / `push` / `sync` | Governance-aware VCS operations |
+| `branch` / `pr` | Strategy-aware branching and PR creation |
+| `ledger` | Structured ledger add/list/stats |
+| `req` | Requirements list/add/trace/gaps/orphans |
+| `session-end` | End-of-session checklist |
 
 ## 7 Agent Integrations
 
@@ -104,9 +110,36 @@ AGENTS.md (cross-platform standard), Warp/Oz, Claude Code, GitHub Copilot, Curso
 
 GitHub Actions, GitLab CI, Bitbucket Pipelines — all with tool-aware CI generated from the verification tool registry. Dependabot/Renovate configured per language ecosystem.
 
+## Governance Rules (H1–H12)
+
+specsmith-governed projects enforce 12 hard rules. Two were added in v0.2.3 for agentic workflows:
+
+- **H11** — Every loop or blocking wait in agent-written scripts must have a deadline, a fallback exit, and a diagnostic message on timeout. `specsmith validate` enforces this automatically.
+- **H12** — On Windows, multi-step automation goes into a `.cmd` file, not inline shell invocations or `.ps1` files.
+
+See [Governance Model](https://specsmith.readthedocs.io/en/stable/governance/) for the full rule set.
+
+## Proactive Rate Limit Pacing
+
+specsmith ships a rolling-window scheduler that paces AI provider requests before dispatch:
+
+- Built-in RPM/TPM profiles for OpenAI, Anthropic, and Google models (including wildcard fallbacks)
+- Pre-dispatch budget check: sleeps until the 60-second window refills instead of overshooting
+- Parses OpenAI-style `"Please try again in 10.793s"` messages and obeys them
+- Adaptive concurrency: halved after a 429, gradually restored after consecutive successes
+- Local overrides always take precedence over built-in defaults
+
+```bash
+specsmith credits limits defaults          # list built-in profiles
+specsmith credits limits defaults --install  # merge into project config
+specsmith credits limits status --provider openai --model gpt-5.4
+```
+
+See [Rate Limit Pacing](https://specsmith.readthedocs.io/en/stable/rate-limits/) for full details.
+
 ## Documentation
 
-**[specsmith.readthedocs.io](https://specsmith.readthedocs.io)** — Full user manual with tutorials, command reference, project type details, tool registry, governance model, troubleshooting.
+**[specsmith.readthedocs.io](https://specsmith.readthedocs.io)** — Full user manual with tutorials, command reference, project type details, tool registry, governance model, rate-limit pacing, troubleshooting.
 
 ## Links
 

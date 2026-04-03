@@ -123,3 +123,41 @@ class TestCLIUpgrade:
         with open(target / "scaffold.yml") as fh:
             data = yaml.safe_load(fh)
         assert data["spec_version"] == "0.2.0"
+
+
+class TestCLICreditsLimits:
+    def test_set_and_list_limits_profile(self, tmp_path: Path) -> None:
+        runner = CliRunner()
+
+        set_result = runner.invoke(
+            main,
+            [
+                "credits",
+                "limits",
+                "set",
+                "--project-dir",
+                str(tmp_path),
+                "--provider",
+                "openai",
+                "--model",
+                "gpt-5.4",
+                "--rpm",
+                "60",
+                "--tpm",
+                "500000",
+                "--target",
+                "0.7",
+                "--concurrency",
+                "4",
+            ],
+        )
+        assert set_result.exit_code == 0
+        assert "Saved openai/gpt-5.4" in set_result.output
+
+        list_result = runner.invoke(
+            main,
+            ["credits", "limits", "list", "--project-dir", str(tmp_path)],
+        )
+        assert list_result.exit_code == 0
+        assert "openai/gpt-5.4" in list_result.output
+        assert "RPM=60 TPM=500000" in list_result.output

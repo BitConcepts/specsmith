@@ -1501,6 +1501,168 @@ def credits_budget(
     console.print(f"  Enabled:       {budget.enabled}")
 
 
+@credits.group(name="limits")
+def credits_limits() -> None:
+    """Manage persisted per-model RPM/TPM profiles."""
+
+
+@credits_limits.command(name="list")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+def credits_limits_list(project_dir: str) -> None:
+    """List configured local model rate-limit profiles."""
+    from specsmith.rate_limits import load_rate_limit_profiles
+
+    root = Path(project_dir).resolve()
+    profiles = sorted(
+        load_rate_limit_profiles(root),
+        key=lambda profile: (profile.provider, profile.model),
+    )
+    if not profiles:
+        console.print("[yellow]No model rate-limit profiles configured.[/yellow]")
+        return
+
+    for profile in profiles:
+        console.print(
+            "  "
+            f"{profile.provider}/{profile.model} "
+            f"RPM={profile.rpm_limit} TPM={profile.tpm_limit} "
+            f"target={profile.utilization_target:.2f} "
+            f"concurrency={profile.concurrency_cap}"
+        )
+
+
+@credits_limits.command(name="set")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+@click.option("--provider", required=True, help="Provider key, such as openai or anthropic.")
+@click.option("--model", required=True, help="Model key, such as gpt-5.4.")
+@click.option("--rpm", "rpm_limit", type=int, required=True, help="Requests per minute limit.")
+@click.option("--tpm", "tpm_limit", type=int, required=True, help="Tokens per minute limit.")
+@click.option("--target", "utilization_target", type=float, default=0.7, show_default=True)
+@click.option("--concurrency", "concurrency_cap", type=int, default=1, show_default=True)
+def credits_limits_set(
+    project_dir: str,
+    provider: str,
+    model: str,
+    rpm_limit: int,
+    tpm_limit: int,
+    utilization_target: float,
+    concurrency_cap: int,
+) -> None:
+    """Create or replace a local model rate-limit profile."""
+    from specsmith.rate_limits import (
+        ModelRateLimitProfile,
+        load_rate_limit_profiles,
+        save_rate_limit_profiles,
+    )
+
+    root = Path(project_dir).resolve()
+    updated_profile = ModelRateLimitProfile(
+        provider=provider,
+        model=model,
+        rpm_limit=rpm_limit,
+        tpm_limit=tpm_limit,
+        utilization_target=utilization_target,
+        concurrency_cap=concurrency_cap,
+        source="override",
+    )
+    profiles = {profile.key: profile for profile in load_rate_limit_profiles(root)}
+    profiles[updated_profile.key] = updated_profile
+    save_rate_limit_profiles(root, list(profiles.values()))
+    console.print(
+        "[green]✓[/green] "
+        f"Saved {updated_profile.provider}/{updated_profile.model} "
+        f"(RPM={updated_profile.rpm_limit}, TPM={updated_profile.tpm_limit}, "
+        f"target={updated_profile.utilization_target:.2f}, "
+        f"concurrency={updated_profile.concurrency_cap})"
+    )
+
+
+@credits_limits.command(name="status")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+@click.option("--provider", required=True, help="Provider key, such as openai or anthropic.")
+@click.option("--model", required=True, help="Model key, such as gpt-5.4.")
+def credits_limits_status(project_dir: str, provider: str, model: str) -> None:
+    """Show rolling-window snapshot for a model (RPM, TPM, concurrency, moving averages)."""
+    from specsmith.rate_limits import (
+        BUILTIN_PROFILES,
+        load_rate_limit_profiles,
+        load_rate_limit_scheduler,
+    )
+
+    root = Path(project_dir).resolve()
+    profiles = load_rate_limit_profiles(root, defaults=BUILTIN_PROFILES)
+    scheduler = load_rate_limit_scheduler(root, profiles)
+
+    try:
+        snap = scheduler.snapshot(provider, model)
+    except KeyError:
+        console.print(
+            f"[red]No profile found for {provider}/{model}.[/red] "
+            "Use 'specsmith credits limits set' to configure one."
+        )
+        raise SystemExit(1) from None
+
+    console.print(f"[bold]{snap.provider}/{snap.model}[/bold]")
+    console.print(
+        f"  RPM: {snap.rolling_request_count} / {snap.effective_rpm_limit} "
+        f"(limit {snap.rpm_limit}, target {snap.effective_rpm_limit})"
+    )
+    console.print(
+        f"  TPM: {snap.rolling_token_count:,} / {snap.effective_tpm_limit:,} "
+        f"(limit {snap.tpm_limit:,})"
+    )
+    console.print(
+        f"  Utilization: RPM {snap.request_utilization:.1%}  TPM {snap.token_utilization:.1%}"
+    )
+    console.print(
+        f"  Concurrency: {snap.in_flight} in-flight / {snap.current_concurrency_cap} cap "
+        f"(base {snap.base_concurrency_cap})"
+    )
+    console.print(
+        f"  Moving avg:  {snap.moving_average_requests:.1f} req/window  "
+        f"{snap.moving_average_tokens:,.0f} tok/window"
+    )
+
+
+@credits_limits.command(name="defaults")
+@click.option("--project-dir", type=click.Path(exists=True), default=".")
+@click.option(
+    "--install",
+    is_flag=True,
+    default=False,
+    help="Merge built-in defaults into the local project config (existing overrides preserved).",
+)
+def credits_limits_defaults(project_dir: str, install: bool) -> None:
+    """List (or install) built-in RPM/TPM profiles for common provider/model paths."""
+    from specsmith.rate_limits import (
+        BUILTIN_PROFILES,
+        load_rate_limit_profiles,
+        save_rate_limit_profiles,
+    )
+
+    console.print("[bold]Built-in model rate-limit profiles[/bold]")
+    console.print("[dim](conservative defaults — local overrides take precedence)[/dim]\n")
+    for profile in BUILTIN_PROFILES:
+        console.print(
+            f"  {profile.provider}/{profile.model:25s} "
+            f"RPM={profile.rpm_limit:<6} TPM={profile.tpm_limit:>12,} "
+            f"target={profile.utilization_target:.2f}"
+        )
+
+    if install:
+        root = Path(project_dir).resolve()
+        # Load existing local profiles; they take precedence over built-ins
+        existing = {p.key: p for p in load_rate_limit_profiles(root)}
+        merged = {p.key: p for p in BUILTIN_PROFILES}
+        merged.update(existing)  # local overrides win
+        save_rate_limit_profiles(root, list(merged.values()))
+        added = len(merged) - len(existing)
+        console.print(
+            f"\n[green]\u2713[/green] Installed {added} new default(s) to "
+            ".specsmith/model-rate-limits.json (existing profiles preserved)."
+        )
+
+
 main.add_command(credits)
 
 

@@ -46,12 +46,12 @@ When AGENTS.md is kept small (~100-150 lines), governance details are delegated 
 
 | File | Content | When Loaded |
 |------|---------|-------------|
-| `RULES.md` | Hard rules H1-H9, stop conditions | Every session start |
-|| `WORKFLOW.md` | Session lifecycle, proposal format, ledger format | Every session start |
-|| `ROLES.md` | Agent role boundaries, behavioral rules | Every session start |
-|| `CONTEXT-BUDGET.md` | Context management, credit optimization | Every session start |
-|| `VERIFICATION.md` | Verification standards, tools listing, acceptance criteria | When performing verification |
-|| `DRIFT-METRICS.md` | Drift detection, feedback loops, health signals | On audit or session start |
+| `RULES.md` | Hard rules H1-H11, stop conditions | Every session start |
+| `WORKFLOW.md` | Session lifecycle, proposal format, ledger format | Every session start |
+| `ROLES.md` | Agent role boundaries, behavioral rules | Every session start |
+| `CONTEXT-BUDGET.md` | Context management, credit optimization | Every session start |
+| `VERIFICATION.md` | Verification standards, tools listing, acceptance criteria | When performing verification |
+| `DRIFT-METRICS.md` | Drift detection, feedback loops, health signals | On audit or session start |
 
 This lazy-loading approach minimizes token consumption — agents only load VERIFICATION.md when they're actually running tests, not at every session start.
 
@@ -101,3 +101,19 @@ This is how context persists across sessions. When an agent starts with `resume`
 6. **Consistency** — Do AGENTS.md references resolve? Are requirement IDs unique?
 
 `specsmith audit --fix` auto-repairs what it can: creates missing stubs, compresses oversized ledgers, regenerates CI configs.
+
+## Hard Rules (H11 and H12)
+
+Two rules were added in v0.2.3 specifically for long-running agentic workflows:
+
+**H11 — No unbounded loops or blocking I/O without a deadline**
+
+Every loop or blocking wait in agent-written scripts and automation must have an explicit deadline or iteration cap, a fallback exit path when the deadline fires, and a diagnostic message on timeout. Violating patterns include `while True:` / `while ($true)` / `for (;;)` with no deadline guard, I/O polling loops with no deadline, and `sleep` inside a loop with no termination condition.
+
+`specsmith validate` enforces this by scanning `.sh`, `.cmd`, `.ps1`, and `.bash` files under `scripts/` and the project root for infinite-loop patterns without a recognised deadline/timeout guard.
+
+**H12 — Windows multi-step automation via .cmd files**
+
+On Windows, multi-step or heavily-quoted automation sequences must be written to a temporary `.cmd` file and executed from there. Inline multi-line quoting on Windows is fragile and causes avoidable hangs. Do not use `.ps1` files for this class of automation unless there is a concrete PowerShell-only requirement.
+
+See `docs/governance/RULES.md` in any governed project for the full set of H1–H12 rules and stop conditions.

@@ -41,6 +41,7 @@ nav:
   - Agent Integrations: agent-integrations.md
   - Doctor: doctor.md
   - Export & Compliance: export.md
+  - Rate Limit Pacing: rate-limits.md
   - Troubleshooting: troubleshooting.md
   - Releasing: releasing.md
   - Contributing: contributing.md
