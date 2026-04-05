@@ -110,10 +110,14 @@ class SealRecord:
             entry_hash=str(d["entry_hash"]),
             timestamp=str(d["timestamp"]),
             author=str(d.get("author", "specsmith")),
-            artifact_ids=[
-                str(x) for x in (d.get("artifact_ids") or []) if isinstance(x, (str, int, float))
-            ],
-        )
+            artifact_ids=_parse_ids(d.get("artifact_ids")),
+
+
+def _parse_ids(raw: object) -> list[str]:
+    """Parse artifact_ids from a JSON value safely."""
+    if not isinstance(raw, list):
+        return []
+    return [str(item) for item in raw]
 
 
 _GENESIS_HASH = "0" * 64
