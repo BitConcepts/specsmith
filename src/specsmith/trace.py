@@ -111,6 +111,7 @@ class SealRecord:
             timestamp=str(d["timestamp"]),
             author=str(d.get("author", "specsmith")),
             artifact_ids=_parse_ids(d.get("artifact_ids")),
+        )
 
 
 def _parse_ids(raw: object) -> list[str]:
