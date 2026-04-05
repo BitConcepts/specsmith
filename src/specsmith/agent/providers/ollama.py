@@ -6,6 +6,7 @@ Ollama exposes an OpenAI-compatible /v1/chat/completions endpoint.
 We use that directly for tool calling. For plain completion, we use
 the native /api/chat endpoint.
 """
+
 from __future__ import annotations
 
 import json
@@ -54,9 +55,7 @@ class OllamaProvider:
             return self._complete_openai_compat(messages, tools, max_tokens)
         return self._complete_native(messages, max_tokens)
 
-    def _complete_native(
-        self, messages: list[Message], max_tokens: int
-    ) -> CompletionResponse:
+    def _complete_native(self, messages: list[Message], max_tokens: int) -> CompletionResponse:
         payload = {
             "model": self.model,
             "messages": [m.to_dict() for m in messages],
@@ -87,11 +86,13 @@ class OllamaProvider:
         content = choice.get("message", {}).get("content", "") or ""
         tool_calls: list[dict[str, Any]] = []
         for tc in choice.get("message", {}).get("tool_calls", []):
-            tool_calls.append({
-                "id": tc.get("id", ""),
-                "name": tc.get("function", {}).get("name", ""),
-                "input": json.loads(tc.get("function", {}).get("arguments", "{}")),
-            })
+            tool_calls.append(
+                {
+                    "id": tc.get("id", ""),
+                    "name": tc.get("function", {}).get("name", ""),
+                    "input": json.loads(tc.get("function", {}).get("arguments", "{}")),
+                }
+            )
         usage = data.get("usage", {})
         return CompletionResponse(
             content=content,

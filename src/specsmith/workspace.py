@@ -20,6 +20,7 @@ import yaml
 @dataclass
 class WorkspaceProject:
     """A project within a workspace."""
+
     path: str
     name: str = ""
     overrides: dict[str, Any] = field(default_factory=dict)
@@ -28,6 +29,7 @@ class WorkspaceProject:
 @dataclass
 class WorkspaceConfig:
     """Workspace configuration parsed from workspace.yml."""
+
     name: str = ""
     description: str = ""
     projects: list[WorkspaceProject] = field(default_factory=list)
@@ -37,6 +39,7 @@ class WorkspaceConfig:
 @dataclass
 class WorkspaceAuditResult:
     """Audit result for a single project in the workspace."""
+
     path: str
     name: str
     healthy: bool
@@ -64,11 +67,13 @@ def load_workspace(root: Path) -> WorkspaceConfig:
         if isinstance(p, str):
             projects.append(WorkspaceProject(path=p))
         elif isinstance(p, dict):
-            projects.append(WorkspaceProject(
-                path=p.get("path", ""),
-                name=p.get("name", ""),
-                overrides=p.get("overrides", {}),
-            ))
+            projects.append(
+                WorkspaceProject(
+                    path=p.get("path", ""),
+                    name=p.get("name", ""),
+                    overrides=p.get("overrides", {}),
+                )
+            )
 
     return WorkspaceConfig(
         name=raw.get("name", root.name),
@@ -108,28 +113,47 @@ def audit_workspace(root: Path) -> list[WorkspaceAuditResult]:
         name = project.name or proj_root.name
 
         if not proj_root.exists():
-            results.append(WorkspaceAuditResult(
-                path=project.path, name=name, healthy=False,
-                passed=0, failed=1, fixable=0,
-                error=f"Directory not found: {proj_root}",
-            ))
+            results.append(
+                WorkspaceAuditResult(
+                    path=project.path,
+                    name=name,
+                    healthy=False,
+                    passed=0,
+                    failed=1,
+                    fixable=0,
+                    error=f"Directory not found: {proj_root}",
+                )
+            )
             continue
 
         try:
             from specsmith.auditor import run_audit
+
             report = run_audit(proj_root)
             issues = [r.message for r in report.results if not r.passed]
-            results.append(WorkspaceAuditResult(
-                path=project.path, name=name,
-                healthy=report.healthy, passed=report.passed,
-                failed=report.failed, fixable=report.fixable,
-                issues=issues[:5],  # Show up to 5 issues
-            ))
+            results.append(
+                WorkspaceAuditResult(
+                    path=project.path,
+                    name=name,
+                    healthy=report.healthy,
+                    passed=report.passed,
+                    failed=report.failed,
+                    fixable=report.fixable,
+                    issues=issues[:5],  # Show up to 5 issues
+                )
+            )
         except Exception as e:  # noqa: BLE001
-            results.append(WorkspaceAuditResult(
-                path=project.path, name=name, healthy=False,
-                passed=0, failed=1, fixable=0, error=str(e),
-            ))
+            results.append(
+                WorkspaceAuditResult(
+                    path=project.path,
+                    name=name,
+                    healthy=False,
+                    passed=0,
+                    failed=1,
+                    fixable=0,
+                    error=str(e),
+                )
+            )
 
     return results
 
@@ -154,8 +178,7 @@ def export_workspace(root: Path) -> str:
             lines.append(f"\n_Error: {result.error}_\n")
             continue
         lines.append(
-            f"\n- Passed: {result.passed} | Failed: {result.failed} | "
-            f"Fixable: {result.fixable}"
+            f"\n- Passed: {result.passed} | Failed: {result.failed} | Fixable: {result.fixable}"
         )
         if result.issues:
             lines.append("\n**Issues:**")
@@ -167,6 +190,7 @@ def export_workspace(root: Path) -> str:
         proj_root = (root / result.path).resolve()
         try:
             from specsmith.exporter import run_export
+
             proj_report = run_export(proj_root)
             # Include first 500 chars of project export
             summary_lines = proj_report.splitlines()[:20]

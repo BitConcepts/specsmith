@@ -6,6 +6,7 @@ Part of the standalone ``epistemic`` library. Zero external dependencies.
 
     from epistemic.trace import TraceVault, SealType, SealRecord
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -18,6 +19,7 @@ from pathlib import Path
 
 class SealType(str, Enum):
     """Type of a SealRecord."""
+
     DECISION = "decision"
     MILESTONE = "milestone"
     AUDIT_GATE = "audit-gate"

@@ -5,6 +5,7 @@
 Part of the standalone ``epistemic`` library. Zero external dependencies.
     from epistemic import CertaintyEngine, CertaintyReport
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

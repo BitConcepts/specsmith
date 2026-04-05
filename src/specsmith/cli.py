@@ -35,8 +35,13 @@ class _AutoUpdateGroup(click.Group):
 
     # Commands that should not trigger the version check
     _SKIP_COMMANDS = {
-        "update", "self-update", "migrate-project", "verify-release", "plugin",
-        "--version", "help",
+        "update",
+        "self-update",
+        "migrate-project",
+        "verify-release",
+        "plugin",
+        "--version",
+        "help",
     }
 
     def invoke(self, ctx: click.Context) -> object:
@@ -71,6 +76,7 @@ def _maybe_prompt_project_update() -> None:
 
     try:
         import yaml
+
         with open(scaffold_path) as f:
             raw = yaml.safe_load(f) or {}
         project_ver = raw.get("spec_version", "")
@@ -97,6 +103,7 @@ def _maybe_prompt_project_update() -> None:
 
         if answer in ("", "y", "yes"):
             from specsmith.updater import run_migration
+
             console.print("[cyan]Migrating project...[/cyan]")
             actions = run_migration(Path("."))
             for a in actions:
@@ -1912,11 +1919,17 @@ def abort_cmd(pid: int | None, abort_all_flag: bool, project_dir: str) -> None:
 @main.command(name="run")
 @click.option("--project-dir", type=click.Path(exists=True), default=".")
 @click.option(
-    "--task", "task", default="",
+    "--task",
+    "task",
+    default="",
     help="Run a single task non-interactively and exit.",
 )
-@click.option("--provider", "provider_name", default=None,
-              help="LLM provider: anthropic, openai, gemini, ollama (default: auto-detect)")
+@click.option(
+    "--provider",
+    "provider_name",
+    default=None,
+    help="LLM provider: anthropic, openai, gemini, ollama (default: auto-detect)",
+)
 @click.option("--model", default=None, help="Model name override.")
 @click.option(
     "--tier",
@@ -1924,8 +1937,9 @@ def abort_cmd(pid: int | None, abort_all_flag: bool, project_dir: str) -> None:
     default="balanced",
     help="Model capability tier (default: balanced).",
 )
-@click.option("--no-stream", "no_stream", is_flag=True, default=False,
-              help="Disable streaming output.")
+@click.option(
+    "--no-stream", "no_stream", is_flag=True, default=False, help="Disable streaming output."
+)
 def run_cmd(
     project_dir: str,
     task: str,
@@ -2083,9 +2097,7 @@ def stress_test_cmd(project_dir: str, accepted_only: bool, output_format: str) -
     if accepted_only:
         artifacts = [a for a in artifacts if a.is_accepted]
 
-    console.print(
-        f"[bold]Stress-testing[/bold] {len(artifacts)} belief artifacts\n"
-    )
+    console.print(f"[bold]Stress-testing[/bold] {len(artifacts)} belief artifacts\n")
 
     tester = StressTester(req_path=req_path, test_path=test_path)
     result = tester.run(artifacts)
@@ -2165,13 +2177,12 @@ def belief_graph_cmd(project_dir: str, output_format: str, component: str) -> No
     if output_format == "mermaid":
         from specsmith.epistemic.failure_graph import FailureModeGraph
         from specsmith.epistemic.stress_tester import StressTestResult
+
         graph = FailureModeGraph()
         graph.build(artifacts, StressTestResult())
         console.print(graph.render_mermaid())
     else:
-        console.print(
-            f"[bold]Belief Graph[/bold] — {len(artifacts)} artifacts\n"
-        )
+        console.print(f"[bold]Belief Graph[/bold] — {len(artifacts)} artifacts\n")
         by_comp: dict[str, list] = {}
         for a in artifacts:
             by_comp.setdefault(a.component or "OTHER", []).append(a)
@@ -2211,9 +2222,7 @@ def belief_graph_cmd(project_dir: str, output_format: str, component: str) -> No
     default=False,
     help="Emit Mermaid failure-mode graph alongside text output.",
 )
-def epistemic_audit_cmd(
-    project_dir: str, threshold: float, emit_mermaid: bool
-) -> None:
+def epistemic_audit_cmd(project_dir: str, threshold: float, emit_mermaid: bool) -> None:
     """Full AEE epistemic audit: certainty scores, logic knots, failure modes.
 
     Runs the full AEE pipeline:\n
@@ -2304,9 +2313,12 @@ def trace_group() -> None:
 
 
 @trace_group.command(name="seal")
-@click.argument("seal_type", type=click.Choice(
-    ["decision", "milestone", "audit-gate", "logic-knot", "stress-test", "epistemic"]
-))
+@click.argument(
+    "seal_type",
+    type=click.Choice(
+        ["decision", "milestone", "audit-gate", "logic-knot", "stress-test", "epistemic"]
+    ),
+)
 @click.argument("description")
 @click.option("--project-dir", type=click.Path(exists=True), default=".")
 @click.option("--author", default="agent", help="Author of this seal.")
@@ -2400,10 +2412,12 @@ def integrate_cmd(tool_name: str, project_dir: str, dry_run: bool) -> None:
 
     if req_path.exists():
         from specsmith.epistemic.belief import parse_requirements_as_beliefs
+
         artifacts = parse_requirements_as_beliefs(req_path)
         # Find relevant artifacts by matching tool name to component/description
         relevant = [
-            a for a in artifacts
+            a
+            for a in artifacts
             if tool_name.lower() in a.source_text.lower()
             or tool_name.lower() in a.component.lower()
         ]
@@ -2420,10 +2434,10 @@ def integrate_cmd(tool_name: str, project_dir: str, dry_run: bool) -> None:
     console.print()
     console.print("  [bold]Epistemic Contract[/bold] for this integration:")
     console.print(f"    Tool:             {tool_name}")
-    console.print( "    Claims:           [to be defined in adapter template]")
-    console.print( "    Uncertainty:      [to be defined — what can this tool NOT detect?]")
-    console.print( "    Evidence type:    [static analysis | runtime | human review | mixed]")
-    console.print( "    Failure modes:    [what happens when this tool fails silently?]")
+    console.print("    Claims:           [to be defined in adapter template]")
+    console.print("    Uncertainty:      [to be defined — what can this tool NOT detect?]")
+    console.print("    Evidence type:    [static analysis | runtime | human review | mixed]")
+    console.print("    Failure modes:    [what happens when this tool fails silently?]")
     console.print()
 
     if dry_run:
@@ -2433,10 +2447,12 @@ def integrate_cmd(tool_name: str, project_dir: str, dry_run: bool) -> None:
     # Check if adapter already exists
     try:
         from specsmith.integrations import get_adapter
+
         adapter = get_adapter(tool_name)
         scaffold_path = root / "scaffold.yml"
         if scaffold_path.exists():
             import yaml
+
             with open(scaffold_path) as f:
                 raw = yaml.safe_load(f)
             config = ProjectConfig(**raw)
@@ -2476,6 +2492,7 @@ def auth_set(platform: str, token: str) -> None:
 
     if not token:
         import getpass
+
         info = PLATFORMS.get(platform.lower(), {})
         desc = info.get("description", platform)
         url = info.get("url", "")
@@ -2687,6 +2704,7 @@ def watch_cmd(project_dir: str, interval: int, no_notify: bool) -> None:
     # Check if watchdog is available (optional dep)
     try:
         import importlib.util as _iutil  # noqa: F401
+
         _has_watchdog = _iutil.find_spec("watchdog") is not None
     except Exception:  # noqa: BLE001
         _has_watchdog = False
@@ -2735,9 +2753,7 @@ def watch_cmd(project_dir: str, interval: int, no_notify: bool) -> None:
             if not report.healthy:
                 msg = f"\u26a0 {report.failed} governance issue(s) detected."
                 if last_alert.get("audit") != msg:
-                    console.print(
-                        f"  [red]{msg}[/red] Run [bold]specsmith audit --fix[/bold]."
-                    )
+                    console.print(f"  [red]{msg}[/red] Run [bold]specsmith audit --fix[/bold].")
                     last_alert["audit"] = msg
             elif last_alert.get("audit"):
                 console.print("  [green]\u2713[/green] Governance healthy.")
@@ -2810,9 +2826,7 @@ def patent_search_cmd(query: str, max_results: int, output: str, project_dir: st
     default=False,
     help="Save report to prior-art/ directory.",
 )
-def patent_prior_art_cmd(
-    claim: str, max_results: int, project_dir: str, save_report: bool
-) -> None:
+def patent_prior_art_cmd(claim: str, max_results: int, project_dir: str, save_report: bool) -> None:
     """Analyze prior art for a patent claim.
 
     Extracts key terms, searches USPTO, and generates a prior art report.

@@ -81,11 +81,13 @@ class FailureModeGraph:
         for artifact in artifacts:
             for link in artifact.inferential_links:
                 if link in self._nodes:
-                    self._edges.append((
-                        artifact.artifact_id,
-                        link,
-                        "depends-on",
-                    ))
+                    self._edges.append(
+                        (
+                            artifact.artifact_id,
+                            link,
+                            "depends-on",
+                        )
+                    )
                     self._nodes[link].children.append(artifact.artifact_id)
 
         # Mark logic knot partners
@@ -101,9 +103,7 @@ class FailureModeGraph:
         Equilibrium (E) is the AEE state where S(G) yields no new failures:
         no unresolved critical failures exist and no Logic Knots remain.
         """
-        has_critical = any(
-            node.critical_count > 0 for node in self._nodes.values()
-        )
+        has_critical = any(node.critical_count > 0 for node in self._nodes.values())
         return not has_critical and len(self._logic_knots) == 0
 
     def logic_knot_detect(self) -> list[tuple[str, str, str]]:
@@ -181,28 +181,20 @@ class FailureModeGraph:
             label = node.artifact_id
             if node.critical_count > 0:
                 shape = f'["{label}\\n⚠CRITICAL"]'
-                lines.append(f'  {_safe_id(node.artifact_id)}{shape}')
-                lines.append(
-                    f"  style {_safe_id(node.artifact_id)} fill:#ff4444,color:#fff"
-                )
+                lines.append(f"  {_safe_id(node.artifact_id)}{shape}")
+                lines.append(f"  style {_safe_id(node.artifact_id)} fill:#ff4444,color:#fff")
             elif node.failure_count > 0:
                 shape = f'["{label}\\n{node.failure_count} failures"]'
                 lines.append(f"  {_safe_id(node.artifact_id)}{shape}")
-                lines.append(
-                    f"  style {_safe_id(node.artifact_id)} fill:#ff9900,color:#000"
-                )
+                lines.append(f"  style {_safe_id(node.artifact_id)} fill:#ff9900,color:#000")
             else:
                 lines.append(f'  {_safe_id(node.artifact_id)}["{label}"]')
 
         for from_id, to_id, label in self._edges:
-            lines.append(
-                f"  {_safe_id(from_id)} -->|{label}| {_safe_id(to_id)}"
-            )
+            lines.append(f"  {_safe_id(from_id)} -->|{label}| {_safe_id(to_id)}")
 
         for id1, id2, _ in self._logic_knots:
-            lines.append(
-                f"  {_safe_id(id1)} <-->|⚠ Logic Knot| {_safe_id(id2)}"
-            )
+            lines.append(f"  {_safe_id(id1)} <-->|⚠ Logic Knot| {_safe_id(id2)}")
 
         return "\n".join(lines)
 

@@ -49,8 +49,7 @@ def add_entry(
     chain = CryptoAuditChain(root)
     prev_hash = chain.latest_hash()
     entry_body = (
-        f"{now}|{description}|{entry_type}|{author}|{status}|"
-        f"{epistemic_status}|{belief_artifacts}"
+        f"{now}|{description}|{entry_type}|{author}|{status}|{epistemic_status}|{belief_artifacts}"
     )
     entry_hash = _sha256(f"{entry_body}:{prev_hash}")
 
@@ -101,7 +100,8 @@ class CryptoAuditChain:
         if not self._path.exists():
             return _GENESIS_HASH
         lines = [
-            line.strip() for line in self._path.read_text(encoding="utf-8").splitlines()
+            line.strip()
+            for line in self._path.read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
         return lines[-1] if lines else _GENESIS_HASH
@@ -117,7 +117,8 @@ class CryptoAuditChain:
         if not self._path.exists():
             return []
         return [
-            line.strip() for line in self._path.read_text(encoding="utf-8").splitlines()
+            line.strip()
+            for line in self._path.read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
 

@@ -11,6 +11,7 @@ This module re-exports everything for backward compatibility.
     # Also works (same objects, backward-compatible):
     from specsmith.epistemic import BeliefArtifact
 """
+
 from __future__ import annotations
 
 # Re-export the entire epistemic public API  # noqa: I001

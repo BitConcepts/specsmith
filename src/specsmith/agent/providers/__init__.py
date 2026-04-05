@@ -56,12 +56,14 @@ def get_provider(
 
     if provider_name == "anthropic":
         from specsmith.agent.providers.anthropic import AnthropicProvider
+
         return AnthropicProvider(
             model=resolved_model or "claude-sonnet-4-5",
             api_key=api_key or os.environ.get("ANTHROPIC_API_KEY", ""),
         )
     elif provider_name == "openai":
         from specsmith.agent.providers.openai import OpenAIProvider
+
         return OpenAIProvider(
             model=resolved_model or "gpt-4o",
             api_key=api_key or os.environ.get("OPENAI_API_KEY", ""),
@@ -69,20 +71,21 @@ def get_provider(
         )
     elif provider_name == "gemini":
         from specsmith.agent.providers.gemini import GeminiProvider
+
         return GeminiProvider(
             model=resolved_model or "gemini-2.5-pro",
             api_key=api_key or os.environ.get("GOOGLE_API_KEY", ""),
         )
     elif provider_name == "ollama":
         from specsmith.agent.providers.ollama import OllamaProvider
+
         return OllamaProvider(
             model=resolved_model or "qwen2.5:14b",
             base_url=base_url or os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
         )
     else:
         raise ValueError(
-            f"Unknown provider '{provider_name}'. "
-            "Valid: anthropic, openai, gemini, ollama"
+            f"Unknown provider '{provider_name}'. Valid: anthropic, openai, gemini, ollama"
         )
 
 
@@ -101,6 +104,7 @@ def _auto_detect_provider() -> str:
 
     # Try Ollama (no API key needed)
     import urllib.request
+
     try:
         urllib.request.urlopen(  # noqa: S310
             "http://localhost:11434/api/version", timeout=1
@@ -126,6 +130,7 @@ def list_providers() -> list[dict[str, str]]:
     ]:
         if name == "ollama":
             import urllib.request
+
             try:
                 urllib.request.urlopen(  # noqa: S310
                     "http://localhost:11434/api/version", timeout=1

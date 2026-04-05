@@ -5,6 +5,7 @@
 Part of the standalone ``epistemic`` library. Zero external dependencies.
     from epistemic import FailureModeGraph
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -25,16 +26,16 @@ class GraphNode:
 class FailureModeGraph:
     """Directed graph of failure-mode relations between BeliefArtifacts.
 
-        from epistemic import FailureModeGraph, StressTester, BeliefArtifact
+    from epistemic import FailureModeGraph, StressTester, BeliefArtifact
 
-        artifacts = [...]
-        tester = StressTester()
-        result = tester.run(artifacts)
+    artifacts = [...]
+    tester = StressTester()
+    result = tester.run(artifacts)
 
-        graph = FailureModeGraph()
-        graph.build(artifacts, result)
-        print(f"Equilibrium: {graph.equilibrium_check()}")
-        print(graph.render_text())
+    graph = FailureModeGraph()
+    graph.build(artifacts, result)
+    print(f"Equilibrium: {graph.equilibrium_check()}")
+    print(graph.render_text())
     """
 
     def __init__(self) -> None:
@@ -126,7 +127,9 @@ class FailureModeGraph:
                 lines.append(f'  {_sid(node.artifact_id)}["{label}\\n⚠CRITICAL"]')
                 lines.append(f"  style {_sid(node.artifact_id)} fill:#ff4444,color:#fff")
             elif node.failure_count > 0:
-                lines.append(f'  {_sid(node.artifact_id)}["{label}\\n{node.failure_count} failures"]')  # noqa: E501
+                lines.append(
+                    f'  {_sid(node.artifact_id)}["{label}\\n{node.failure_count} failures"]'
+                )  # noqa: E501
                 lines.append(f"  style {_sid(node.artifact_id)} fill:#ff9900,color:#000")
             else:
                 lines.append(f'  {_sid(node.artifact_id)}["{label}"]')

@@ -194,11 +194,15 @@ class ProjectConfig(BaseModel):
     @property
     def is_epistemic_type(self) -> bool:
         """Whether this project type always enables the AEE epistemic layer."""
-        return self.type in (
-            ProjectType.EPISTEMIC_PIPELINE,
-            ProjectType.KNOWLEDGE_ENGINEERING,
-            ProjectType.AEE_RESEARCH,
-        ) or self.enable_epistemic
+        return (
+            self.type
+            in (
+                ProjectType.EPISTEMIC_PIPELINE,
+                ProjectType.KNOWLEDGE_ENGINEERING,
+                ProjectType.AEE_RESEARCH,
+            )
+            or self.enable_epistemic
+        )
 
     @property
     def needs_services(self) -> bool:

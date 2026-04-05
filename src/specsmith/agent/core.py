@@ -149,7 +149,7 @@ class StreamToken:
 class ModelTier(str, Enum):
     """Model capability tier for routing decisions (ECC-inspired)."""
 
-    FAST = "fast"      # cheap/fast (haiku, gpt-4o-mini, gemini-flash, llama-3.1-8b)
+    FAST = "fast"  # cheap/fast (haiku, gpt-4o-mini, gemini-flash, llama-3.1-8b)
     BALANCED = "balanced"  # best value (sonnet, gpt-4o, gemini-pro)
     POWERFUL = "powerful"  # max capability (opus, o3, gemini-ultra)
 

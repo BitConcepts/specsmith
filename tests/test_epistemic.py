@@ -55,7 +55,11 @@ class TestBeliefArtifact:
 
     def test_belief_artifact_accepted_status(self) -> None:
         """TEST-AEE-002: ACCEPTED, STRESS_TESTED, RECONSTRUCTED all satisfy is_accepted."""
-        for status in (BeliefStatus.ACCEPTED, BeliefStatus.STRESS_TESTED, BeliefStatus.RECONSTRUCTED):  # noqa: E501
+        for status in (
+            BeliefStatus.ACCEPTED,
+            BeliefStatus.STRESS_TESTED,
+            BeliefStatus.RECONSTRUCTED,
+        ):  # noqa: E501
             a = BeliefArtifact(artifact_id="X", status=status)
             assert a.is_accepted
 
@@ -97,6 +101,7 @@ class TestBeliefArtifact:
             encoding="utf-8",
         )
         from epistemic.belief import parse_requirements_as_beliefs
+
         artifacts = parse_requirements_as_beliefs(req_file)
         assert len(artifacts) == 1
         a = artifacts[0]
@@ -122,7 +127,9 @@ class TestStressTester:
         tester = StressTester()
         result = tester.run([a])
         assert result.critical_count >= 1
-        assert any("no parseable propositions" in fm.challenge.lower() for fm in result.failure_modes)  # noqa: E501
+        assert any(
+            "no parseable propositions" in fm.challenge.lower() for fm in result.failure_modes
+        )  # noqa: E501
 
     def test_stress_tester_detects_vagueness(self) -> None:
         """TEST-STR-002: Vague terms detected as MEDIUM failure modes."""
@@ -160,8 +167,7 @@ class TestStressTester:
         tester = StressTester()
         result = tester.run([a])
         missing_test = [
-            fm for fm in result.failure_modes
-            if "falsifiability" in fm.challenge.lower()
+            fm for fm in result.failure_modes if "falsifiability" in fm.challenge.lower()
         ]
         assert len(missing_test) == 1
         assert missing_test[0].severity == FailureSeverity.HIGH
@@ -206,6 +212,7 @@ class TestFailureModeGraph:
     def test_equilibrium_fails_with_critical(self) -> None:
         """TEST-FMG-002: equilibrium_check fails when critical failures exist."""
         from epistemic.belief import FailureMode
+
         a = BeliefArtifact(
             artifact_id="REQ-001",
             propositions=[],
@@ -314,10 +321,12 @@ class TestCertaintyEngine:
 
     def test_certainty_component_averages(self) -> None:
         """TEST-CRT-004: component_averages groups by component code."""
-        a1 = BeliefArtifact("REQ-CLI-001", component="CLI", propositions=["c1"],
-                            confidence=ConfidenceLevel.MEDIUM)
-        a2 = BeliefArtifact("REQ-CLI-002", component="CLI", propositions=["c2"],
-                            confidence=ConfidenceLevel.LOW)
+        a1 = BeliefArtifact(
+            "REQ-CLI-001", component="CLI", propositions=["c1"], confidence=ConfidenceLevel.MEDIUM
+        )
+        a2 = BeliefArtifact(
+            "REQ-CLI-002", component="CLI", propositions=["c2"], confidence=ConfidenceLevel.LOW
+        )
         engine = CertaintyEngine()
         report = engine.run([a1, a2])
         avgs = report.component_averages
@@ -419,7 +428,8 @@ class TestAEESession:
         result = session.run()
         # Should detect missing test for accepted belief
         high_failures = [
-            fm for fm in result.stress_result.failure_modes
+            fm
+            for fm in result.stress_result.failure_modes
             if fm.severity in (FailureSeverity.HIGH, FailureSeverity.CRITICAL)
         ]
         assert len(high_failures) >= 1
@@ -439,9 +449,12 @@ class TestAEESession:
     def test_session_equilibrium_check(self) -> None:
         """equilibrium_check returns bool without building full graph."""
         session = AEESession("test")
-        session.add_belief("REQ-001", ["clean claim"],
-                           epistemic_boundary=["Platform: all"],
-                           status=BeliefStatus.DRAFT)
+        session.add_belief(
+            "REQ-001",
+            ["clean claim"],
+            epistemic_boundary=["Platform: all"],
+            status=BeliefStatus.DRAFT,
+        )
         eq = session.equilibrium_check()
         assert isinstance(eq, bool)
 
@@ -456,14 +469,16 @@ class TestAEESession:
     def test_session_load_from_dicts(self) -> None:
         """load_from_dicts() constructs BeliefArtifacts from plain dicts."""
         session = AEESession("test")
-        count = session.load_from_dicts([
-            {
-                "artifact_id": "HYP-001",
-                "propositions": ["claim"],
-                "confidence": "low",
-                "status": "accepted",
-            }
-        ])
+        count = session.load_from_dicts(
+            [
+                {
+                    "artifact_id": "HYP-001",
+                    "propositions": ["claim"],
+                    "confidence": "low",
+                    "status": "accepted",
+                }
+            ]
+        )
         assert count == 1
         a = session.get("HYP-001")
         assert a is not None

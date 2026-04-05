@@ -92,6 +92,7 @@ def build_system_prompt(
     if scaffold_path.exists():
         try:
             import yaml
+
             with open(scaffold_path) as f:
                 raw = yaml.safe_load(f) or {}
             spec_version = raw.get("spec_version", "unknown")
@@ -118,8 +119,7 @@ H13: All proposals must state their epistemic boundaries. Hidden assumptions are
     skills_section = format_skills_context(skills, max_tokens=2000)
 
     governance_text = (
-        agents_md
-        or f"Spec version: {spec_version}. AGENTS.md not found — run specsmith audit."
+        agents_md or f"Spec version: {spec_version}. AGENTS.md not found — run specsmith audit."
     )
 
     prompt = f"""You are an AEE-integrated specsmith agent for this project.
@@ -201,6 +201,7 @@ class AgentRunner:
         if self._provider is not None:
             return
         from specsmith.agent.providers import get_provider
+
         self._provider = get_provider(
             provider_name=self._provider_name,
             model=self._model,
@@ -212,9 +213,7 @@ class AgentRunner:
     def run_interactive(self) -> None:
         """Start the interactive REPL."""
         self._ensure_provider()
-        self._system_prompt = build_system_prompt(
-            self.project_dir, self._skills
-        )
+        self._system_prompt = build_system_prompt(self.project_dir, self._skills)
 
         # Fire session start hooks
         ctx = HookContext(
@@ -292,9 +291,7 @@ class AgentRunner:
 
             if not response.has_tool_calls:
                 # Final response — add to history
-                self._state.messages.append(
-                    Message(role=Role.ASSISTANT, content=response.content)
-                )
+                self._state.messages.append(Message(role=Role.ASSISTANT, content=response.content))
                 break
 
             # Process tool calls
@@ -302,25 +299,27 @@ class AgentRunner:
             self._state.tool_calls_made += len(tool_results)
 
             # Add assistant message with tool calls
-            self._state.messages.append(Message(
-                role=Role.ASSISTANT,
-                content=response.content or "",
-                tool_calls=response.tool_calls,
-            ))
+            self._state.messages.append(
+                Message(
+                    role=Role.ASSISTANT,
+                    content=response.content or "",
+                    tool_calls=response.tool_calls,
+                )
+            )
 
             # Add tool result messages
             for tr in tool_results:
-                self._state.messages.append(Message(
-                    role=Role.TOOL,
-                    content=tr.content,
-                    tool_call_id=tr.tool_call_id,
-                ))
+                self._state.messages.append(
+                    Message(
+                        role=Role.TOOL,
+                        content=tr.content,
+                        tool_call_id=tr.tool_call_id,
+                    )
+                )
 
         return final_response
 
-    def _call_provider(
-        self, messages: list[Message], silent: bool = False
-    ) -> CompletionResponse:
+    def _call_provider(self, messages: list[Message], silent: bool = False) -> CompletionResponse:
         """Call the LLM provider, streaming if enabled."""
         if self._stream and not silent:
             # Stream the response
@@ -370,12 +369,14 @@ class AgentRunner:
             pre_results = self._hooks.fire(HookTrigger.PRE_TOOL, pre_ctx)
             blocked, block_msg = self._hooks.has_blocking_result(pre_results)
             if blocked:
-                results.append(ToolResult(
-                    tool_name=name,
-                    tool_call_id=call_id,
-                    content=f"[BLOCKED by hook] {block_msg}",
-                    error=True,
-                ))
+                results.append(
+                    ToolResult(
+                        tool_name=name,
+                        tool_call_id=call_id,
+                        content=f"[BLOCKED by hook] {block_msg}",
+                        error=True,
+                    )
+                )
                 continue
 
             # Show hook warnings
@@ -467,15 +468,18 @@ class AgentRunner:
         elif cmd_lower.startswith("/skill "):
             skill_name = cmd[7:].strip()
             from specsmith.agent.skills import get_skill_by_name
+
             skill = get_skill_by_name(self._skills, skill_name)
             if skill:
                 self._print(f"\n--- Skill: {skill.name} ---")
                 self._print(skill.content[:2000])
                 # Inject skill as next context
-                self._state.messages.append(Message(
-                    role=Role.USER,
-                    content=f"[Skill loaded: {skill.name}]\n{skill.content[:3000]}"
-                ))
+                self._state.messages.append(
+                    Message(
+                        role=Role.USER,
+                        content=f"[Skill loaded: {skill.name}]\n{skill.content[:3000]}",
+                    )
+                )
                 self._print("\nSkill injected into context.")
             else:
                 self._print(f"Skill '{skill_name}' not found.")

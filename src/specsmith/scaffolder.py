@@ -185,12 +185,14 @@ def _build_file_map(config: ProjectConfig) -> list[tuple[str, str]]:
         ProjectType.AEE_RESEARCH,
     }
     if config.type in _EPISTEMIC_TYPES or getattr(config, "enable_epistemic", False):
-        files.extend([
-            ("governance/epistemic-axioms.md.j2", "docs/governance/EPISTEMIC-AXIOMS.md"),
-            ("governance/belief-registry.md.j2", "docs/governance/BELIEF-REGISTRY.md"),
-            ("governance/failure-modes.md.j2", "docs/governance/FAILURE-MODES.md"),
-            ("governance/uncertainty-map.md.j2", "docs/governance/UNCERTAINTY-MAP.md"),
-        ])
+        files.extend(
+            [
+                ("governance/epistemic-axioms.md.j2", "docs/governance/EPISTEMIC-AXIOMS.md"),
+                ("governance/belief-registry.md.j2", "docs/governance/BELIEF-REGISTRY.md"),
+                ("governance/failure-modes.md.j2", "docs/governance/FAILURE-MODES.md"),
+                ("governance/uncertainty-map.md.j2", "docs/governance/UNCERTAINTY-MAP.md"),
+            ]
+        )
 
     # ReadTheDocs for AEE research/knowledge projects (they produce docs)
     if config.type in {ProjectType.AEE_RESEARCH, ProjectType.KNOWLEDGE_ENGINEERING}:

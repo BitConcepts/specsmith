@@ -118,8 +118,7 @@ class CertaintyReport:
             lines.append("Artifacts below threshold:")
             for s in sorted(low, key=lambda x: x.propagated_score):
                 lines.append(
-                    f"  ✗ {s.artifact_id:25s}  "
-                    f"score={s.propagated_score:.2f}  [{s.label}]"
+                    f"  ✗ {s.artifact_id:25s}  score={s.propagated_score:.2f}  [{s.label}]"
                 )
                 for note in s.notes[:2]:
                     lines.append(f"     {note}")
@@ -166,8 +165,7 @@ class CertaintyEngine:
         below = [s.artifact_id for s in score_list if not s.above_threshold]
 
         overall = (
-            sum(s.propagated_score for s in score_list) / len(score_list)
-            if score_list else 0.0
+            sum(s.propagated_score for s in score_list) / len(score_list) if score_list else 0.0
         )
 
         return CertaintyReport(
@@ -177,9 +175,7 @@ class CertaintyEngine:
             below_threshold=below,
         )
 
-    def _compute_base(
-        self, artifact: BeliefArtifact, covered_reqs: set[str]
-    ) -> ArtifactCertainty:
+    def _compute_base(self, artifact: BeliefArtifact, covered_reqs: set[str]) -> ArtifactCertainty:
         """Compute base certainty before propagation."""
         base = artifact.confidence.score
         notes: list[str] = []

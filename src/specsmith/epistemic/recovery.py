@@ -43,12 +43,12 @@ from specsmith.epistemic.stress_tester import StressTestResult
 class RecoveryStrategy(str, Enum):
     """Strategy to apply when recovering a failed BeliefArtifact."""
 
-    DECOMPOSE = "decompose"      # Split compound beliefs
-    CONSTRAIN = "constrain"      # Add epistemic boundary
-    FALSIFY = "falsify"          # Add/improve test
-    QUANTIFY = "quantify"        # Replace vague terms with measures
-    RESOLVE = "resolve"          # Resolve Logic Knot (narrow or supersede)
-    DEPRECATE = "deprecate"      # Mark deprecated, add replacement note
+    DECOMPOSE = "decompose"  # Split compound beliefs
+    CONSTRAIN = "constrain"  # Add epistemic boundary
+    FALSIFY = "falsify"  # Add/improve test
+    QUANTIFY = "quantify"  # Replace vague terms with measures
+    RESOLVE = "resolve"  # Resolve Logic Knot (narrow or supersede)
+    DEPRECATE = "deprecate"  # Mark deprecated, add replacement note
 
 
 @dataclass
@@ -136,126 +136,139 @@ class RecoveryOperator:
 
         if "vagueness" in challenge:
             if "unquantified" in challenge:
-                proposals.append(RecoveryProposal(
-                    artifact_id=artifact.artifact_id,
-                    failure_mode_challenge=fm.challenge,
-                    strategy=RecoveryStrategy.QUANTIFY,
-                    description=(
-                        f"Replace vague quantity in {artifact.artifact_id} with "
-                        "a specific numeric bound or threshold."
-                    ),
-                    suggested_change=(
-                        "Replace terms like 'some', 'many', 'several' with "
-                        "explicit numbers (e.g., 'at least 3', 'within 500ms', "
-                        "'no more than 10')."
-                    ),
-                    estimated_cost="low",
-                    priority=priority,
-                ))
+                proposals.append(
+                    RecoveryProposal(
+                        artifact_id=artifact.artifact_id,
+                        failure_mode_challenge=fm.challenge,
+                        strategy=RecoveryStrategy.QUANTIFY,
+                        description=(
+                            f"Replace vague quantity in {artifact.artifact_id} with "
+                            "a specific numeric bound or threshold."
+                        ),
+                        suggested_change=(
+                            "Replace terms like 'some', 'many', 'several' with "
+                            "explicit numbers (e.g., 'at least 3', 'within 500ms', "
+                            "'no more than 10')."
+                        ),
+                        estimated_cost="low",
+                        priority=priority,
+                    )
+                )
             else:
-                proposals.append(RecoveryProposal(
-                    artifact_id=artifact.artifact_id,
-                    failure_mode_challenge=fm.challenge,
-                    strategy=RecoveryStrategy.QUANTIFY,
-                    description=(
-                        f"Replace imprecise language in {artifact.artifact_id} "
-                        "with specific, measurable criteria."
-                    ),
-                    suggested_change=fm.recovery_hint or (
-                        "Identify the vague term and replace it with a concrete, "
-                        "measurable specification."
-                    ),
-                    estimated_cost="low",
-                    priority=priority,
-                ))
+                proposals.append(
+                    RecoveryProposal(
+                        artifact_id=artifact.artifact_id,
+                        failure_mode_challenge=fm.challenge,
+                        strategy=RecoveryStrategy.QUANTIFY,
+                        description=(
+                            f"Replace imprecise language in {artifact.artifact_id} "
+                            "with specific, measurable criteria."
+                        ),
+                        suggested_change=fm.recovery_hint
+                        or (
+                            "Identify the vague term and replace it with a concrete, "
+                            "measurable specification."
+                        ),
+                        estimated_cost="low",
+                        priority=priority,
+                    )
+                )
 
         elif "falsifiability" in challenge or "missing_test" in challenge or "no test" in challenge:
-            proposals.append(RecoveryProposal(
-                artifact_id=artifact.artifact_id,
-                failure_mode_challenge=fm.challenge,
-                strategy=RecoveryStrategy.FALSIFY,
-                description=(
-                    f"Add a TEST entry in docs/TEST_SPEC.md for {artifact.artifact_id}."
-                ),
-                suggested_change=(
-                    f"Add: `- **TEST-XXX**: Covers: {artifact.artifact_id}\\n"
-                    f"  - **Type**: unit | integration\\n"
-                    f"  - **Description**: Verify that {artifact.source_text[:80]}\\n"
-                    "  - **Pass criteria**: [define pass criteria]`"
-                ),
-                estimated_cost="low",
-                priority=priority,
-            ))
+            proposals.append(
+                RecoveryProposal(
+                    artifact_id=artifact.artifact_id,
+                    failure_mode_challenge=fm.challenge,
+                    strategy=RecoveryStrategy.FALSIFY,
+                    description=(
+                        f"Add a TEST entry in docs/TEST_SPEC.md for {artifact.artifact_id}."
+                    ),
+                    suggested_change=(
+                        f"Add: `- **TEST-XXX**: Covers: {artifact.artifact_id}\\n"
+                        f"  - **Type**: unit | integration\\n"
+                        f"  - **Description**: Verify that {artifact.source_text[:80]}\\n"
+                        "  - **Pass criteria**: [define pass criteria]`"
+                    ),
+                    estimated_cost="low",
+                    priority=priority,
+                )
+            )
 
         elif "observability" in challenge or "boundary" in challenge:
-            proposals.append(RecoveryProposal(
-                artifact_id=artifact.artifact_id,
-                failure_mode_challenge=fm.challenge,
-                strategy=RecoveryStrategy.CONSTRAIN,
-                description=(
-                    f"Add an explicit epistemic boundary to {artifact.artifact_id}."
-                ),
-                suggested_change=(
-                    f"Add to {artifact.artifact_id}: "
-                    "`- **Platform:** all | windows | linux | macos\\n"
-                    "- **Boundary:** [assumptions and context within which this "
-                    "requirement must hold]`"
-                ),
-                estimated_cost="low",
-                priority=priority,
-            ))
+            proposals.append(
+                RecoveryProposal(
+                    artifact_id=artifact.artifact_id,
+                    failure_mode_challenge=fm.challenge,
+                    strategy=RecoveryStrategy.CONSTRAIN,
+                    description=(f"Add an explicit epistemic boundary to {artifact.artifact_id}."),
+                    suggested_change=(
+                        f"Add to {artifact.artifact_id}: "
+                        "`- **Platform:** all | windows | linux | macos\\n"
+                        "- **Boundary:** [assumptions and context within which this "
+                        "requirement must hold]`"
+                    ),
+                    estimated_cost="low",
+                    priority=priority,
+                )
+            )
             if not artifact.propositions:
-                proposals.append(RecoveryProposal(
+                proposals.append(
+                    RecoveryProposal(
+                        artifact_id=artifact.artifact_id,
+                        failure_mode_challenge=fm.challenge,
+                        strategy=RecoveryStrategy.DECOMPOSE,
+                        description=(
+                            f"Add a description to {artifact.artifact_id} — currently empty."
+                        ),
+                        suggested_change=(
+                            f"Add `- **Description:** [what {artifact.artifact_id} "
+                            "must do, stated as a testable claim]`"
+                        ),
+                        estimated_cost="low",
+                        priority=1,  # Always highest for empty artifacts
+                    )
+                )
+
+        elif "irreducibility" in challenge or "compound" in challenge:
+            proposals.append(
+                RecoveryProposal(
                     artifact_id=artifact.artifact_id,
                     failure_mode_challenge=fm.challenge,
                     strategy=RecoveryStrategy.DECOMPOSE,
                     description=(
-                        f"Add a description to {artifact.artifact_id} — currently empty."
+                        f"Decompose {artifact.artifact_id} into independent, "
+                        "separately-testable requirements."
                     ),
                     suggested_change=(
-                        f"Add `- **Description:** [what {artifact.artifact_id} "
-                        "must do, stated as a testable claim]`"
+                        f"Split {artifact.artifact_id} into {len(artifact.propositions)} "
+                        "or more requirements, each with a single proposition and its "
+                        "own test. Use sequential IDs (e.g., "
+                        f"{artifact.artifact_id}a, {artifact.artifact_id}b, etc.)."
                     ),
-                    estimated_cost="low",
-                    priority=1,  # Always highest for empty artifacts
-                ))
-
-        elif "irreducibility" in challenge or "compound" in challenge:
-            proposals.append(RecoveryProposal(
-                artifact_id=artifact.artifact_id,
-                failure_mode_challenge=fm.challenge,
-                strategy=RecoveryStrategy.DECOMPOSE,
-                description=(
-                    f"Decompose {artifact.artifact_id} into independent, "
-                    "separately-testable requirements."
-                ),
-                suggested_change=(
-                    f"Split {artifact.artifact_id} into {len(artifact.propositions)} "
-                    "or more requirements, each with a single proposition and its "
-                    "own test. Use sequential IDs (e.g., "
-                    f"{artifact.artifact_id}a, {artifact.artifact_id}b, etc.)."
-                ),
-                estimated_cost="medium",
-                priority=priority,
-            ))
+                    estimated_cost="medium",
+                    priority=priority,
+                )
+            )
 
         elif "confidence" in challenge and "p1" in challenge.lower():
-            proposals.append(RecoveryProposal(
-                artifact_id=artifact.artifact_id,
-                failure_mode_challenge=fm.challenge,
-                strategy=RecoveryStrategy.FALSIFY,
-                description=(
-                    f"Stress-test {artifact.artifact_id} (P1, low confidence) to "
-                    "raise confidence to MEDIUM or higher."
-                ),
-                suggested_change=(
-                    "Run specsmith stress-test, add test coverage, add explicit "
-                    "boundary, and mark status as 'stress-tested' after evidence "
-                    "is recorded in LEDGER.md."
-                ),
-                estimated_cost="medium",
-                priority=1,
-            ))
+            proposals.append(
+                RecoveryProposal(
+                    artifact_id=artifact.artifact_id,
+                    failure_mode_challenge=fm.challenge,
+                    strategy=RecoveryStrategy.FALSIFY,
+                    description=(
+                        f"Stress-test {artifact.artifact_id} (P1, low confidence) to "
+                        "raise confidence to MEDIUM or higher."
+                    ),
+                    suggested_change=(
+                        "Run specsmith stress-test, add test coverage, add explicit "
+                        "boundary, and mark status as 'stress-tested' after evidence "
+                        "is recorded in LEDGER.md."
+                    ),
+                    estimated_cost="medium",
+                    priority=1,
+                )
+            )
 
         return proposals
 
@@ -271,38 +284,38 @@ class RecoveryOperator:
         proposals: list[RecoveryProposal] = []
 
         if "duplicate" in reason.lower():
-            proposals.append(RecoveryProposal(
-                artifact_id=id1,
-                failure_mode_challenge=f"Logic Knot: {reason[:60]}",
-                strategy=RecoveryStrategy.DEPRECATE,
-                description=(
-                    f"Resolve duplicate ID conflict between {id1} and {id2}."
-                ),
-                suggested_change=(
-                    f"Merge the two definitions of {id1} into one, or rename one "
-                    "with a new unique ID. Record the decision in LEDGER.md."
-                ),
-                estimated_cost="low",
-                priority=1,
-            ))
+            proposals.append(
+                RecoveryProposal(
+                    artifact_id=id1,
+                    failure_mode_challenge=f"Logic Knot: {reason[:60]}",
+                    strategy=RecoveryStrategy.DEPRECATE,
+                    description=(f"Resolve duplicate ID conflict between {id1} and {id2}."),
+                    suggested_change=(
+                        f"Merge the two definitions of {id1} into one, or rename one "
+                        "with a new unique ID. Record the decision in LEDGER.md."
+                    ),
+                    estimated_cost="low",
+                    priority=1,
+                )
+            )
         else:
-            proposals.append(RecoveryProposal(
-                artifact_id=id1,
-                failure_mode_challenge=f"Logic Knot: {reason[:60]}",
-                strategy=RecoveryStrategy.RESOLVE,
-                description=(
-                    f"Resolve Logic Knot between {id1} and {id2}: {reason[:120]}"
-                ),
-                suggested_change=(
-                    f"Review both {id1} and {id2}. Options:\n"
-                    "  1. Narrow the epistemic boundary of one so they no longer conflict\n"
-                    "  2. Supersede one with the other (mark superseded as DEPRECATED)\n"
-                    "  3. Decompose both into non-conflicting primitives\n"
-                    "Record the resolution in LEDGER.md."
-                ),
-                estimated_cost="medium",
-                priority=1,
-            ))
+            proposals.append(
+                RecoveryProposal(
+                    artifact_id=id1,
+                    failure_mode_challenge=f"Logic Knot: {reason[:60]}",
+                    strategy=RecoveryStrategy.RESOLVE,
+                    description=(f"Resolve Logic Knot between {id1} and {id2}: {reason[:120]}"),
+                    suggested_change=(
+                        f"Review both {id1} and {id2}. Options:\n"
+                        "  1. Narrow the epistemic boundary of one so they no longer conflict\n"
+                        "  2. Supersede one with the other (mark superseded as DEPRECATED)\n"
+                        "  3. Decompose both into non-conflicting primitives\n"
+                        "Record the resolution in LEDGER.md."
+                    ),
+                    estimated_cost="medium",
+                    priority=1,
+                )
+            )
         return proposals
 
     def format_proposals(self, proposals: list[RecoveryProposal]) -> str:
@@ -319,8 +332,7 @@ class RecoveryOperator:
 
         for i, p in enumerate(proposals, 1):
             lines.append(
-                f"{i}. [{p.strategy.value.upper()}] {p.artifact_id} "
-                f"(cost: {p.estimated_cost})"
+                f"{i}. [{p.strategy.value.upper()}] {p.artifact_id} (cost: {p.estimated_cost})"
             )
             lines.append(f"   Problem: {p.failure_mode_challenge}")
             lines.append(f"   Action:  {p.description}")

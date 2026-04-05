@@ -172,6 +172,7 @@ class AEESession:
         if trace_dir is not None:
             try:
                 from epistemic.trace import TraceVault
+
                 self._vault = TraceVault(trace_dir)
             except ImportError:
                 pass
@@ -379,6 +380,7 @@ class AEESession:
         if self._vault is None:
             return None
         from epistemic.trace import TraceVault  # type: ignore[attr-defined]
+
         vault: TraceVault = self._vault  # type: ignore[assignment]
         ids = artifact_ids or [a.artifact_id for a in self._artifacts]
         return vault.seal(
@@ -393,6 +395,7 @@ class AEESession:
         if self._vault is None:
             return True, []
         from epistemic.trace import TraceVault  # type: ignore[attr-defined]
+
         vault: TraceVault = self._vault  # type: ignore[assignment]
         return vault.verify()
 

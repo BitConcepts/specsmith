@@ -106,44 +106,53 @@ class HookRegistry:
 
     def _install_defaults(self) -> None:
         """Install the built-in default hooks."""
-        self.register(Hook(
-            trigger=HookTrigger.PRE_TOOL,
-            handler=_epistemic_boundary_check,
-            name="epistemic-boundary-check",
-            description=(
-                "H13 enforcement: warn when a tool call may affect P1 belief artifacts "
-                "without an explicit epistemic boundary in the proposal."
-            ),
-        ))
-        self.register(Hook(
-            trigger=HookTrigger.POST_TOOL,
-            handler=_post_tool_ledger_hint,
-            name="ledger-hint",
-            description=(
-                "After significant tool calls (commit, push, epistemic-audit), "
-                "remind the agent to add a ledger entry."
-            ),
-        ))
-        self.register(Hook(
-            trigger=HookTrigger.CONTEXT_BUDGET,
-            handler=_context_budget_warning,
-            name="context-budget-warning",
-            description=(
-                "Warn when estimated session token usage exceeds 80% of the "
-                "context window. Recommend using /save-session."
-            ),
-        ))
-        self.register(Hook(
-            trigger=HookTrigger.SESSION_START,
-            handler=_session_start_reminder,
-            name="session-start",
-            description="Remind to sync and check specsmith updates at session start.",
-        ))
+        self.register(
+            Hook(
+                trigger=HookTrigger.PRE_TOOL,
+                handler=_epistemic_boundary_check,
+                name="epistemic-boundary-check",
+                description=(
+                    "H13 enforcement: warn when a tool call may affect P1 belief artifacts "
+                    "without an explicit epistemic boundary in the proposal."
+                ),
+            )
+        )
+        self.register(
+            Hook(
+                trigger=HookTrigger.POST_TOOL,
+                handler=_post_tool_ledger_hint,
+                name="ledger-hint",
+                description=(
+                    "After significant tool calls (commit, push, epistemic-audit), "
+                    "remind the agent to add a ledger entry."
+                ),
+            )
+        )
+        self.register(
+            Hook(
+                trigger=HookTrigger.CONTEXT_BUDGET,
+                handler=_context_budget_warning,
+                name="context-budget-warning",
+                description=(
+                    "Warn when estimated session token usage exceeds 80% of the "
+                    "context window. Recommend using /save-session."
+                ),
+            )
+        )
+        self.register(
+            Hook(
+                trigger=HookTrigger.SESSION_START,
+                handler=_session_start_reminder,
+                name="session-start",
+                description="Remind to sync and check specsmith updates at session start.",
+            )
+        )
 
 
 # ---------------------------------------------------------------------------
 # Default hook handlers
 # ---------------------------------------------------------------------------
+
 
 def _epistemic_boundary_check(ctx: HookContext) -> HookResult:
     """H13: warn if epistemic boundary is not declared for tool calls that affect beliefs."""
@@ -156,6 +165,7 @@ def _epistemic_boundary_check(ctx: HookContext) -> HookResult:
     if req_file.exists():
         content = req_file.read_text(encoding="utf-8")
         import re
+
         p1_count = len(re.findall(r"\*\*Priority\*\*:\s*P1", content, re.IGNORECASE))
         if p1_count > 0:
             return HookResult(
@@ -172,15 +182,23 @@ def _epistemic_boundary_check(ctx: HookContext) -> HookResult:
 def _post_tool_ledger_hint(ctx: HookContext) -> HookResult:
     """Remind agent to add ledger entry after significant operations."""
     significant_tools = {
-        "commit", "push", "epistemic_audit", "stress_test",
-        "trace_seal", "create_pr", "create_branch",
+        "commit",
+        "push",
+        "epistemic_audit",
+        "stress_test",
+        "trace_seal",
+        "create_pr",
+        "create_branch",
     }
-    if ctx.tool_name in significant_tools:
-        if "[exit" not in ctx.tool_output and "[ERROR]" not in ctx.tool_output:
-            return HookResult(
-                action="continue",
-                message=f"[ledger-hint] Consider adding a LEDGER.md entry for: {ctx.tool_name}",
-            )
+    if (
+        ctx.tool_name in significant_tools
+        and "[exit" not in ctx.tool_output
+        and "[ERROR]" not in ctx.tool_output
+    ):
+        return HookResult(
+            action="continue",
+            message=f"[ledger-hint] Consider adding a LEDGER.md entry for: {ctx.tool_name}",
+        )
     return HookResult(action="continue")
 
 

@@ -4,6 +4,7 @@
 
 Requires: pip install specsmith[anthropic]
 """
+
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -33,14 +34,17 @@ class AnthropicProvider:
     def _ensure_client(self) -> None:
         try:
             import anthropic
+
             self._client = anthropic.Anthropic(api_key=self._api_key or None)
         except ImportError as e:
             from specsmith.agent.core import ProviderNotAvailable
+
             raise ProviderNotAvailable("anthropic", "anthropic") from e
 
     def is_available(self) -> bool:
         try:
             import anthropic  # noqa: F401
+
             return bool(self._api_key)
         except ImportError:
             return False
@@ -77,11 +81,13 @@ class AnthropicProvider:
             if hasattr(block, "text"):
                 content += block.text
             elif hasattr(block, "type") and block.type == "tool_use":
-                tool_calls.append({
-                    "id": block.id,
-                    "name": block.name,
-                    "input": block.input,
-                })
+                tool_calls.append(
+                    {
+                        "id": block.id,
+                        "name": block.name,
+                        "input": block.input,
+                    }
+                )
 
         return CompletionResponse(
             content=content,
@@ -125,10 +131,12 @@ class AnthropicProvider:
         """Build a message containing tool results for Anthropic's format."""
         content: list[dict[str, Any]] = []
         for r in results:
-            content.append({
-                "type": "tool_result",
-                "tool_use_id": r.tool_call_id,
-                "content": r.content,
-                "is_error": r.error,
-            })
+            content.append(
+                {
+                    "type": "tool_result",
+                    "tool_use_id": r.tool_call_id,
+                    "content": r.content,
+                    "is_error": r.error,
+                }
+            )
         return Message(role=Role.USER, content=str(content))

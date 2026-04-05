@@ -142,7 +142,7 @@ class StressTester:
         result.logic_knots.extend(knots)
 
         # Equilibrium: no unresolved critical failures and no logic knots
-        result.equilibrium = (result.critical_count == 0 and not result.has_logic_knots)
+        result.equilibrium = result.critical_count == 0 and not result.has_logic_knots
         return result
 
     # ------------------------------------------------------------------
@@ -154,26 +154,28 @@ class StressTester:
         fms = []
         for prop in artifact.propositions:
             if _VAGUE_TERMS.search(prop):
-                fms.append(FailureMode(
-                    artifact_id=artifact.artifact_id,
-                    challenge="Vagueness: imprecise term detected",
-                    breakpoint=(
-                        f"Proposition '{prop[:80]}' contains imprecise language "
-                        "that admits multiple interpretations."
-                    ),
-                    severity=FailureSeverity.MEDIUM,
-                    recovery_hint="Replace vague terms with specific, measurable criteria.",
-                ))
+                fms.append(
+                    FailureMode(
+                        artifact_id=artifact.artifact_id,
+                        challenge="Vagueness: imprecise term detected",
+                        breakpoint=(
+                            f"Proposition '{prop[:80]}' contains imprecise language "
+                            "that admits multiple interpretations."
+                        ),
+                        severity=FailureSeverity.MEDIUM,
+                        recovery_hint="Replace vague terms with specific, measurable criteria.",
+                    )
+                )
             if _VAGUE_QUANTITY.search(prop):
-                fms.append(FailureMode(
-                    artifact_id=artifact.artifact_id,
-                    challenge="Vagueness: unquantified quantity",
-                    breakpoint=(
-                        f"Proposition '{prop[:80]}' uses an unquantified quantity."
-                    ),
-                    severity=FailureSeverity.LOW,
-                    recovery_hint="Replace with a specific numeric bound or threshold.",
-                ))
+                fms.append(
+                    FailureMode(
+                        artifact_id=artifact.artifact_id,
+                        challenge="Vagueness: unquantified quantity",
+                        breakpoint=(f"Proposition '{prop[:80]}' uses an unquantified quantity."),
+                        severity=FailureSeverity.LOW,
+                        recovery_hint="Replace with a specific numeric bound or threshold.",
+                    )
+                )
         return fms
 
     def _challenge_missing_test(self, artifact: BeliefArtifact) -> list[FailureMode]:
@@ -182,90 +184,101 @@ class StressTester:
             return []  # Only accepted beliefs require test coverage
         if artifact.artifact_id in self._covered_reqs:
             return []
-        return [FailureMode(
-            artifact_id=artifact.artifact_id,
-            challenge="Falsifiability: no test exists to challenge this belief",
-            breakpoint=(
-                f"{artifact.artifact_id} is accepted but has no corresponding "
-                "TEST-xxx entry in TEST_SPEC.md. A belief without a falsification "
-                "mechanism violates Axiom 2 (Falsifiability)."
-            ),
-            severity=FailureSeverity.HIGH,
-            recovery_hint=(
-                "Add a TEST entry in docs/TEST_SPEC.md that covers this requirement."
-            ),
-        )]
+        return [
+            FailureMode(
+                artifact_id=artifact.artifact_id,
+                challenge="Falsifiability: no test exists to challenge this belief",
+                breakpoint=(
+                    f"{artifact.artifact_id} is accepted but has no corresponding "
+                    "TEST-xxx entry in TEST_SPEC.md. A belief without a falsification "
+                    "mechanism violates Axiom 2 (Falsifiability)."
+                ),
+                severity=FailureSeverity.HIGH,
+                recovery_hint=(
+                    "Add a TEST entry in docs/TEST_SPEC.md that covers this requirement."
+                ),
+            )
+        ]
 
     def _challenge_missing_boundary(self, artifact: BeliefArtifact) -> list[FailureMode]:
         """Challenge: Does the claim declare its epistemic boundary?"""
         if artifact.epistemic_boundary and any(
-            b for b in artifact.epistemic_boundary
+            b
+            for b in artifact.epistemic_boundary
             if b.strip() and b.strip() != "Assumed correct project environment"
         ):
             return []
         if not artifact.propositions:
             return []
-        return [FailureMode(
-            artifact_id=artifact.artifact_id,
-            challenge="Observability: no explicit epistemic boundary declared",
-            breakpoint=(
-                f"{artifact.artifact_id} makes claims without stating the assumptions "
-                "or context within which those claims must hold. Hidden assumptions "
-                "violate Axiom 1 (Observability) and Hard Rule H13."
-            ),
-            severity=FailureSeverity.LOW,
-            recovery_hint=(
-                "Add a '**Platform:**' or '**Boundary:**' field declaring the scope "
-                "and assumptions for this requirement."
-            ),
-        )]
+        return [
+            FailureMode(
+                artifact_id=artifact.artifact_id,
+                challenge="Observability: no explicit epistemic boundary declared",
+                breakpoint=(
+                    f"{artifact.artifact_id} makes claims without stating the assumptions "
+                    "or context within which those claims must hold. Hidden assumptions "
+                    "violate Axiom 1 (Observability) and Hard Rule H13."
+                ),
+                severity=FailureSeverity.LOW,
+                recovery_hint=(
+                    "Add a '**Platform:**' or '**Boundary:**' field declaring the scope "
+                    "and assumptions for this requirement."
+                ),
+            )
+        ]
 
     def _challenge_compound_claim(self, artifact: BeliefArtifact) -> list[FailureMode]:
         """Challenge: Is this a compound belief masking multiple primitives?"""
         if len(artifact.propositions) > 3:
-            return [FailureMode(
-                artifact_id=artifact.artifact_id,
-                challenge="Irreducibility: compound belief with too many propositions",
-                breakpoint=(
-                    f"{artifact.artifact_id} contains {len(artifact.propositions)} "
-                    "propositions. Beliefs with more than 3 propositions often hide "
-                    "Logic Knots and should be decomposed. Violates Axiom 3."
-                ),
-                severity=FailureSeverity.LOW,
-                recovery_hint=(
-                    "Split this requirement into multiple, independently testable REQs."
-                ),
-            )]
-        for prop in artifact.propositions:
-            if _COMPOUND_INDICATORS.search(prop):
-                return [FailureMode(
+            return [
+                FailureMode(
                     artifact_id=artifact.artifact_id,
-                    challenge="Irreducibility: compound claim structure detected",
+                    challenge="Irreducibility: compound belief with too many propositions",
                     breakpoint=(
-                        f"Proposition '{prop[:80]}' appears to contain multiple "
-                        "independent claims joined by 'and'. Each should be a "
-                        "separate, falsifiable proposition."
+                        f"{artifact.artifact_id} contains {len(artifact.propositions)} "
+                        "propositions. Beliefs with more than 3 propositions often hide "
+                        "Logic Knots and should be decomposed. Violates Axiom 3."
                     ),
                     severity=FailureSeverity.LOW,
-                    recovery_hint="Decompose into separate propositions or requirements.",
-                )]
+                    recovery_hint=(
+                        "Split this requirement into multiple, independently testable REQs."
+                    ),
+                )
+            ]
+        for prop in artifact.propositions:
+            if _COMPOUND_INDICATORS.search(prop):
+                return [
+                    FailureMode(
+                        artifact_id=artifact.artifact_id,
+                        challenge="Irreducibility: compound claim structure detected",
+                        breakpoint=(
+                            f"Proposition '{prop[:80]}' appears to contain multiple "
+                            "independent claims joined by 'and'. Each should be a "
+                            "separate, falsifiable proposition."
+                        ),
+                        severity=FailureSeverity.LOW,
+                        recovery_hint="Decompose into separate propositions or requirements.",
+                    )
+                ]
         return []
 
     def _challenge_no_propositions(self, artifact: BeliefArtifact) -> list[FailureMode]:
         """Challenge: Does the artifact have any testable claims?"""
         if artifact.propositions:
             return []
-        return [FailureMode(
-            artifact_id=artifact.artifact_id,
-            challenge="Observability: no parseable propositions",
-            breakpoint=(
-                f"{artifact.artifact_id} has no parsed propositions. "
-                "An empty requirement cannot be observed, tested, or falsified. "
-                "This violates Axioms 1 and 2."
-            ),
-            severity=FailureSeverity.CRITICAL,
-            recovery_hint="Add a description or decompose into explicit propositions.",
-        )]
+        return [
+            FailureMode(
+                artifact_id=artifact.artifact_id,
+                challenge="Observability: no parseable propositions",
+                breakpoint=(
+                    f"{artifact.artifact_id} has no parsed propositions. "
+                    "An empty requirement cannot be observed, tested, or falsified. "
+                    "This violates Axioms 1 and 2."
+                ),
+                severity=FailureSeverity.CRITICAL,
+                recovery_hint="Add a description or decompose into explicit propositions.",
+            )
+        ]
 
     def _challenge_p1_confidence(self, artifact: BeliefArtifact) -> list[FailureMode]:
         """Challenge: Is a P1 requirement insufficiently validated?"""
@@ -273,21 +286,23 @@ class StressTester:
             return []
         if artifact.confidence in (ConfidenceLevel.MEDIUM, ConfidenceLevel.HIGH):
             return []
-        return [FailureMode(
-            artifact_id=artifact.artifact_id,
-            challenge="Confidence: P1 requirement below medium confidence",
-            breakpoint=(
-                f"{artifact.artifact_id} is marked P1 (critical) but has "
-                f"confidence '{artifact.confidence.value}'. "
-                "P1 requirements with confidence below MEDIUM are a stop condition "
-                "per H13 (Epistemic Boundaries Required)."
-            ),
-            severity=FailureSeverity.CRITICAL,
-            recovery_hint=(
-                "Elevate confidence by stress-testing, adding evidence, or "
-                "lowering the priority if the requirement is not truly critical."
-            ),
-        )]
+        return [
+            FailureMode(
+                artifact_id=artifact.artifact_id,
+                challenge="Confidence: P1 requirement below medium confidence",
+                breakpoint=(
+                    f"{artifact.artifact_id} is marked P1 (critical) but has "
+                    f"confidence '{artifact.confidence.value}'. "
+                    "P1 requirements with confidence below MEDIUM are a stop condition "
+                    "per H13 (Epistemic Boundaries Required)."
+                ),
+                severity=FailureSeverity.CRITICAL,
+                recovery_hint=(
+                    "Elevate confidence by stress-testing, adding evidence, or "
+                    "lowering the priority if the requirement is not truly critical."
+                ),
+            )
+        ]
 
     def _challenge_circular_links(
         self, artifact: BeliefArtifact, id_set: set[str]
@@ -296,22 +311,22 @@ class StressTester:
         fms = []
         for link in artifact.inferential_links:
             if link not in id_set and link != artifact.artifact_id:
-                fms.append(FailureMode(
-                    artifact_id=artifact.artifact_id,
-                    challenge="Irreducibility: dangling inferential link",
-                    breakpoint=(
-                        f"{artifact.artifact_id} references '{link}' in its "
-                        "inferential links, but that artifact does not exist. "
-                        "Dangling links undermine the justification chain."
-                    ),
-                    severity=FailureSeverity.MEDIUM,
-                    recovery_hint=f"Remove or correct the link to '{link}'.",
-                ))
+                fms.append(
+                    FailureMode(
+                        artifact_id=artifact.artifact_id,
+                        challenge="Irreducibility: dangling inferential link",
+                        breakpoint=(
+                            f"{artifact.artifact_id} references '{link}' in its "
+                            "inferential links, but that artifact does not exist. "
+                            "Dangling links undermine the justification chain."
+                        ),
+                        severity=FailureSeverity.MEDIUM,
+                        recovery_hint=f"Remove or correct the link to '{link}'.",
+                    )
+                )
         return fms
 
-    def _detect_logic_knots(
-        self, artifacts: list[BeliefArtifact]
-    ) -> list[tuple[str, str, str]]:
+    def _detect_logic_knots(self, artifacts: list[BeliefArtifact]) -> list[tuple[str, str, str]]:
         """Detect Logic Knots — irreducible conflicts between accepted beliefs.
 
         A Logic Knot exists when two accepted BeliefArtifacts in the same
@@ -326,11 +341,13 @@ class StressTester:
         seen: dict[str, str] = {}
         for a in accepted:
             if a.artifact_id in seen:
-                knots.append((
-                    a.artifact_id,
-                    seen[a.artifact_id],
-                    "Duplicate requirement ID — two accepted beliefs share the same identifier.",
-                ))
+                knots.append(
+                    (
+                        a.artifact_id,
+                        seen[a.artifact_id],
+                        "Duplicate requirement ID — two accepted beliefs share the same identifier.",  # noqa: E501
+                    )
+                )
             seen[a.artifact_id] = a.artifact_id
 
         # Detect MUST / MUST NOT pairs on similar subjects within a component
@@ -342,15 +359,17 @@ class StressTester:
             if not comp:
                 continue
             for i, a1 in enumerate(group):
-                for a2 in group[i + 1:]:
+                for a2 in group[i + 1 :]:
                     if _has_negation_conflict(a1, a2):
-                        knots.append((
-                            a1.artifact_id,
-                            a2.artifact_id,
-                            f"Negation conflict in component '{comp}': "
-                            f"'{a1.artifact_id}' and '{a2.artifact_id}' appear to "
-                            "make contradictory MUST/MUST NOT claims on the same subject.",
-                        ))
+                        knots.append(
+                            (
+                                a1.artifact_id,
+                                a2.artifact_id,
+                                f"Negation conflict in component '{comp}': "
+                                f"'{a1.artifact_id}' and '{a2.artifact_id}' appear to "
+                                "make contradictory MUST/MUST NOT claims on the same subject.",
+                            )
+                        )
         return knots
 
 
@@ -364,7 +383,8 @@ def _has_negation_conflict(a1: BeliefArtifact, a2: BeliefArtifact) -> bool:
         for prop in artifact.propositions:
             # Extract significant nouns (simple heuristic: words > 4 chars, not stop words)
             words.update(
-                w.lower() for w in re.findall(r"\b[a-zA-Z]{5,}\b", prop)
+                w.lower()
+                for w in re.findall(r"\b[a-zA-Z]{5,}\b", prop)
                 if w.lower() not in _STOP_WORDS
             )
         return words
@@ -385,10 +405,33 @@ def _has_negation_conflict(a1: BeliefArtifact, a2: BeliefArtifact) -> bool:
 
 
 _STOP_WORDS = {
-    "must", "shall", "should", "could", "would", "have", "that", "this",
-    "with", "from", "into", "each", "when", "where", "which", "their",
-    "there", "these", "those", "after", "before", "project", "system",
-    "command", "using", "defined", "allow",
+    "must",
+    "shall",
+    "should",
+    "could",
+    "would",
+    "have",
+    "that",
+    "this",
+    "with",
+    "from",
+    "into",
+    "each",
+    "when",
+    "where",
+    "which",
+    "their",
+    "there",
+    "these",
+    "those",
+    "after",
+    "before",
+    "project",
+    "system",
+    "command",
+    "using",
+    "defined",
+    "allow",
 }
 
 

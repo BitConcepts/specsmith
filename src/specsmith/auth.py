@@ -67,6 +67,7 @@ _CREDS_FILE = Path.home() / ".specsmith" / "credentials.json"
 # Credential resolution
 # ---------------------------------------------------------------------------
 
+
 def get_token(platform: str) -> str | None:
     """Resolve a token for a platform.
 
@@ -123,21 +124,25 @@ def list_configured() -> list[dict[str, str]]:
         if token:
             source = _detect_source(name, token)
             masked = _mask_token(token)
-            result.append({
-                "platform": name,
-                "status": "configured",
-                "source": source,
-                "masked": masked,
-                "description": info["description"],
-            })
+            result.append(
+                {
+                    "platform": name,
+                    "status": "configured",
+                    "source": source,
+                    "masked": masked,
+                    "description": info["description"],
+                }
+            )
         else:
-            result.append({
-                "platform": name,
-                "status": "not set",
-                "source": "",
-                "masked": "",
-                "description": info["description"],
-            })
+            result.append(
+                {
+                    "platform": name,
+                    "status": "not set",
+                    "source": "",
+                    "masked": "",
+                    "description": info["description"],
+                }
+            )
     return result
 
 
@@ -150,9 +155,11 @@ def check_required(platforms: list[str]) -> dict[str, bool]:
 # OS keyring helpers
 # ---------------------------------------------------------------------------
 
+
 def _keyring_get(platform: str) -> str | None:
     try:
         import keyring  # type: ignore[import-untyped]
+
         value = keyring.get_password(_KEYRING_SERVICE, platform)
         return value or None
     except (ImportError, Exception):  # noqa: BLE001
@@ -162,6 +169,7 @@ def _keyring_get(platform: str) -> str | None:
 def _keyring_set(platform: str, token: str) -> bool:
     try:
         import keyring  # type: ignore[import-untyped]
+
         keyring.set_password(_KEYRING_SERVICE, platform, token)
         return True
     except (ImportError, Exception):  # noqa: BLE001
@@ -171,6 +179,7 @@ def _keyring_set(platform: str, token: str) -> bool:
 def _keyring_delete(platform: str) -> bool:
     try:
         import keyring  # type: ignore[import-untyped]
+
         keyring.delete_password(_KEYRING_SERVICE, platform)
         return True
     except (ImportError, Exception):  # noqa: BLE001
@@ -180,6 +189,7 @@ def _keyring_delete(platform: str) -> bool:
 # ---------------------------------------------------------------------------
 # File fallback helpers (simple obfuscation, not true encryption)
 # ---------------------------------------------------------------------------
+
 
 def _file_get(platform: str) -> str | None:
     if not _CREDS_FILE.exists():
@@ -196,19 +206,17 @@ def _file_get(platform: str) -> str | None:
 
 def _file_set(platform: str, token: str) -> None:
     _CREDS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    import contextlib
+
     data: dict[str, str] = {}
     if _CREDS_FILE.exists():
-        try:
+        with contextlib.suppress(Exception):
             data = json.loads(_CREDS_FILE.read_text(encoding="utf-8"))
-        except Exception:  # noqa: BLE001
-            pass
     data[platform] = _obfuscate(token)
     _CREDS_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
     # Restrict permissions on non-Windows
-    try:
+    with contextlib.suppress(Exception):
         _CREDS_FILE.chmod(0o600)
-    except Exception:  # noqa: BLE001
-        pass
 
 
 def _file_delete(platform: str) -> bool:
@@ -244,6 +252,7 @@ def _deobfuscate(hex_str: str) -> str:
 def _machine_key() -> bytes:
     """Derive a machine-specific key from system info."""
     import platform
+
     node = platform.node() or "specsmith-default"
     return hashlib.sha256(node.encode()).digest()
 
@@ -251,6 +260,7 @@ def _machine_key() -> bytes:
 # ---------------------------------------------------------------------------
 # Utilities
 # ---------------------------------------------------------------------------
+
 
 def _mask_token(token: str) -> str:
     if len(token) <= 8:

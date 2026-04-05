@@ -24,6 +24,7 @@ _TIMEOUT = 30
 @dataclass
 class PatentResult:
     """A single patent search result."""
+
     patent_number: str
     title: str
     abstract: str = ""
@@ -42,6 +43,7 @@ class PatentResult:
 @dataclass
 class PriorArtReport:
     """Prior art analysis report for a claim."""
+
     claim_text: str
     query_used: str
     results: list[PatentResult] = field(default_factory=list)
@@ -97,11 +99,13 @@ class PriorArtReport:
 def _get_api_key() -> str | None:
     """Get USPTO API key from env or auth module."""
     import os
+
     key = os.environ.get("USPTO_API_KEY", "").strip()
     if key:
         return key
     try:
         from specsmith.auth import get_token
+
         return get_token("uspto")
     except ImportError:
         return None
@@ -157,10 +161,7 @@ def search_patents(
     docs = data.get("results", data.get("patents", []))
     for doc in docs[:max_results]:
         pn = doc.get("patentNumber", doc.get("applicationNumber", ""))
-        title = (
-            doc.get("inventionTitle", doc.get("patentTitle", ""))
-            or doc.get("title", "")
-        )
+        title = doc.get("inventionTitle", doc.get("patentTitle", "")) or doc.get("title", "")
         abstract = doc.get("abstract", "")
         if isinstance(abstract, list):
             abstract = " ".join(abstract)
@@ -170,16 +171,18 @@ def search_patents(
             inventors_raw = [inventors_raw]
         inventors = [str(i) for i in inventors_raw]
 
-        results.append(PatentResult(
-            patent_number=str(pn),
-            title=str(title),
-            abstract=str(abstract)[:1000],
-            filing_date=str(doc.get("filingDate", "")),
-            grant_date=str(doc.get("grantDate", "")),
-            inventors=inventors[:5],
-            assignee=str(doc.get("assigneeEntityName", "")),
-            url=f"https://patents.google.com/patent/US{pn}" if pn else "",
-        ))
+        results.append(
+            PatentResult(
+                patent_number=str(pn),
+                title=str(title),
+                abstract=str(abstract)[:1000],
+                filing_date=str(doc.get("filingDate", "")),
+                grant_date=str(doc.get("grantDate", "")),
+                inventors=inventors[:5],
+                assignee=str(doc.get("assigneeEntityName", "")),
+                url=f"https://patents.google.com/patent/US{pn}" if pn else "",
+            )
+        )
 
     return results
 
@@ -235,9 +238,15 @@ def _extract_search_terms(claim_text: str) -> str:
 
     # Remove common patent boilerplate
     boilerplate = [
-        r"\bcomprising\b", r"\bconsisting of\b", r"\bwherein\b",
-        r"\bclaim \d+\b", r"\bthe method of\b", r"\ba method for\b",
-        r"\ban apparatus\b", r"\ba system\b", r"\bcharacterized by\b",
+        r"\bcomprising\b",
+        r"\bconsisting of\b",
+        r"\bwherein\b",
+        r"\bclaim \d+\b",
+        r"\bthe method of\b",
+        r"\ba method for\b",
+        r"\ban apparatus\b",
+        r"\ba system\b",
+        r"\bcharacterized by\b",
     ]
     text = claim_text
     for pattern in boilerplate:
@@ -245,8 +254,21 @@ def _extract_search_terms(claim_text: str) -> str:
 
     # Extract meaningful words (>3 chars, not common words)
     _STOP = {
-        "the", "and", "for", "with", "that", "this", "from", "into",
-        "each", "when", "where", "said", "have", "been", "which",
+        "the",
+        "and",
+        "for",
+        "with",
+        "that",
+        "this",
+        "from",
+        "into",
+        "each",
+        "when",
+        "where",
+        "said",
+        "have",
+        "been",
+        "which",
     }
     words = re.findall(r"\b[a-zA-Z]{4,}\b", text)
     significant = [w for w in words if w.lower() not in _STOP]

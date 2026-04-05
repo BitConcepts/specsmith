@@ -18,6 +18,7 @@ Providers auto-detected from environment:
     Ollama running    → local models (zero config)
     SPECSMITH_PROVIDER=<name> → explicit override
 """
+
 from __future__ import annotations
 
 from specsmith.agent.core import (

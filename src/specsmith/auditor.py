@@ -511,20 +511,25 @@ def check_trace_chain_integrity(root: Path) -> list[AuditResult]:
 
     try:
         from epistemic.trace import TraceVault
+
         vault = TraceVault(root / ".specsmith")
         valid, errors = vault.verify()
         if valid:
-            return [AuditResult(
-                name="trace-chain-integrity",
-                passed=True,
-                message=f"Trace vault intact ({vault.count()} seals)",
-            )]
+            return [
+                AuditResult(
+                    name="trace-chain-integrity",
+                    passed=True,
+                    message=f"Trace vault intact ({vault.count()} seals)",
+                )
+            ]
         else:
-            return [AuditResult(
-                name="trace-chain-integrity",
-                passed=False,
-                message=f"Trace vault integrity failure: {'; '.join(errors[:2])}",
-            )]
+            return [
+                AuditResult(
+                    name="trace-chain-integrity",
+                    passed=False,
+                    message=f"Trace vault integrity failure: {'; '.join(errors[:2])}",
+                )
+            ]
     except ImportError:
         return []  # epistemic package not installed
     except Exception:  # noqa: BLE001

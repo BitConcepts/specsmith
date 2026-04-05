@@ -4,6 +4,7 @@
 
 Requires: pip install specsmith[gemini]
 """
+
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -32,15 +33,18 @@ class GeminiProvider:
     def _ensure_client(self) -> None:
         try:
             import google.generativeai as genai
+
             genai.configure(api_key=self._api_key)
             self._genai = genai
         except ImportError as e:
             from specsmith.agent.core import ProviderNotAvailable
+
             raise ProviderNotAvailable("gemini", "gemini") from e
 
     def is_available(self) -> bool:
         try:
             import google.generativeai  # noqa: F401
+
             return bool(self._api_key)
         except ImportError:
             return False
@@ -67,10 +71,8 @@ class GeminiProvider:
             elif m.role == Role.ASSISTANT:
                 history.append({"role": "model", "parts": [m.content]})
 
-        if system_text and history:
-            # Prepend system to first user message
-            if history[0]["role"] == "user":
-                history[0]["parts"] = [f"[SYSTEM]\n{system_text}\n\n{history[0]['parts'][0]}"]
+        if system_text and history and history[0]["role"] == "user":
+            history[0]["parts"] = [f"[SYSTEM]\n{system_text}\n\n{history[0]['parts'][0]}"]
 
         if not history:
             return CompletionResponse(content="", model=self.model)

@@ -164,7 +164,7 @@ class BeliefArtifact:
     component: str = ""
     priority: str = ""
     # Optional metadata for non-specsmith uses
-    domain: str = ""        # e.g., "linguistics", "software", "policy"
+    domain: str = ""  # e.g., "linguistics", "software", "policy"
     evidence: list[str] = field(default_factory=list)  # evidence citations
 
     @property
@@ -186,7 +186,8 @@ class BeliefArtifact:
     @property
     def critical_failures(self) -> list[FailureMode]:
         return [
-            fm for fm in self.failure_modes
+            fm
+            for fm in self.failure_modes
             if not fm.resolved and fm.severity == FailureSeverity.CRITICAL
         ]
 
@@ -281,9 +282,8 @@ def parse_requirements_as_beliefs(path: Path) -> list[BeliefArtifact]:
                 current.evidence.append(val)
         else:
             stripped = line.strip().lstrip("-").strip()
-            if stripped and not stripped.startswith("#"):
-                if not current_desc:
-                    current_desc = stripped
+            if stripped and not stripped.startswith("#") and not current_desc:
+                current_desc = stripped
 
     if current is not None:
         _finalise(current, current_desc)

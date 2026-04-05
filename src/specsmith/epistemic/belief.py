@@ -74,20 +74,20 @@ _CONFIDENCE_SCORES: dict[ConfidenceLevel, float] = {
 class BeliefStatus(str, Enum):
     """Lifecycle status of a BeliefArtifact."""
 
-    DRAFT = "draft"            # Proposed, not yet accepted
-    ACCEPTED = "accepted"      # Accepted by human operator
-    STRESS_TESTED = "stress-tested"   # Has been through stress-testing
-    RECONSTRUCTED = "reconstructed"   # Rebuilt after stress-test failures
+    DRAFT = "draft"  # Proposed, not yet accepted
+    ACCEPTED = "accepted"  # Accepted by human operator
+    STRESS_TESTED = "stress-tested"  # Has been through stress-testing
+    RECONSTRUCTED = "reconstructed"  # Rebuilt after stress-test failures
     DEPRECATED = "deprecated"  # Superseded; kept for audit trail
 
 
 class FailureSeverity(str, Enum):
     """Severity of a failure mode in the Failure-Mode Graph."""
 
-    CRITICAL = "critical"   # Blocks progress; must be resolved before proceeding
-    HIGH = "high"           # Significant weakness; should be resolved
-    MEDIUM = "medium"       # Noteworthy; monitor and address
-    LOW = "low"             # Minor; informational
+    CRITICAL = "critical"  # Blocks progress; must be resolved before proceeding
+    HIGH = "high"  # Significant weakness; should be resolved
+    MEDIUM = "medium"  # Noteworthy; monitor and address
+    LOW = "low"  # Minor; informational
 
 
 @dataclass
@@ -100,8 +100,8 @@ class FailureMode:
     """
 
     artifact_id: str
-    challenge: str          # The adversarial challenge that exposed this failure
-    breakpoint: str         # What breaks when the challenge is applied
+    challenge: str  # The adversarial challenge that exposed this failure
+    breakpoint: str  # What breaks when the challenge is applied
     severity: FailureSeverity = FailureSeverity.MEDIUM
     recovery_hint: str = ""  # Suggested recovery path (RecoveryOperator expands this)
     resolved: bool = False
@@ -176,7 +176,8 @@ class BeliefArtifact:
     @property
     def critical_failures(self) -> list[FailureMode]:
         return [
-            fm for fm in self.failure_modes
+            fm
+            for fm in self.failure_modes
             if not fm.resolved and fm.severity == FailureSeverity.CRITICAL
         ]
 
@@ -248,9 +249,8 @@ def parse_requirements_as_beliefs(path: Path) -> list[BeliefArtifact]:
         else:
             # Inline description continuation (bullet lines)
             stripped = line.strip().lstrip("-").strip()
-            if stripped and not stripped.startswith("#"):
-                if not current_desc:
-                    current_desc = stripped
+            if stripped and not stripped.startswith("#") and not current_desc:
+                current_desc = stripped
 
     if current is not None:
         _finalise(current, current_desc)

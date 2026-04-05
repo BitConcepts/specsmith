@@ -205,9 +205,7 @@ class TraceVault:
             expected_content = f"{rec.seal_id}:{rec.seal_type}:{rec.description}:{rec.timestamp}"
             expected_content_hash = _sha256(expected_content)
             if rec.content_hash != expected_content_hash:
-                errors.append(
-                    f"{rec.seal_id}: content_hash invalid — metadata tampered"
-                )
+                errors.append(f"{rec.seal_id}: content_hash invalid — metadata tampered")
 
             # Verify entry_hash is correct
             expected_entry = _sha256(f"{rec.content_hash}:{rec.prev_hash}")

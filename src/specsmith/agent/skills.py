@@ -74,8 +74,7 @@ def get_skill_by_name(skills: list[Skill], name: str) -> Skill | None:
     """Find a skill by name (case-insensitive)."""
     name_lower = name.lower()
     return next(
-        (s for s in skills if s.name.lower() == name_lower or
-         name_lower in s.name.lower()),
+        (s for s in skills if s.name.lower() == name_lower or name_lower in s.name.lower()),
         None,
     )
 
@@ -126,21 +125,18 @@ def _parse_skill_file(path: Path) -> Skill | None:
         domain_m = re.search(r"^domain:\s*(.+)$", fm, re.MULTILINE)
 
         if name_m:
-            name = name_m.group(1).strip().strip('"\'')
+            name = name_m.group(1).strip().strip("\"'")
         if desc_m:
-            description = desc_m.group(1).strip().strip('"\'')
+            description = desc_m.group(1).strip().strip("\"'")
         if tags_m:
-            tags = [t.strip().strip('"\'') for t in tags_m.group(1).split(",")]
+            tags = [t.strip().strip("\"'") for t in tags_m.group(1).split(",")]
         if domain_m:
             domain = domain_m.group(1).strip()
 
     # Fall back to first heading
     if not name:
         h1 = re.search(r"^#\s+(.+)$", content, re.MULTILINE)
-        if h1:
-            name = h1.group(1).strip()
-        else:
-            name = path.stem.replace("-", " ").replace("_", " ").title()
+        name = h1.group(1).strip() if h1 else path.stem.replace("-", " ").replace("_", " ").title()
 
     # Fall back to first non-heading paragraph for description
     if not description:

@@ -135,7 +135,8 @@ def build_tool_registry(project_dir: str = ".") -> list[Tool]:
             ],
             handler=lambda format="text", component="": _run_specsmith(  # noqa: A002
                 ["belief-graph", "--format", format]
-                + (["--component", component] if component else []), pd
+                + (["--component", component] if component else []),
+                pd,
             ),
         ),
         Tool(
@@ -200,7 +201,8 @@ def build_tool_registry(project_dir: str = ".") -> list[Tool]:
             handler=lambda title="", draft="false": _run_specsmith(
                 ["pr"]
                 + (["--title", title] if title else [])
-                + (["--draft"] if draft == "true" else []), pd
+                + (["--draft"] if draft == "true" else []),
+                pd,
             ),
         ),
         Tool(
@@ -226,10 +228,7 @@ def build_tool_registry(project_dir: str = ".") -> list[Tool]:
                 ToolParam("reqs", "Affected REQ IDs (comma-separated)", required=False),
             ],
             handler=lambda description, entry_type="task", reqs="": _run_specsmith(
-                ["ledger", "add",
-                 "--type", entry_type,
-                 "--reqs", reqs,
-                 description], pd
+                ["ledger", "add", "--type", entry_type, "--reqs", reqs, description], pd
             ),
         ),
         Tool(
@@ -258,7 +257,8 @@ def build_tool_registry(project_dir: str = ".") -> list[Tool]:
             ],
             handler=lambda seal_type, description, artifacts="": _run_specsmith(
                 ["trace", "seal", seal_type, description]
-                + (["--artifacts", artifacts] if artifacts else []), pd
+                + (["--artifacts", artifacts] if artifacts else []),
+                pd,
             ),
         ),
         Tool(

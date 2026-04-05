@@ -7,6 +7,7 @@ Requires: pip install specsmith[openai]
 For Ollama: set base_url="http://localhost:11434/v1" and api_key="ollama"
 For other OpenAI-compatible servers: set OPENAI_BASE_URL environment variable
 """
+
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -40,17 +41,20 @@ class OpenAIProvider:
     def _ensure_client(self) -> None:
         try:
             import openai
+
             kwargs: dict[str, Any] = {"api_key": self._api_key or "placeholder"}
             if self._base_url:
                 kwargs["base_url"] = self._base_url
             self._client = openai.OpenAI(**kwargs)
         except ImportError as e:
             from specsmith.agent.core import ProviderNotAvailable
+
             raise ProviderNotAvailable("openai", "openai") from e
 
     def is_available(self) -> bool:
         try:
             import openai  # noqa: F401
+
             return bool(self._api_key or self._base_url)
         except ImportError:
             return False
@@ -79,11 +83,14 @@ class OpenAIProvider:
         if choice.message.tool_calls:
             for tc in choice.message.tool_calls:
                 import json
-                tool_calls.append({
-                    "id": tc.id,
-                    "name": tc.function.name,
-                    "input": json.loads(tc.function.arguments or "{}"),
-                })
+
+                tool_calls.append(
+                    {
+                        "id": tc.id,
+                        "name": tc.function.name,
+                        "input": json.loads(tc.function.arguments or "{}"),
+                    }
+                )
 
         usage = response.usage
         return CompletionResponse(
