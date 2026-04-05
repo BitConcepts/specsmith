@@ -1,32 +1,69 @@
 # specsmith Documentation
 
-**Forge governed project scaffolds from the Agentic AI Development Workflow Specification.**
+**Applied Epistemic Engineering toolkit for AI-assisted development.**
 
-specsmith generates project structures with built-in AI agent governance — the rules, verification tools, CI/CD pipelines, and documentation that keep AI coding assistants working within an auditable, structured workflow.
+> Intelligence proposes. Constraints decide. The ledger remembers.
+
+specsmith treats belief systems like code: **codable, testable, and deployable**. It scaffolds
+epistemically-governed projects, stress-tests requirements as BeliefArtifacts, runs
+cryptographically-sealed trace vaults, and orchestrates AI agents under formal AEE governance.
+
+It also co-installs the **standalone `epistemic` Python library** for direct use in any project:
+
+```python
+from epistemic import AEESession          # zero deps, works anywhere
+session = AEESession("my-project")
+session.add_belief("HYP-001", ["The hypothesis holds"])
+result = session.run()
+print(result.summary())
+```
+
+## What is Applied Epistemic Engineering?
+
+AEE treats requirements, decisions, and hypotheses like code:
+
+- **Codable** — every claim is a `BeliefArtifact` with propositions and explicit epistemic boundaries
+- **Testable** — `StressTester` applies 8 adversarial challenges to surface failure modes and Logic Knots
+- **Deployable** — beliefs that survive stress-testing are sealed with cryptographic proof (`TraceVault`)
+
+The 4-step AEE core method: **Frame → Disassemble → Stress-Test → Reconstruct**
 
 ## Why specsmith?
 
-AI coding agents (Warp/Oz, Claude Code, Cursor, Copilot, etc.) are powerful but unstructured. Without governance, they:
+AI agents produce knowledge claims constantly — requirements, architecture decisions, test results — but have no mechanism to assess their epistemic quality. Without AEE governance:
 
-- Make changes without proposals or review
-- Skip verification steps
-- Lose context between sessions
-- Generate inconsistent project structures
+- Requirements are vague, compound, or untestable
+- Conflicting claims (Logic Knots) silently accumulate
+- Critical decisions lack tamper-evident audit trails
+- Agent context is lost between sessions
 
-specsmith solves this by generating a **governance layer** that agents read and follow: propose before acting, verify before recording, log everything in the ledger.
+specsmith provides the **governance + epistemic layer** that makes AI-assisted development auditable, repeatable, and epistemically sound.
 
 ## What You Get
 
 When you run `specsmith init` or `specsmith import`, your project gets:
 
-- **AGENTS.md** — The governance hub. Every AI agent reads this first. Contains authority hierarchy, type-specific rules, and pointers to modular governance files.
-- **LEDGER.md** — Append-only record of all changes. The agent writes here after every task. This is how context persists across sessions.
-- **docs/governance/** — Six modular files: rules, workflow, roles, context budget, verification standards, drift metrics. Loaded lazily to minimize token use.
-- **docs/REQUIREMENTS.md** — Numbered, testable requirements. For patent projects, pre-populated with claim/specification/figure requirements. For API projects, endpoint/auth requirements.
-- **docs/TEST_SPEC.md** — Test cases linked to requirements via `Covers: REQ-xxx` references. The audit command checks this linkage.
-- **CI config** — GitHub Actions, GitLab CI, or Bitbucket Pipelines with the exact tools for your project type (not generic Python-only configs).
-- **Dependency management** — Dependabot or Renovate configured for the correct package ecosystem.
-- **Agent integration files** — Warp SKILL.md, CLAUDE.md, Copilot instructions, Cursor rules, etc.
+**AEE Epistemic Layer:**
+
+- **`epistemic` library** — zero-dep Python library, `from epistemic import AEESession` works anywhere
+- **`specsmith stress-test`** — adversarial challenges on every requirement (8 challenge categories)
+- **`specsmith epistemic-audit`** — full AEE pipeline: certainty scores, logic knot detection, recovery proposals
+- **`specsmith trace seal/verify`** — tamper-evident SHA-256 decision audit chain
+- **Epistemic governance templates** — belief-registry.md, failure-modes.md, uncertainty-map.md
+
+**Governance Infrastructure:**
+
+- **AGENTS.md** — governance hub read by every AI agent; includes H13 (epistemic boundaries required)
+- **LEDGER.md** — SHA-256-chained append-only record; the sole authority for session continuity
+- **docs/governance/** — modular rules, workflow, roles, context budget, verification, drift metrics
+- **docs/REQUIREMENTS.md** — requirements parseable as `BeliefArtifact` instances
+- **CI config** — GitHub Actions, GitLab CI, Bitbucket Pipelines with correct tools per project type
+
+**Agentic Client:**
+
+- **`specsmith run`** — AEE-integrated REPL (Anthropic, OpenAI, Gemini, Ollama)
+- **Skills** — SKILL.md loader with domain priority; built-in profiles: planner, verifier, epistemic-auditor
+- **Hooks** — H13 enforcement, ledger hints, context budget alerts
 
 !!! note "Documentation Versions"
     **Stable:** [specsmith.readthedocs.io/en/stable/](https://specsmith.readthedocs.io/en/stable/) — matches `pip install specsmith`
@@ -35,50 +72,61 @@ When you run `specsmith init` or `specsmith import`, your project gets:
 ## Quick Start
 
 ```bash
-pip install specsmith
+pip install specsmith             # core + epistemic library
+pip install specsmith[anthropic]  # + Claude support for specsmith run
 
-# New project (interactive)
+# New project
 specsmith init
 
 # Adopt an existing project
 specsmith import --project-dir ./my-project
 
-# Generate architecture docs
-specsmith architect --project-dir ./my-project
+# Run AEE stress-test on requirements
+specsmith stress-test --project-dir ./my-project
+
+# Full epistemic audit (certainty + logic knots + recovery)
+specsmith epistemic-audit --project-dir ./my-project
+
+# Start agentic REPL
+specsmith run --project-dir ./my-project
 
 # Check governance health
 specsmith audit --project-dir ./my-project
-
-# Track AI credit spend
-specsmith credits summary --project-dir ./my-project
-
-# Generate compliance report
-specsmith export --project-dir ./my-project
 ```
 
-### Starting an AI Agent Session
+### Using the epistemic library
 
-From any specsmith-governed project root, the universal command to begin a session:
+```python
+from epistemic import AEESession, ConfidenceLevel, BeliefStatus
 
+session = AEESession("my-project", threshold=0.7)
+session.add_belief(
+    artifact_id="REQ-API-001",
+    propositions=["The API returns HTTP 200 for valid requests"],
+    epistemic_boundary=["Platform: all", "Auth: JWT required"],
+    status=BeliefStatus.ACCEPTED,
+)
+session.add_evidence("REQ-API-001", "Integration test suite passes")
+result = session.run()
+print(result.summary())
 ```
-/agent AGENTS.md
-```
 
-This loads the governance hub, session state from LEDGER.md, and project rules. Works in Warp/Oz, Claude Code, Cursor, Copilot, and any agent that reads markdown context.
+Works in any Python 3.10+ project. See [epistemic Library Reference](epistemic-library.md) for full API.
 
 ## Documentation Guide
 
 | Section | What You'll Learn |
 |---------|------------------|
-| [Getting Started](getting-started.md) | Installation, first project, first import — with full walkthrough |
-| [CLI Commands](commands.md) | Every command with all options, examples, and behavior details |
-| [Project Types](project-types.md) | All 30 types with directory structures, tools, and governance rules |
+| [Getting Started](getting-started.md) | Installation, first project, first import — full walkthrough |
+| [AEE Primer](aee-primer.md) | Applied Epistemic Engineering from zero to productive (10 parts) |
+| [epistemic Library](epistemic-library.md) | Standalone library API reference + integration examples |
+| [Agentic Client](agent-client.md) | `specsmith run` — multi-provider REPL, skills, hooks, model routing |
+| [CLI Commands](commands.md) | Every command with all options, examples, and behavior |
+| [Project Types](project-types.md) | All 33 types with directory structures, tools, and governance rules |
 | [Tool Registry](tool-registry.md) | How tool-aware CI works, what tools each type uses, how to override |
 | [Importing Projects](importing.md) | How detection works, merge behavior, type inference logic |
 | [Configuration](configuration.md) | Every scaffold.yml field explained with examples |
 | [Governance Model](governance.md) | The closed-loop workflow, file hierarchy, modular governance |
-| [Agent Integrations](agent-integrations.md) | How each AI agent reads governance files |
-| [Doctor](doctor.md) | Checking if your tools are installed |
 | [Export & Compliance](export.md) | Generating coverage reports, understanding the output |
 | [Troubleshooting](troubleshooting.md) | Common issues and solutions |
 | [Contributing](contributing.md) | Adding project types, code standards, PR process |
