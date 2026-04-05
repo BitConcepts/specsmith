@@ -231,8 +231,9 @@ def check_req_test_consistency(root: Path) -> list[AuditResult]:
             )
         )
 
-    # Orphaned tests
-    orphaned = covered_reqs - req_ids
+    # Orphaned tests: use all_req_ids so tests covering Draft requirements
+    # are not incorrectly flagged as orphaned.
+    orphaned = covered_reqs - all_req_ids
     if orphaned:
         results.append(
             AuditResult(
