@@ -417,7 +417,7 @@ class ResponseCache:
         self._hits += 1
         self._tokens_saved += entry.get("tokens", 0)
         self._cost_saved += entry.get("cost", 0.0)
-        return entry["response"]
+        return str(entry["response"])
 
     def set(
         self,
@@ -800,7 +800,7 @@ class OptimizationEngine:
         self._report.cost_saved_usd += self._cache.cost_saved - getattr(
             self, "_last_cache_cost", 0.0
         )
-        self._last_cache_cost: float = self._cache.cost_saved  # type: ignore[assignment]
+        self._last_cache_cost: float = self._cache.cost_saved
 
     def report(self) -> OptimizationReport:
         """Return the current session-level optimization report."""

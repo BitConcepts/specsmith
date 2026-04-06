@@ -101,6 +101,9 @@ python_version = "3.10"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
+# GUI package requires PySide6, an optional extra not available in the mypy
+# environment. Exclude it from type-checking to avoid false positives.
+exclude = ["src/specsmith/gui"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
