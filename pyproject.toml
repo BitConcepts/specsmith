@@ -105,5 +105,20 @@ warn_unused_configs = true
 # environment. Exclude it from type-checking to avoid false positives.
 exclude = ["src/specsmith/gui"]
 
+# Optional extras — installed by the user, not in the dev environment.
+# Ignore missing stubs rather than failing type-check for absent packages.
+[[tool.mypy.overrides]]
+module = [
+    "anthropic",
+    "anthropic.*",
+    "openai",
+    "openai.*",
+    "google.generativeai",
+    "google.generativeai.*",
+    "keyring",
+    "keyring.*",
+]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
