@@ -23,9 +23,13 @@ jobs:
       - run: mypy src/specsmith --ignore-missing-imports
       - run: pytest tests/ -x -q
 
-  dev-build:
+  build-and-publish:
     needs: test
     runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -56,29 +60,12 @@ jobs:
 
       - run: python -m build
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: dev-dist
-          path: dist/
-
-  pypi-dev-publish:
-    needs: dev-build
-    runs-on: ubuntu-latest
-    environment: pypi
-    permissions:
-      id-token: write
-    continue-on-error: true
-    steps:
-      - uses: actions/download-artifact@v8
-        with:
-          name: dev-dist
-          path: dist/
       - name: Publish dev release to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        continue-on-error: true  # version already exists on PyPI is not a failure
 
   docs-build:
-    needs: dev-build
+    needs: build-and-publish
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
