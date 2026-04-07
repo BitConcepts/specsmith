@@ -28,7 +28,9 @@ Special REPL commands (not sent to the LLM):
 
 from __future__ import annotations
 
+import inspect
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, cast
@@ -45,6 +47,31 @@ from specsmith.agent.hooks import HookContext, HookRegistry, HookTrigger
 from specsmith.agent.optimizer import OptimizationConfig, OptimizationEngine
 from specsmith.agent.skills import Skill, format_skills_context, load_skills
 from specsmith.agent.tools import build_tool_registry, get_tool_by_name
+
+
+def _call_handler_safe(handler: Callable[..., str], inputs: dict[str, Any]) -> str:
+    """Call a tool handler with filtered inputs.
+
+    LLMs (especially local models via Ollama) sometimes pass extra keyword
+    arguments the handler doesn't declare.  We use ``inspect.signature`` to
+    filter ``inputs`` to only the parameters the callable accepts, preventing
+    ``TypeError: got an unexpected keyword argument 'description'`` crashes.
+    """
+    try:
+        sig    = inspect.signature(handler)
+        params = sig.parameters
+        # Check if handler accepts **kwargs — if so, pass everything
+        has_var_kw = any(
+            p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values()
+        )
+        if has_var_kw:
+            return handler(**inputs)
+        # Filter to only declared parameters
+        filtered = {k: v for k, v in inputs.items() if k in params}
+        return handler(**filtered)
+    except TypeError:
+        # Final fallback: call with no arguments (never crash)
+        return handler()  # type: ignore[call-arg]
 
 
 @dataclass
@@ -493,7 +520,7 @@ class AgentRunner:
 
             if tool and tool.handler:
                 try:
-                    output = tool.handler(**inputs)
+                    output = _call_handler_safe(tool.handler, inputs)
                     error = False
                 except Exception as e:  # noqa: BLE001
                     output = f"[ERROR] {e}"
