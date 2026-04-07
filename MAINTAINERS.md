@@ -4,7 +4,7 @@
 
 | Name | Role | GitHub | Contact |
 |------|------|--------|---------|
-| Tristen Pierson | Owner, Lead Engineer | [@tristenpierson](https://github.com/tristenpierson) | tpierson@bitconcepts.tech |
+| Tristen Pierson | Owner, Lead Engineer | [@tbitcs](https://github.com/tbitcs) | tpierson@bitconcepts.tech |
 
 ## Organization
 

@@ -1,11 +1,11 @@
 # Default owner for all files
-* @tristenpierson
+* @tbitcs
 
 # Specification
-docs/AGENT-WORKFLOW-SPEC.md @tristenpierson
+docs/AGENT-WORKFLOW-SPEC.md @tbitcs
 
 # Core CLI
-src/specsmith/ @tristenpierson
+src/specsmith/ @tbitcs
 
 # CI/CD
-.github/ @tristenpierson
+.github/ @tbitcs
