@@ -15,8 +15,8 @@ import subprocess
 import sys
 import urllib.error
 import urllib.request
+from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Iterator
 
 OLLAMA_API = "http://localhost:11434"
 

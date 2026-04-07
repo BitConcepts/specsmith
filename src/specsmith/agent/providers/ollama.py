@@ -10,11 +10,10 @@ the native /api/chat endpoint.
 from __future__ import annotations
 
 import json
+import os
 import urllib.request
 from collections.abc import Iterator
 from typing import Any
-
-import os
 
 from specsmith.agent.core import (
     CompletionResponse,
