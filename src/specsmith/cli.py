@@ -4098,7 +4098,6 @@ def tools_install_cmd(tool: str, list_all: bool, category: str, dry_run: bool, y
     from specsmith.tool_installer import (
         KNOWN_TOOLS,
         ToolInstallInfo,
-        format_install_table,
         get_install_command,
         list_tools,
     )
@@ -4129,7 +4128,8 @@ def tools_install_cmd(tool: str, list_all: bool, category: str, dry_run: bool, y
             )
         else:
             console.print(
-                f"[red]Unknown tool '{tool}'.[/red] Run [bold]specsmith tools install --list[/bold] "
+                f"[red]Unknown tool '{tool}'.[/red] "
+                "Run [bold]specsmith tools install --list[/bold] "
                 "to see available tools."
             )
         raise SystemExit(1)
@@ -4162,7 +4162,7 @@ def tools_install_cmd(tool: str, list_all: bool, category: str, dry_run: bool, y
         if result.returncode != 0:
             console.print(f"[red]Install failed (exit {result.returncode}).[/red]")
             raise SystemExit(result.returncode)
-        console.print(f"[green]✓[/green] Done.")
+        console.print("[green]\u2713[/green] Done.")
 
 
 @tools_group.command(name="rules")
@@ -4216,7 +4216,8 @@ def tools_rules_cmd(project_dir: str, tool_key: str, list_all: bool) -> None:
     scaffold_path = root / "scaffold.yml"
     if not scaffold_path.exists():
         console.print(
-            "[yellow]No scaffold.yml found. Run specsmith init or use --tool to view a specific tool.[/yellow]"
+            "[yellow]No scaffold.yml found. "
+            "Run specsmith init or use --tool to view a specific tool.[/yellow]"
         )
         raise SystemExit(1)
 

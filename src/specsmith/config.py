@@ -205,11 +205,11 @@ class ProjectConfig(BaseModel):
     )
     custom_allowed_commands: list[str] = Field(
         default_factory=list,
-        description="Additional command prefixes allowed for the agent (appended to profile defaults).",
+        description="Extra allowed command prefixes merged with the active execution profile.",
     )
     custom_blocked_commands: list[str] = Field(
         default_factory=list,
-        description="Additional command prefixes blocked for the agent (appended to profile defaults).",
+        description="Extra blocked command prefixes merged with the active execution profile.",
     )
     custom_blocked_tools: list[str] = Field(
         default_factory=list,

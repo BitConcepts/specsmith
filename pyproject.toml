@@ -125,6 +125,8 @@ module = [
     "google.*",
     "yaml",
     "yaml.*",
+    "keyring",   # optional OS credential store; stubs not published
+    "keyring.*",
 ]
 ignore_missing_imports = true
 
