@@ -145,9 +145,53 @@ class OllamaProvider:
                 except json.JSONDecodeError:
                     continue
 
+    # ── Model name resolution ───────────────────────────────────────────────
+
+    def _get_installed_models(self) -> list[str]:
+        """Query running Ollama for exact installed model IDs."""
+        try:
+            with urllib.request.urlopen(  # noqa: S310
+                f"{self._base_url}/api/tags", timeout=3
+            ) as resp:
+                data: dict[str, Any] = json.loads(resp.read())
+                return [m["name"] for m in data.get("models", [])]
+        except Exception:  # noqa: BLE001
+            return []
+
+    def _resolve_model(self, requested: str) -> str:
+        """Resolve a requested model name to the exact installed name.
+
+        Handles the common Ollama 404 scenario where the model was pulled
+        under a quantization-tagged name (e.g. ``qwen2.5:14b-instruct-q4_K_M``)
+        but specsmith was started with the short tag (``qwen2.5:14b``).
+        Returns the shortest matching installed name (= the default quant tag)
+        or the original name if nothing better is found.
+        """
+        installed = self._get_installed_models()
+        if not installed:
+            return requested
+        if requested in installed:
+            return requested  # exact match — nothing to do
+        # Try base name (before first colon): 'qwen2.5' matches 'qwen2.5:14b-*'
+        base = requested.split(":")[0]
+        # Also try short tag: 'qwen2.5:14b' matches 'qwen2.5:14b-instruct-q4_K_M'
+        short_tag = requested if ":" in requested else None
+        candidates = [
+            m for m in installed
+            if m.startswith(base + ":")
+            or (short_tag and m.startswith(short_tag))
+        ]
+        if candidates:
+            return min(candidates, key=len)  # shortest = default quantization
+        return requested
+
+    # ── HTTP helper ─────────────────────────────────────────────────────────
+
     def _post(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
         import urllib.error
 
+        # Patch payload model name to current self.model (may change on retry)
+        payload = {**payload, "model": self.model}
         req = urllib.request.Request(  # noqa: S310
             f"{self._base_url}{path}",
             data=json.dumps(payload).encode(),
@@ -159,10 +203,19 @@ class OllamaProvider:
                 return result
         except urllib.error.HTTPError as e:
             if e.code == 404:
+                # Auto-resolve: find exact installed model name and retry once
+                resolved = self._resolve_model(self.model)
+                if resolved != self.model:
+                    self.model = resolved
+                    return self._post(path, payload)  # retry with correct name
+                installed = self._get_installed_models()
+                hint = (
+                    "\n  Installed: " + ", ".join(installed[:5])
+                    if installed else "\n  (Ollama returned no installed models)"
+                )
                 raise RuntimeError(
-                    f"Ollama model not found: '{self.model}'\n"
-                    f"  Check installed models: specsmith ollama list\n"
-                    f"  Download it:            specsmith ollama pull {self.model}"
+                    f"Ollama model not found: '{self.model}'{hint}\n"
+                    f"  Download it: specsmith ollama pull {self.model}"
                 ) from e
             raise
         except OSError as e:
