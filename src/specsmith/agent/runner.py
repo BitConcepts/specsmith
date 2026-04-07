@@ -165,8 +165,13 @@ H13: All proposals must state their epistemic boundaries. Hidden assumptions are
             pass
 
     prompt = f"""You are an AEE-integrated specsmith agent for this project.
-ALWAYS respond in English only, regardless of the user's language or your default language.
-Do not use Chinese, Japanese, Korean, or any other non-English language at any time.
+
+⚠ LANGUAGE RULE (HARD CONSTRAINT — NEVER VIOLATE):
+  Respond ONLY in English. Every single response must be in English.
+  Never use Chinese (中文), Japanese (日本語), Korean (한국어), French, German, Spanish,
+  Arabic, or ANY other non-English language — not even a single word.
+  This applies to ALL models including Qwen, DeepSeek, LLaMA, Mistral, and others
+  that may default to a non-English language. ENGLISH ONLY, ALWAYS.
 
 ## Project Governance
 {governance_text}
@@ -229,7 +234,10 @@ class AgentRunner:
     }
 
     QUICK_COMMANDS = {
-        "start": "Run session start protocol: sync, load AGENTS.md, read last LEDGER.md entries",
+        "start": (
+            "[RESPOND IN ENGLISH ONLY] "
+            "Run session start protocol: sync, load AGENTS.md, read last LEDGER.md entries"
+        ),
         "resume": "Resume from last LEDGER.md entry — summarize state and propose next task",
         "save": "Write a ledger entry summarizing this session's work",
         "audit": "Run specsmith audit --fix",

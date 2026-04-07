@@ -178,10 +178,11 @@ def run_sync(root: Path) -> GitResult:
     if not result.success:
         return result
 
-    # Check if governance files were in the pull
+    # Check if governance files were in the pull.
+    # Use ORIG_HEAD (set by git pull) rather than HEAD~1 — works even on first pull.
     gov_files = ["AGENTS.md", "LEDGER.md", "scaffold.yml", "docs/governance/"]
     warnings: list[str] = []
-    diff_result = _run_git(root, ["diff", "--name-only", "HEAD~1..HEAD"])
+    diff_result = _run_git(root, ["diff", "--name-only", "ORIG_HEAD..HEAD"])
     if diff_result.success:
         for gf in gov_files:
             if gf in diff_result.output:

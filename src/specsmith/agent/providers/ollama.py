@@ -96,18 +96,32 @@ class OllamaProvider:
     ) -> CompletionResponse:
         """Complete using the native /api/chat endpoint.
 
-        Tool calling is attempted first; if the model returns an error
-        indicating no tool support (HTTP 400 etc.) we retry without tools.
+        Tool calling is attempted first; if the model returns HTTP 400
+        (tool calling not supported) we retry without tools.  If the native
+        fallback *also* returns 400 (common when the ``think`` parameter is
+        unsupported by an older Ollama server) we strip ``think`` and retry.
         """
         if tools:
             try:
                 return self._complete_with_tools(messages, tools, max_tokens)
             except Exception as exc:  # noqa: BLE001
-                if _is_tool_fallback_error(exc):
-                    # Model doesn't support tool calling — degrade gracefully
-                    return self._complete_native(messages, max_tokens)
-                raise
-        return self._complete_native(messages, max_tokens)
+                if not _is_tool_fallback_error(exc):
+                    raise
+                # Fall through to native (no-tools) completion below
+        return self._complete_native_with_fallback(messages, max_tokens)
+
+    def _complete_native_with_fallback(
+        self, messages: list[Message], max_tokens: int
+    ) -> CompletionResponse:
+        """Call _complete_native; if it fails with 400 and think is set, retry without it."""
+        try:
+            return self._complete_native(messages, max_tokens)
+        except Exception as exc:  # noqa: BLE001
+            if self._think is not None and _is_tool_fallback_error(exc):
+                # Older Ollama doesn't support 'think' — disable permanently for this session
+                self._think = None
+                return self._complete_native(messages, max_tokens)
+            raise
 
     def _complete_native(self, messages: list[Message], max_tokens: int) -> CompletionResponse:
         """Plain chat completion without tools."""
