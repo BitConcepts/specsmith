@@ -20,7 +20,11 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: ruff check src/ tests/
       - run: ruff format --check src/ tests/
-      - run: mypy src/specsmith --ignore-missing-imports
+      # types-pyyaml covers yaml stubs; --disable-error-code import-untyped
+      # suppresses the remaining 'Library stubs not installed' warnings for
+      # packages that mypy can still use (like yaml) even without stub files.
+      - run: pip install types-pyyaml
+      - run: mypy src/specsmith --ignore-missing-imports --disable-error-code import-untyped
       - run: pytest tests/ -x -q
 
   build:

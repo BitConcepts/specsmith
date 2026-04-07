@@ -69,7 +69,7 @@ def _call_handler_safe(handler: Callable[..., str], inputs: dict[str, Any]) -> s
         return handler(**filtered)
     except TypeError:
         # Final fallback: call with no arguments (never crash)
-        return handler()  # type: ignore[call-arg]
+        return handler()  # type: ignore[call-arg, unused-ignore]
 
 
 @dataclass

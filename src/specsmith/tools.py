@@ -272,7 +272,13 @@ def get_tools(config: ProjectConfig) -> ToolSet:
 
     Uses the tool registry defaults, overridden by any explicit verification_tools.
     """
-    base = _TOOL_REGISTRY.get(config.type, ToolSet())
+    # config.type is str; _TOOL_REGISTRY has ProjectType keys (which extend str).
+    # Convert via ProjectType() with a fallback to avoid KeyError on custom types.
+    try:
+        pt = ProjectType(config.type)
+    except ValueError:
+        pt = ProjectType.CLI_PYTHON
+    base = _TOOL_REGISTRY.get(pt, ToolSet())
 
     if not config.verification_tools:
         return base

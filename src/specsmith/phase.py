@@ -355,7 +355,8 @@ def write_phase(project_dir: Path, phase_key: str) -> None:
 
 def evaluate_phase(phase: Phase, project_dir: Path) -> tuple[list[str], list[str]]:
     """Return (passed_descriptions, failed_descriptions)."""
-    passed, failed = [], []
+    passed: list[str] = []
+    failed: list[str] = []
     for chk in phase.checks:
         (passed if chk.check(project_dir) else failed).append(chk.description)
     return passed, failed

@@ -497,7 +497,7 @@ def check_tool_configuration(root: Path) -> list[AuditResult]:
             AuditResult(
                 name="tool-ci-config",
                 passed=True,
-                message=f"CI config references expected verification tools for {config.type.value}",
+                message=f"CI config references expected verification tools for {config.type}",
             )
         )
 
@@ -527,7 +527,7 @@ def check_type_mismatch(root: Path) -> list[AuditResult]:
                     name="type-mismatch",
                     passed=False,
                     message=(
-                        f"scaffold.yml type is {config.type.value} but detected "
+                        f"scaffold.yml type is {config.type} but detected "
                         f"{detected.inferred_type.value} from project files"
                     ),
                 )
@@ -537,7 +537,7 @@ def check_type_mismatch(root: Path) -> list[AuditResult]:
                 AuditResult(
                     name="type-mismatch",
                     passed=True,
-                    message=f"Project type {config.type.value} matches detected structure",
+                    message=f"Project type {config.type} matches detected structure",
                 )
             )
     except Exception:  # noqa: BLE001
@@ -652,7 +652,7 @@ def run_auto_fix(root: Path, report: AuditReport) -> list[str]:
                         platform.generate_all(config, root)
                         fixed.append(
                             f"Generated {config.vcs_platform} CI config "
-                            f"with tools for {config.type.value}"
+                            f"with tools for {config.type}"
                         )
                 except Exception:  # noqa: BLE001
                     pass  # Best-effort

@@ -56,7 +56,7 @@ class GeminiProvider:
     def _ensure_client(self) -> None:
         # ── Try new google-genai SDK first ────────────────────────────────
         try:
-            from google import genai  # type: ignore[import-untyped]
+            from google import genai  # noqa: PLC0415  # type: ignore[import-untyped, unused-ignore]
 
             self._client = genai.Client(api_key=self._api_key or None)
             self._sdk = "genai"
@@ -66,7 +66,7 @@ class GeminiProvider:
 
         # ── Fall back to legacy google-generativeai ───────────────────────
         try:
-            import google.generativeai as _legacy_genai  # type: ignore[import-untyped]
+            import google.generativeai as _legacy_genai  # noqa: PLC0415
 
             _legacy_genai.configure(api_key=self._api_key)
             self._genai = _legacy_genai
@@ -101,7 +101,9 @@ class GeminiProvider:
 
     def _complete_new_sdk(self, messages: list[Message], max_tokens: int) -> CompletionResponse:
         """Complete using google-genai (new SDK, GA May 2025)."""
-        from google.genai.types import GenerateContentConfig  # type: ignore[import-untyped]
+        from google.genai.types import (
+            GenerateContentConfig,  # type: ignore[import-untyped, unused-ignore]
+        )
 
         system_text, history = self._split_messages(messages)
 
@@ -180,7 +182,9 @@ class GeminiProvider:
             yield from self._stream_legacy_sdk(messages, max_tokens)
 
     def _stream_new_sdk(self, messages: list[Message], max_tokens: int) -> Iterator[StreamToken]:
-        from google.genai.types import GenerateContentConfig  # type: ignore[import-untyped]
+        from google.genai.types import (
+            GenerateContentConfig,  # type: ignore[import-untyped, unused-ignore]
+        )
 
         system_text, history = self._split_messages(messages)
         config_kwargs: dict[str, Any] = {"max_output_tokens": max_tokens}
