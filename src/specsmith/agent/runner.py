@@ -238,8 +238,8 @@ class AgentRunner:
     QUICK_COMMANDS = {
         "start": (
             "[RESPOND IN ENGLISH ONLY] "
-        "Run session start protocol: sync, load AGENTS.md, read last LEDGER.md entries. "
-        "Translate any non-English context internally if needed, but respond only in English."
+            "Run session start protocol: sync, load AGENTS.md, read last LEDGER.md entries. "
+            "Translate any non-English context internally if needed, but respond only in English."
         ),
         "resume": (
             "[RESPOND IN ENGLISH ONLY] Resume from last LEDGER.md entry"

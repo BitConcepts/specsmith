@@ -62,7 +62,8 @@ def read_wireframe(root: Path, wireframe_id: str) -> str:
 
     needle = wireframe_id.lower()
     candidates = [
-        fp for fp in wf_dir.iterdir()
+        fp
+        for fp in wf_dir.iterdir()
         if fp.is_file() and (fp.name.lower() == needle or fp.stem.lower().startswith(needle))
     ]
     if not candidates:

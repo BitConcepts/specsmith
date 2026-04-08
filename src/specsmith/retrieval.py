@@ -10,8 +10,24 @@ from pathlib import Path
 
 _INDEX_PATH = Path(".specsmith") / "retrieval-index.json"
 _TEXT_EXTS = {
-    ".md", ".txt", ".py", ".ts", ".js", ".json", ".yaml", ".yml", ".toml",
-    ".go", ".rs", ".c", ".cpp", ".h", ".java", ".sh", ".ps1", ".cmd",
+    ".md",
+    ".txt",
+    ".py",
+    ".ts",
+    ".js",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".toml",
+    ".go",
+    ".rs",
+    ".c",
+    ".cpp",
+    ".h",
+    ".java",
+    ".sh",
+    ".ps1",
+    ".cmd",
 }
 _SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv", "dist", "build", ".mypy_cache"}
 
