@@ -129,6 +129,10 @@ class OllamaProvider:
             "model": self.model,
             "messages": [m.to_dict() for m in messages],
             "stream": False,
+            # keep_alive=-1: keep the model loaded indefinitely between turns.
+            # Without this Ollama unloads after 5 min of inactivity, forcing a
+            # full reload + re-prefill which causes apparent context loss.
+            "keep_alive": -1,
             "options": {"num_predict": max_tokens, "num_ctx": self._num_ctx},
         }
         if self._think is not None:
@@ -161,6 +165,7 @@ class OllamaProvider:
             "messages": [m.to_dict() for m in messages],
             "stream": False,
             "tools": [t.to_openai_schema() for t in tools],
+            "keep_alive": -1,
             "options": {"num_predict": max_tokens, "num_ctx": self._num_ctx},
         }
         data = self._post("/api/chat", payload)
@@ -208,6 +213,7 @@ class OllamaProvider:
             "model": self.model,
             "messages": [m.to_dict() for m in messages],
             "stream": True,
+            "keep_alive": -1,
             "options": {"num_predict": max_tokens, "num_ctx": self._num_ctx},
         }
         if tools:
