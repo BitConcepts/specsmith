@@ -232,7 +232,7 @@ If you want to call a tool, use the tool calling API — never emit tool calls a
 ## REQUIREMENTS QUALITY RULE — NO PLACEHOLDERS:
 NEVER create placeholder, stub, or template requirements (e.g. "Placeholder description").
 When adding requirements:
-  1. FIRST analyze the codebase, architecture, and existing requirements to understand what is needed.
+  1. FIRST analyze the codebase and architecture to understand what is needed.
   2. THEN propose specific, meaningful, testable requirements with real descriptions.
   3. Present your proposed requirements for the user to review BEFORE writing them.
   4. Only write to REQUIREMENTS.md after the user approves.
