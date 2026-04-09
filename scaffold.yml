@@ -5,12 +5,13 @@ languages:
   - Bash
   - Cmd / Batch
   - YAML
+  - TOML
   - Markdown
 platforms:
   - linux
   - windows
   - macos
-spec_version: 0.3.6
+spec_version: 0.3.8
 aee_phase: inception
 description: Applied Epistemic Engineering toolkit for AI-assisted development.
 vcs_platform: github

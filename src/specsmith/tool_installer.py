@@ -176,7 +176,123 @@ KNOWN_TOOLS: dict[str, ToolInstallInfo] = {
         windows_scoop="scoop install uv",
         manual="https://docs.astral.sh/uv/",
     ),
-    # ── C / C++ tooling ─────────────────────────────────────────────────────
+    "pip-audit": ToolInstallInfo(
+        key="pip-audit",
+        display_name="pip-audit (Python security)",
+        category="python",
+        pip="pip install pip-audit",
+        manual="https://github.com/pypa/pip-audit",
+    ),
+    "bandit": ToolInstallInfo(
+        key="bandit",
+        display_name="Bandit (Python security linter)",
+        category="python",
+        pip="pip install bandit",
+        manual="https://bandit.readthedocs.io/",
+    ),
+    "safety": ToolInstallInfo(
+        key="safety",
+        display_name="Safety (dependency checker)",
+        category="python",
+        pip="pip install safety",
+        manual="https://safetycli.com/",
+    ),
+    "black": ToolInstallInfo(
+        key="black",
+        display_name="Black (Python formatter)",
+        category="python",
+        pip="pip install black",
+        macos="brew install black",
+        manual="https://black.readthedocs.io/",
+    ),
+    "isort": ToolInstallInfo(
+        key="isort",
+        display_name="isort (import sorter)",
+        category="python",
+        pip="pip install isort",
+        manual="https://pycqa.github.io/isort/",
+    ),
+    "pyright": ToolInstallInfo(
+        key="pyright",
+        display_name="Pyright (Python type checker)",
+        category="python",
+        pip="pip install pyright",
+        npm="npm install -g pyright",
+        manual="https://github.com/microsoft/pyright",
+    ),
+    "pylint": ToolInstallInfo(
+        key="pylint",
+        display_name="Pylint",
+        category="python",
+        pip="pip install pylint",
+        manual="https://pylint.readthedocs.io/",
+    ),
+    "flake8": ToolInstallInfo(
+        key="flake8",
+        display_name="Flake8",
+        category="python",
+        pip="pip install flake8",
+        manual="https://flake8.pycqa.org/",
+    ),
+    "coverage": ToolInstallInfo(
+        key="coverage",
+        display_name="Coverage.py",
+        category="python",
+        pip="pip install coverage",
+        manual="https://coverage.readthedocs.io/",
+    ),
+    "pre-commit": ToolInstallInfo(
+        key="pre-commit",
+        display_name="pre-commit",
+        category="python",
+        pip="pip install pre-commit",
+        macos="brew install pre-commit",
+        manual="https://pre-commit.com/",
+    ),
+    "nbstripout": ToolInstallInfo(
+        key="nbstripout",
+        display_name="nbstripout (notebook cleanup)",
+        category="python",
+        pip="pip install nbstripout",
+        manual="https://github.com/kynan/nbstripout",
+    ),
+    "tox": ToolInstallInfo(
+        key="tox",
+        display_name="tox (test runner)",
+        category="python",
+        pip="pip install tox",
+        manual="https://tox.wiki/",
+    ),
+    # ── JavaScript / TypeScript tooling ────────────────────────────────────────
+    "eslint": ToolInstallInfo(
+        key="eslint",
+        display_name="ESLint",
+        category="js",
+        npm="npm install -g eslint",
+        manual="https://eslint.org/",
+    ),
+    "prettier": ToolInstallInfo(
+        key="prettier",
+        display_name="Prettier",
+        category="js",
+        npm="npm install -g prettier",
+        manual="https://prettier.io/",
+    ),
+    "jest": ToolInstallInfo(
+        key="jest",
+        display_name="Jest",
+        category="js",
+        npm="npm install -g jest",
+        manual="https://jestjs.io/",
+    ),
+    "vitest": ToolInstallInfo(
+        key="vitest",
+        display_name="Vitest",
+        category="js",
+        npm="npm install -g vitest",
+        manual="https://vitest.dev/",
+    ),
+    # ── C / C++ tooling ─────────────────────────────────────────────────────────
     "clang-tidy": ToolInstallInfo(
         key="clang-tidy",
         display_name="clang-tidy",
@@ -220,7 +336,14 @@ KNOWN_TOOLS: dict[str, ToolInstallInfo] = {
         pip="pip install cmake",
         manual="https://cmake.org/download/",
     ),
-    # ── Rust tooling ─────────────────────────────────────────────────────────
+    # ── Rust tooling ───────────────────────────────────────────────────────────
+    "cargo-audit": ToolInstallInfo(
+        key="cargo-audit",
+        display_name="cargo-audit (Rust security)",
+        category="rust",
+        cargo="cargo install cargo-audit",
+        manual="https://github.com/rustsec/rustsec",
+    ),
     "rustup": ToolInstallInfo(
         key="rustup",
         display_name="Rust (via rustup)",
@@ -232,6 +355,12 @@ KNOWN_TOOLS: dict[str, ToolInstallInfo] = {
         manual="https://rustup.rs/",
     ),
     # ── Go tooling ────────────────────────────────────────────────────────────
+    "govulncheck": ToolInstallInfo(
+        key="govulncheck",
+        display_name="govulncheck (Go security)",
+        category="go",
+        manual="go install golang.org/x/vuln/cmd/govulncheck@latest",
+    ),
     "go": ToolInstallInfo(
         key="go",
         display_name="Go",
