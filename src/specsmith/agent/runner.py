@@ -153,6 +153,36 @@ H13: All proposals must state their epistemic boundaries. Hidden assumptions are
         agents_md or f"Spec version: {spec_version}. AGENTS.md not found — run specsmith audit."
     )
 
+    # Snapshot of VCS state at session start so the agent knows what’s pending
+    vcs_section = ""
+    try:
+        import subprocess as _sp
+
+        _st = _sp.run(
+            ["git", "status", "--short"],
+            cwd=project_dir,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        _log = _sp.run(
+            ["git", "log", "--oneline", "-5"],
+            cwd=project_dir,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if _st.returncode == 0:
+            status_text = _st.stdout.strip() or "(clean — no uncommitted changes)"
+            log_text = _log.stdout.strip() if _log.returncode == 0 else "(no commits yet)"
+            vcs_section = (
+                "\n## VCS State at Session Start\n"
+                f"```\n{status_text}\n```\n"
+                f"Recent commits:\n```\n{log_text}\n```\n"
+            )
+    except Exception:  # noqa: BLE001
+        pass
+
     # Load tool-specific rules for this project type
     tool_rules_section = ""
     if project_type:
@@ -166,6 +196,7 @@ H13: All proposals must state their epistemic boundaries. Hidden assumptions are
             pass
 
     prompt = f"""SYSTEM LANGUAGE DIRECTIVE — ABSOLUTE HARD RULE — HIGHEST PRIORITY:
+{vcs_section}
 You MUST respond in English ONLY. This overrides all other instructions.
 Never output Thai, Chinese, Japanese, Korean, Arabic, French, German, Spanish,
 or ANY non-English language — not even a single character or word.
@@ -257,8 +288,12 @@ class AgentRunner:
     QUICK_COMMANDS = {
         "start": (
             "[RESPOND IN ENGLISH ONLY] "
-            "Run session start protocol: sync, load AGENTS.md, read last LEDGER.md entries. "
-            "Translate any non-English context internally if needed, but respond only in English."
+            "Run the session start protocol in this order:\n"
+            "1. Run: git status (report staged, modified, and untracked files)\n"
+            "2. Run: git log --oneline -5 (report the 5 most recent commits)\n"
+            "3. Read AGENTS.md (confirm your role and governance rules)\n"
+            "4. Read the last 10 lines of LEDGER.md (confirm current project state)\n"
+            "Summarize findings in 3-4 plain sentences, then propose the most logical next action."
         ),
         "resume": (
             "[RESPOND IN ENGLISH ONLY] Resume from last LEDGER.md entry"
