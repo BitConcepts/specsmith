@@ -83,3 +83,144 @@ PySide6 (Qt6) desktop application launched via `specsmith gui` (see REQ-GUI-001 
 **Test:** pytest
 **Security:** pip-audit
 **Format:** ruff format
+
+---
+
+## Planned Architecture Evolution (April 2026 Roadmap)
+
+The following components are planned based on the comprehensive gap analysis and research session of April 10, 2026. They are documented here as architectural commitments before implementation begins. See `docs/REQUIREMENTS.md` for formal requirements.
+
+### Phase 1 — Core Harness Depth
+
+#### `src/specsmith/operations.py` — Typed Project Operations
+A `ProjectOperations` class providing typed, cross-platform file, git, and search operations. All tool handlers in `agent/tools.py` will be refactored to use this class instead of raw shell strings.
+- File ops via `pathlib`/`stdlib` (no subprocess): `read_file`, `write_file`, `list_dir`, `glob`, `search`
+- Git ops via structured wrappers: `status`, `log`, `diff`, `add`, `commit`, `push`, `create_branch`, `create_pr`
+- All methods return `OperationResult(exit_code, stdout, stderr, elapsed_ms, metadata)`
+- `executor.py`'s `run_tracked()` retained as narrow escape hatch only
+
+#### `src/specsmith/commands/` — Harness Commands Surface
+Populates the currently empty `commands/__init__.py` with the full harness slash command set. Commands are registered as REPL meta-commands in `AgentRunner._handle_meta_command()`. Priority set: `/model`, `/tier`, `/spawn`, `/learn`, `/instinct-status`, `/eval define`, `/eval run`, `/hooks-enable`, `/hooks-disable`, `/mcp-list`, `/security-scan`.
+
+#### `src/specsmith/instinct.py` — Continuous Learning / Instinct System
+Persists reusable session patterns as instincts at `.specsmith/instincts.json`.
+- `Instinct` dataclass: `{id, trigger_pattern, content, confidence, project_scope, created, last_used, use_count}`
+- `InstinctRegistry`: load/save/search/promote/demote instincts
+- Session-end hook (`SESSION_END`) calls `InstinctExtractor` to analyze transcript and LEDGER.md for candidate patterns
+- `/learn` promotes a candidate; confidence updated on each application
+- Import/export to `.md` format for cross-project sharing
+
+#### `src/specsmith/eval/` — Eval Harness (EDD Framework)
+Implements Eval-Driven Development as a first-class specsmith feature.
+- `task.py`: `Task`, `Trial`, `Transcript`, `Outcome` dataclasses; stored as `.specsmith/evals/{feature}.md`
+- `graders.py`: `CodeGrader` (git-diff + test pass), `ModelGrader` (LLM-as-judge rubric), `HumanFlag`
+- `harness.py`: `EvalHarness` runs k independent trials, computes `pass@k` and `pass^k`
+- `metrics.py`: `PassAtK`, `PassHatK` metric objects with statistical summaries
+- Default grading strategy: git-based outcome (assert files changed + tests pass), not execution-path assertion
+
+### Phase 2 — Multi-Agent Layer
+
+#### `src/specsmith/agent/spawner.py` — AgentTool / Subagent Spawning
+The single tool that spawns all subagent instances. Modeled on the Claude Code `AgentTool` architecture revealed by the March 2026 source map leak.
+- `SpawnParams`: `{subagent_type, description, prompt, model, run_in_background, isolation, cwd}`
+- `SubagentLifecycle`: manages spawn, wait-for-completion, collect summary, teardown
+- Isolation modes: `none` (shared filesystem), `worktree` (dedicated git worktree at `.specsmith/worktrees/{id}/`)
+- Fires `SUBAGENT_START` hook before spawn (may block); `SUBAGENT_STOP` hook on completion
+- Subagents CANNOT spawn further subagents (prevents recursive nesting)
+
+#### `src/specsmith/agent/teams.py` — Agent Team Coordination
+Peer-to-peer multi-agent coordination via filesystem mailbox (no message broker required).
+- Mailbox path: `.specsmith/teams/{team}/mailbox/{agent}.json`
+- `TeamMailbox`: `send(agent, message)`, `receive(agent)`, `broadcast(team, message)`
+- `TeamTaskList`: shared task list at `.specsmith/teams/{team}/tasks.json` with statuses and dependencies
+- `SendMessage` tool: agent-callable tool for peer communication
+- Gated behind `SPECSMITH_AGENT_TEAMS=1` feature flag; cost warning (~7x token multiplier) shown at team creation
+
+#### `src/specsmith/agent/orchestrator.py` — Orchestrator Meta-Agent
+Meta-agent whose sole purpose is orchestration and cost optimization. Runs on a small local Ollama model.
+- `AgentRegistry`: `{type, model, provider, cost_tier, capabilities, avg_latency_ms, confidence}` per agent type
+- `TaskClassifier`: heuristic keyword + length scoring (extends `optimizer.py`'s `ModelRouter`)
+- Emits one structured next-action per turn: `{action, agent_type, model, rationale}`
+- Routes cheap tasks to Ollama workers; complex tasks to cloud providers
+- Post-session self-evaluation updates routing confidence thresholds
+
+#### `src/specsmith/agent/flags.py` — Feature Flag System
+Controls tool schema visibility. When a flag is off, the tool definition is not sent to the LLM — the model cannot call or hallucinate gated tools.
+- `FeatureFlags`: loaded from env vars (`SPECSMITH_FLAG_<NAME>=1`) and `scaffold.yml` `agent.flags`
+- `filter_tools_by_flags(tools, flags)`: removes gated tool schemas before LLM call
+- Gated capabilities: `AGENT_TEAMS`, `WORKTREE_ISOLATION`, `KAIROS_DAEMON`, `SECURITY_SCANNER`, `MCP_TOOLS`
+
+#### `src/specsmith/memory.py` — Agent Memory Persistence
+Cross-session agent learning storage.
+- Persists at `.specsmith/agent-memory/{agent_id}/memory.json`
+- Fields: `accumulated_patterns`, `preferred_approaches`, `known_project_facts`, `failure_history`
+- `SESSION_START` hook loads relevant memories and injects into system prompt (token-budget-aware)
+- Compatible with Theia AI's `~/.theia/agent-memory/` convention
+
+#### New Hook Triggers
+Added to `HookTrigger` enum in `agent/hooks.py`:
+- `SUBAGENT_START` — before subagent spawn (can block)
+- `SUBAGENT_STOP` — on subagent completion with summary
+- `CONTEXT_COMPACT` — before context trimming (custom summarization hook)
+- `EVAL_PASS` / `EVAL_FAIL` — after each eval trial
+
+### Phase 3 — Service + IDE
+
+#### `src/specsmith/server/` — Daemon Service
+`specsmith serve` starts a local HTTP+WebSocket server.
+- `server/__init__.py`: FastAPI or aiohttp app bootstrap
+- `server/routes.py`: REST endpoints `/sessions`, `/agents`, `/instincts`, `/evals`, `/index`, `/health`
+- `server/ws.py`: WebSocket handler at `/ws/session/{id}`
+- `EventSink` protocol: `StdoutSink` (current), `WebSocketSink` (service mode)
+- `AgentRunner._emit_event()` refactored to use `EventSink`
+
+#### `specsmith-ide/` — Theia-Based IDE (new repo)
+Built on Eclipse Theia 1.68+ with `@theia/ai-core`, `@theia/ai-chat`, `@theia/ai-ide`.
+Specsmith-specific Theia extensions:
+- `@specsmith/ai-agents`: AEE orchestrator, epistemic-auditor, instinct-extraction, eval-designer — as Theia chat agents with `AbstractStreamParsingChatAgent`
+- `@specsmith/epistemic-ui`: belief graph panel (Mermaid rendering), H13 gate workflow panel, ledger browser, instinct registry panel
+- `@specsmith/eval-ui`: eval suite browser, trial runner, pass@k / pass^k dashboard
+- `@specsmith/service-client`: WebSocket client to `specsmith serve`
+Theia provides natively: LLM communication, agent framework, SKILL.md skills system, MCP support, ShellExecutionTool, AI configuration view, agent memory directories. These are NOT reimplemented.
+
+### Multi-Agent Coordination Patterns
+
+Three tiers, modeled on the Claude Code architecture:
+
+**Tier 1 — Subagent (hub-and-spoke):**
+- Parent spawns read-only research workers via `AgentTool`
+- Workers return distilled summary; parent never sees full exploration context
+- Workers cannot communicate with siblings
+- Cost: ~3x. Best for: codebase exploration, parallel research, context isolation
+
+**Tier 2 — Agent Teams (peer-to-peer):**
+- Persistent teammates with independent context windows and full tool access
+- Communicate via filesystem mailbox (simple, debuggable, no infrastructure)
+- Shared task list with statuses and dependencies
+- Cost: ~7x. Best for: full-stack features with cross-layer interdependencies
+- Requires `SPECSMITH_AGENT_TEAMS=1` flag
+
+**Tier 3 — Orchestrator-worker:**
+- Orchestrator meta-agent on Ollama classifies tasks and routes to workers
+- Explicit model selection per worker (Ollama for cheap, cloud for complex)
+- Near-zero orchestration cost
+- Best for: automated multi-step pipelines with cost optimization
+
+### Eval Harness Design Principles
+
+- **EDD (Eval-Driven Development)**: define evals BEFORE writing code. Evals are the unit tests of AI development.
+- **Grade outcomes, not paths**: assert that the git working tree changed correctly and tests pass, not that the agent used a specific sequence of tool calls.
+- **pass@k vs pass^k**: pass@k (any success in k trials) measures capability ceiling; pass^k (all k succeed) measures reliability floor. Choose based on deployment context.
+- **Three grader types**: CodeGrader (deterministic, fast, cheap), ModelGrader (LLM-as-judge, flexible), HumanFlag (gold standard, for calibration).
+- **Capability vs regression**: capability evals start with low pass rates and hill-climb; regression evals target ~100% and run on every change.
+
+### Architecture Invariants
+
+- Orchestrator MUST run on local Ollama — never spend cloud credits on routing
+- Subagents MUST be read-only (research) workers — implementation stays in the parent session
+- Filesystem mailbox for all agent communication — no message brokers
+- Feature flags MUST remove tool schemas from LLM calls — not just block execution
+- EventSink abstraction MUST preserve existing JSONL event schema — only transport changes
+- All `ProjectOperations` calls MUST be cross-platform — no platform branches in call sites
+- Instinct extraction MUST be user-reviewed before promotion — never auto-apply instincts
+- Eval grading MUST measure outcomes (git state + test results) — not execution paths

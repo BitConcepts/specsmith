@@ -209,3 +209,73 @@ Begin glossa-lab integration — AEESession for Indus hypothesis tracking. Separ
 - **Type**: migration
 - **Status**: complete
 - **Chain hash**: `c6cbccdf4558bd52...`
+
+---
+
+## Session 2026-04-10 — Architecture research, gap analysis, and roadmap
+
+**Status:** Complete (planning/documentation only — no code changes)
+**Branch:** main
+
+### Scope
+
+Extensive research and gap analysis session to bring specsmith architecture to full parity with the state-of-the-art AI agent harness ecosystem. Sources researched: ECC, Claude Code (including the March 2026 source map leak), OpenClaw, NanoClaw, Theia AI, Anthropic eval harness documentation, and modern multi-agent orchestration frameworks.
+
+### Key findings from code audit
+
+- `executor.py` is PID/process tracking only — NOT a typed operation layer. All tool handlers still use raw shell strings.
+- `commands/__init__.py` is completely empty despite the package existing.
+- Only 3 bundled agent profiles (planner, verifier, epistemic-auditor).
+- `retrieval.py` uses term-frequency scoring, not BM25.
+- The OpenAI provider already accepts `base_url` — no new provider class needed for Jan/LM Studio/vLLM/llama.cpp.
+- No multi-agent spawning, no orchestrator, no instinct system, no eval harness, no service daemon.
+
+### Key research findings
+
+**Claude Code leaked architecture (March 31, 2026 source map):**
+- `AgentTool` is the single tool that spawns all subagents. Parent picks model tier per task at spawn time.
+- Team spawning uses tmux panes + filesystem mailbox (`.claude/teams/{team}/mailbox/{agent}.json`). No message broker needed.
+- Agent Teams (Feb 2026, Opus 4.6): peer-to-peer via `SendMessage`; ~7x token cost.
+- 44 feature flags gate tool schema visibility — model cannot call gated tools it has never seen.
+- KAIROS daemon mode: monitors GitHub webhooks, runs tasks from queue, uses worktree isolation.
+- Subagents are for research (read-only); implementation stays in the parent session.
+
+**Theia AI (Jan 2026, Theia 1.68+):**
+- Agent Skills (SKILL.md + `{{skills}}` variable), ShellExecutionTool, custom agents via YAML, agent memory directories, MCP support, Change Sets — all shipped.
+- `specsmith-ide` build is now writing Theia extensions, not building LLM infrastructure from scratch.
+
+**Eval harness best practices (Anthropic, Jan 2026):**
+- EDD: define evals before coding. Task/Trial/Grader/Transcript/Outcome/Harness terminology.
+- Three grader types: CodeGrader (deterministic), ModelGrader (LLM-as-judge), HumanFlag.
+- pass@k (capability ceiling) vs pass^k (reliability floor).
+- Grade outcomes (git state + test results), not execution paths.
+
+### Decisions made
+
+- Implement typed `ProjectOperations` class first — prerequisite for everything else.
+- Use filesystem mailbox (JSON files on disk) for all inter-agent communication — no message broker.
+- Feature flags remove tool schemas from LLM calls — not just block at execution time.
+- EventSink protocol abstracts stdout vs WebSocket emission — existing event schema unchanged.
+- Orchestrator runs on small local Ollama model — never spend cloud credits on routing.
+- Theia AI is the IDE foundation — specsmith-ide writes Theia extensions, not LLM infrastructure.
+- Grade outcomes not paths in all specsmith evals.
+
+### Changes made this session
+
+- `docs/REQUIREMENTS.md` — 15 new requirement domains (OPS, CMD, MAS, ORC, FLG, LRN, EDD, MEM, HRK, SRV, RTR, LPR, MCP, SEC, IDE) with 60+ formal requirements
+- `docs/ARCHITECTURE.md` — Added "Planned Architecture Evolution" section covering all new components, multi-agent patterns, eval design, and architecture invariants
+- `AGENTS.md` — Added planned commands, planned file registry entries, updated tech stack
+- Architecture plan document updated in Warp Oz with full gap analysis and 16-workstream roadmap
+
+### Open TODOs (Phase 1 — next immediate actions)
+
+- [ ] Implement `src/specsmith/operations.py` — typed `ProjectOperations` class
+- [ ] Refactor tool handlers in `agent/tools.py` to use `ProjectOperations`
+- [ ] Populate `src/specsmith/commands/` with priority slash commands
+- [ ] Implement `src/specsmith/instinct.py` — instinct persistence
+- [ ] Implement `src/specsmith/eval/` — EDD harness with pass@k
+- [ ] Expose `--base-url` in `specsmith run` CLI
+- [ ] Upgrade `retrieval.py` to BM25 with `rank_bm25`
+
+### Next step
+Begin Phase 1: `operations.py` first (it blocks tool handler refactoring), then commands surface, then instinct and eval systems. Each phase should have eval coverage before moving to the next.
