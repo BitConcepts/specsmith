@@ -226,7 +226,8 @@ class OllamaProvider:
             data=json.dumps(payload).encode(),
             headers={"Content-Type": "application/json"},
         )
-        with urllib.request.urlopen(req, timeout=120) as resp:  # noqa: S310
+        # 300s: streaming responses arrive incrementally, but model load can take time
+        with urllib.request.urlopen(req, timeout=300) as resp:  # noqa: S310
             for line in resp:
                 line = line.strip()
                 if not line:
@@ -294,7 +295,9 @@ class OllamaProvider:
             headers={"Content-Type": "application/json"},
         )
         try:
-            with urllib.request.urlopen(req, timeout=120) as resp:  # noqa: S310
+            # 600s timeout: Ollama needs time to load model (first call) + inference.
+            # 120s was too short and caused frequent "timed out" errors in VS Code.
+            with urllib.request.urlopen(req, timeout=600) as resp:  # noqa: S310
                 result: dict[str, Any] = json.loads(resp.read())
                 return result
         except urllib.error.HTTPError as e:
