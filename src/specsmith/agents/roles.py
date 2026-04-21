@@ -172,7 +172,7 @@ def create_verifier(config: AgentConfig, project_dir: str) -> Any:
     from specsmith.agents.tools.shell import run_project_command
     from specsmith.agents.tools.tests import run_unit_tests, summarize_failures
 
-    llm_config = LLMConfig(config.llm_config_dict(model=config.utility_model))
+    llm_config = LLMConfig(config.llm_config_dict(model=config.effective_utility_model))
     pd = project_dir
 
     def _run_tests(test_path: str = "tests/", extra_args: str = "--tb=short -q") -> str:

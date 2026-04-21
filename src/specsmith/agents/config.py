@@ -14,7 +14,7 @@ class AgentConfig:
     """Configuration for the AG2 agent shell."""
 
     primary_model: str = "qwen2.5:14b"
-    utility_model: str = "qwen2.5:14b"  # same as primary; override in scaffold.yml
+    utility_model: str = ""  # empty = same as primary_model
     ollama_base_url: str = "http://localhost:11434"
     max_iterations: int = 10
     stream: bool = False
@@ -22,6 +22,16 @@ class AgentConfig:
     tools_enabled: list[str] = field(
         default_factory=lambda: ["filesystem", "shell", "git", "tests", "docs"]
     )
+
+    @property
+    def effective_utility_model(self) -> str:
+        """Utility model, defaulting to primary if not set."""
+        return self.utility_model or self.primary_model
+
+    @property
+    def effective_max_iterations(self) -> int:
+        """0 means unlimited (use 999 as practical ceiling)."""
+        return self.max_iterations if self.max_iterations > 0 else 999
 
     def llm_config_dict(self, model: str | None = None) -> dict[str, Any]:
         """Return an AG2-compatible LLM config dict for Ollama."""
