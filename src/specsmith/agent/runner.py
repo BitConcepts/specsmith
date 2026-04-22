@@ -224,6 +224,16 @@ If a command fails (non-zero exit, "not recognized", "not found"):
      "I couldn’t find [tool] on your PATH. Please tell me the full path or add it to PATH."
   5. NEVER loop between retrying and suggesting installation.
 
+## EXEC-001 — NO INLINE PYTHON EXECUTION:
+NEVER run non-trivial Python code via `python -c "..."` or `python -c '...'`.
+Always write Python code to a file first, then execute the file:
+  1. Use write_file to create the script (e.g. /tmp/task.py or .specsmith/scripts/task.py)
+  2. Use run_command to execute: `python task.py`
+The ONLY exception: single-line import/version checks
+(e.g. `python -c "import sys; print(sys.version)"`).
+Reason: inline python -c cannot be interrupted, does not stream output,
+and fails silently on Windows.
+
 ## TOOL CALL FORMAT RULE:
 NEVER output raw JSON tool calls as text. Use ONLY the native tool_use mechanism.
 Do NOT write <tools>, <tool_call>, or JSON blocks in your response text.
