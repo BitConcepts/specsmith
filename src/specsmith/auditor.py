@@ -618,6 +618,72 @@ def check_phase_readiness(root: Path) -> list[AuditResult]:
     return results
 
 
+def check_supplementary_rules(root: Path) -> list[AuditResult]:
+    """Check that *_RULES.md files are referenced in AGENTS.md (#71).
+
+    Scans the project tree for supplementary rule files (e.g.
+    YOCTO_BUILD_RULES.md, VIVADO_RULES.md) and warns if they are not
+    listed in the AGENTS.md governance registry.
+    """
+    results: list[AuditResult] = []
+    agents_path = root / "AGENTS.md"
+    if not agents_path.exists():
+        return results
+
+    agents_text = agents_path.read_text(encoding="utf-8")
+
+    # Find all *_RULES.md or *_BUILD_RULES.md files outside docs/governance/
+    rule_files: list[Path] = []
+    skip_dirs = {".git", "node_modules", ".venv", "venv", "__pycache__", ".specsmith"}
+    for p in root.rglob("*_RULES.md"):
+        if any(part in skip_dirs for part in p.parts):
+            continue
+        # Skip the standard governance files
+        rel = str(p.relative_to(root)).replace("\\\\", "/")
+        if rel.startswith("docs/governance/"):
+            continue
+        rule_files.append(p)
+
+    if not rule_files:
+        return results  # No supplementary rules found
+
+    unreferenced: list[str] = []
+    for rf in rule_files:
+        rel = str(rf.relative_to(root)).replace("\\\\", "/")
+        fname = rf.name
+        # Check if the file is mentioned in AGENTS.md (by name or path)
+        if fname not in agents_text and rel not in agents_text:
+            unreferenced.append(rel)
+
+    if unreferenced:
+        results.append(
+            AuditResult(
+                name="supplementary-rules",
+                passed=False,
+                message=(
+                    f"{len(unreferenced)} supplementary rule file(s) not in AGENTS.md: "
+                    + ", ".join(unreferenced[:5])
+                    + (
+                        ". Add them to the auto-load registry."
+                        if len(unreferenced) <= 5
+                        else f" (+{len(unreferenced)-5} more)"
+                    )
+                ),
+                fixable=True,
+            )
+        )
+    else:
+        results.append(
+            AuditResult(
+                name="supplementary-rules",
+                passed=True,
+                message=f"All {len(rule_files)} supplementary rule file(s) referenced in AGENTS.md",
+            )
+        )
+
+    return results
+
+
 def run_audit(root: Path) -> AuditReport:
     """Run all audit checks and return a report."""
     report = AuditReport()
@@ -629,6 +695,7 @@ def run_audit(root: Path) -> AuditReport:
     report.results.extend(check_type_mismatch(root))
     report.results.extend(check_trace_chain_integrity(root))
     report.results.extend(check_phase_readiness(root))
+    report.results.extend(check_supplementary_rules(root))
     return report
 
 
