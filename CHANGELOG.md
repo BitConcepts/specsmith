@@ -5,7 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.11] — 2026-04-22
+## [0.3.13] \u2014 2026-04-23
+
+### Added
+- **`specsmith serve`** \u2014 persistent HTTP server for agent sessions. Zero-dependency
+  stdlib server with SSE events, POST /api/send, GET /api/status. Eliminates
+  Python startup + Ollama cold-load overhead between turns.
+- **EXEC-001 rule** \u2014 agent system prompt forbids `python -c` for non-trivial code.
+  Agents must write to file then execute.
+- **Supplementary rules audit** \u2014 `check_supplementary_rules()` scans for `*_RULES.md`
+  files not referenced in AGENTS.md auto-load registry.
+
+### Changed
+- **Minimal startup protocol** \u2014 `start` quick command no longer runs git, reads
+  AGENTS.md, or reads LEDGER.md. Just a brief greeting. VCS state and governance
+  checks run separately in the extension (instant, no LLM calls).
+- **Version bumped to 0.3.13** for pre-release channel (dev builds as 0.3.13.devN).
+
+### Fixed
+- CI: ruff lint (unused imports, import sorting, line length), ruff format,
+  mypy type errors (dict return type, Any return, autogen stubs).
+- `conftest.py`: SIM105 contextlib.suppress.
+
+---
+
+## [0.3.11] \u2014 2026-04-22
 
 ### Added
 - **AG2 agent shell** (`src/specsmith/agents/`) — Planner/Builder/Verifier agents over Ollama.

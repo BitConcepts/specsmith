@@ -2064,6 +2064,44 @@ def run_cmd(
         raise SystemExit(1) from None
 
 
+@main.command(name="serve")
+@click.option(
+    "--project-dir",
+    type=click.Path(exists=True),
+    default=".",
+    help="Project root directory.",
+)
+@click.option("--provider", default="ollama", help="LLM provider.")
+@click.option("--model", default="", help="Model name (blank = provider default).")
+@click.option("--port", type=int, default=8421, help="HTTP port to listen on.")
+@click.option("--host", default="127.0.0.1", help="Bind address (use 0.0.0.0 for network access).")
+def serve_cmd(
+    project_dir: str,
+    provider: str,
+    model: str,
+    port: int,
+    host: str,
+) -> None:
+    """Start a persistent HTTP server for agent sessions.
+
+    Faster than `specsmith run` — keeps the Python process and Ollama
+    model warm between turns.  Connect via SSE (GET /api/events) and
+    POST /api/send.
+
+    Example:
+      specsmith serve --port 8421 --provider ollama --model qwen2.5:14b
+    """
+    from specsmith.serve import run_server
+
+    run_server(
+        project_dir=project_dir,
+        provider=provider,
+        model=model,
+        port=port,
+        host=host,
+    )
+
+
 @main.group(name="agent")
 def agent_group() -> None:
     """Manage the specsmith agentic client configuration."""

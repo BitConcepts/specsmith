@@ -461,7 +461,65 @@ specsmith can now improve itself via `specsmith agent improve <task>`. Use it fo
 - [ ] Agent tab: populate model dropdown from provider API
 - [ ] Agent tab: pre-fill defaults from Global Settings
 - [ ] Interactive architecture/requirements gap fixing
-- [ ] Git diff coloring in chat (green/red)
 - [ ] Agent task visualization panel
 - [ ] GPU support: AMD ROCm, Apple M, Intel Arc, CPU fallback detection
-- [ ] Phase 4: feature flags, instinct, eval, memory, multi-agent, server, Theia
+- [ ] Phase 4: feature flags, instinct, eval, memory, multi-agent, Theia
+
+---
+
+## Session 2026-04-22 (cont.) \u2014 Service Mode, Settings Overhaul, Stable Release
+
+**Status:** Complete
+**Branch:** develop \u2192 main
+**Releases:** specsmith v0.3.13, specsmith-vscode v0.3.15
+
+### What changed
+
+**specsmith (Python CLI):**
+- `specsmith serve --port 8421` \u2014 persistent HTTP server (stdlib, zero deps).
+  SSE event stream, POST /api/send, GET /api/status. Keeps Python + Ollama warm.
+- EXEC-001 rule in agent system prompt (no python -c for non-trivial code)
+- Supplementary rules audit (check_supplementary_rules in auditor.py)
+- Minimal startup protocol \u2014 no tools, no audit, just greeting
+- Broader JSON filtering (suppress structured status/action JSON from LLM)
+- Version bumped to 0.3.13 for pre-release channel
+- CI fixes: ruff lint/format, mypy type errors, conftest.py SIM105
+
+**specsmith-vscode (VS Code extension):**
+- **Service mode**: Ollama keep-alive pings (3min), ProcessPool (10min idle),
+  HTTP client auto-detects specsmith serve on localhost:8421
+- **Platform-agnostic operations**: all pip/Ollama ops use cp.spawn (no shell).
+  Removed all PowerShell/bash-specific code.
+- **Settings panel overhaul**:
+  - Version marker file (.specsmith-version) for instant version detection
+  - Smart install tracking: polls version, inline Restart button
+  - Channel switch: auto-check, show Install button for any version difference
+  - Ollama upgrade: downloads OllamaSetup.exe via Node https, runs /SILENT
+  - Update banner: shows both specsmith + Ollama updates with tab links
+  - Auto-check on every panel reveal
+  - Ollama tab matches specsmith UI (Check/Install/Last check)
+- **Session panel**:
+  - Tool-call JSON regression fixed (filter raw JSON from llm_chunk)
+  - Startup busy state (setBusy(true) on ready, cleared by turn_done)
+  - Accept All only after 2+ proposals
+  - VCS bar: +additions (green) / -deletions (red), merged token stats
+  - Governance check shows Fix Now / Skip proposal buttons
+  - Broader proposal detection (i recommend, i suggest, etc.)
+  - Removed chat spam (VCS state, starting session messages)
+- **Bug fixes**:
+  - SettingsPanel esbuild regression (\\' \u2192 &#39; in onclick)
+  - _parseVer NaN for .devN builds (parseInt('dev') \u2192 parseInt(m[5]))
+  - pip downgrade from pre-release (--force-reinstall)
+  - Stale version marker invalidation
+  - Corrupted pip temp dir cleanup (~pecsmith)
+  - spawn EPERM/EBUSY handling
+  - Mocha upgraded to 11.3.0 (jsdiff DoS fix)
+
+### Verification
+- specsmith: 249 tests pass, ruff clean, mypy clean, CI green
+- specsmith-vscode: 23 tests pass, tsc clean, esbuild clean, CI green
+- 0 open issues on both repos
+- Pre-release 0.3.13.dev215 published to PyPI
+
+### Next step
+Phase 4: feature flags, instinct/learning, eval harness, agent memory, multi-agent coordination via AG2 GroupChat.
