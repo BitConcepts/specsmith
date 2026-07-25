@@ -24,6 +24,13 @@ def main() -> int:
     if not has_empty_state:
         print("App.tsx lacks a deterministic empty-result state")
         return 1
+    has_accessible_live_state = any(
+        marker in folded_app
+        for marker in ('role="alert"', "role={'alert'}", 'role="status"', "role={'status'}")
+    )
+    if not has_accessible_live_state:
+        print('App.tsx loading/error state requires role="status" or role="alert"')
+        return 1
     if "/api/incidents" not in api:
         print("api.ts does not call /api/incidents")
         return 1

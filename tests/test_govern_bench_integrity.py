@@ -933,6 +933,44 @@ def test_t28_visible_contract_validator_preserves_worker_package(tmp_path: Path)
     assert "preserve the starter package main boundary" in output
 
 
+def test_t28_visible_contract_validator_requires_all_worker_json_tags(
+    tmp_path: Path,
+) -> None:
+    task = get_task("T28")
+    project = tmp_path / "project"
+    _copy_project_fixture(_get_project_dir(task.project), project)
+    fields = {
+        "id": {"type": "string"},
+        "title": {"type": "string"},
+        "service": {"type": "string"},
+        "severity": {"type": "string", "enum": ["low", "medium", "high", "critical"]},
+        "status": {"type": "string", "enum": ["open", "acknowledged"]},
+        "created_at": {"type": "string"},
+        "acknowledged_at": {"type": ["string", "null"]},
+    }
+    (project / "contracts" / "incident.schema.json").write_text(
+        json.dumps(
+            {
+                "type": "object",
+                "properties": fields,
+                "required": list(fields),
+                "additionalProperties": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    passed, output = _exec_run_validator(
+        project,
+        task,
+        "python tools/validate_contract.py",
+    )
+
+    assert not passed
+    assert "JSON tags missing shared fields" in output
+    assert "acknowledged_at" in output
+
+
 def test_t28_visible_contract_validator_requires_worker_defaults(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -972,7 +1010,10 @@ def test_t28_visible_ui_validator_requires_safe_composed_query(tmp_path: Path) -
     project = tmp_path / "project"
     _copy_project_fixture(_get_project_dir(task.project), project)
     (project / "ui" / "src" / "App.tsx").write_text(
-        "loading error severity status acknowledge incidents.length === 0 no incidents",
+        (
+            "loading error severity status acknowledge incidents.length === 0 "
+            'no incidents <p role="status">loading</p>'
+        ),
         encoding="utf-8",
     )
     api = project / "ui" / "src" / "api.ts"
@@ -994,6 +1035,26 @@ def test_t28_visible_ui_validator_requires_safe_composed_query(tmp_path: Path) -
 
     api.write_text(
         "const params = new URLSearchParams(); fetch('/api/incidents?' + params.toString())",
+        encoding="utf-8",
+    )
+    app = project / "ui" / "src" / "App.tsx"
+    app.write_text(
+        "loading error severity status acknowledge incidents.length === 0 no incidents",
+        encoding="utf-8",
+    )
+    passed, output = _exec_run_validator(
+        project,
+        task,
+        "python tools/validate_ui.py",
+    )
+    assert not passed
+    assert 'requires role="status" or role="alert"' in output
+
+    app.write_text(
+        (
+            "loading error severity status acknowledge incidents.length === 0 "
+            'no incidents <p role="status">loading</p>'
+        ),
         encoding="utf-8",
     )
     passed, output = _exec_run_validator(

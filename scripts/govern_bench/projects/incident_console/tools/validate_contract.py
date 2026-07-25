@@ -99,6 +99,12 @@ def main() -> int:
     if re.search(r"(?m)^\s*package\s+main\s*$", worker) is None:
         print("worker/main.go must preserve the starter package main boundary")
         return 1
+    missing_worker_fields = sorted(
+        field for field in INCIDENT_FIELDS if f'json:"{field}"' not in worker
+    )
+    if missing_worker_fields:
+        print("worker/main.go JSON tags missing shared fields: " + ", ".join(missing_worker_fields))
+        return 1
     worker_ok, worker_output = _validate_worker_defaults(root)
     if not worker_ok:
         print("Worker shared-contract validation failed:")
