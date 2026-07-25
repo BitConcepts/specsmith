@@ -61,6 +61,7 @@ task_prompt: |
   - PATCH /api/incidents/{id}/ack acknowledges an incident and returns 404 for an unknown id
   - preserve GET /health and keep state deterministic and testable
   - public tests and API routes must exercise the same resettable in-memory incident store
+  - keep query-filter defaults lint-safe; do not call Query(...) directly in a function default
 
   Go worker:
   - implement exported NormalizeAlert(raw []byte) (Incident, error) in worker/main.go

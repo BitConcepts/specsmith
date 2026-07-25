@@ -132,7 +132,7 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
     assert "supplies current content for each active milestone" in contract
     assert "validates completed milestones immediately" in contract
     assert "existing dependencies and standard libraries" in contract
-    assert tools == ["write_files", "patch_file", "read_file", "write_file", "done"]
+    assert tools == ["write_files", "read_file", "write_file", "done"]
     assert "backend/main.py" in _milestone_progress(task, ["contracts/incident.schema.json"])
     assert "worker boundary" in _milestone_progress(
         task,
@@ -190,7 +190,7 @@ def test_accepted_aee_work_starts_with_minimal_tools_and_bounded_scope() -> None
         for tool in _build_active_tools("SPECSMITH_FULL", task, diagnostics_required=True)
     ]
 
-    assert initial == ["patch_file", "read_file", "write_file", "done"]
+    assert initial == ["read_file", "write_file", "done"]
     assert "run_command" not in _active_tool_names(active)
     assert not (_active_tool_names(_without_read_tools(active)) & {"read_file", "read_files"})
     repair_names = _active_tool_names(
@@ -201,7 +201,7 @@ def test_accepted_aee_work_starts_with_minimal_tools_and_bounded_scope() -> None
             repair_written=True,
         )
     )
-    assert repair_names == {"write_files", "patch_file", "write_file", "done"}
+    assert repair_names == {"write_files", "write_file", "done"}
     assert {"list_files", "run_command", "ask_clarification"}.issubset(diagnostic)
     assert "app/main.py" in _scope_contract(task)
     assert "tests/test_main.py" in _scope_progress(task, ["app/main.py"])
@@ -231,7 +231,6 @@ def test_serialized_routes_receive_bounded_composite_file_tools(tmp_path: Path) 
     assert names == [
         "read_files",
         "write_files",
-        "patch_file",
         "read_file",
         "write_file",
         "done",

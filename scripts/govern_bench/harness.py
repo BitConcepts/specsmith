@@ -437,30 +437,6 @@ _COMPOSITE_FILE_TOOLS: list[dict] = [
     },
 ]
 
-_PATCH_FILE_TOOL: dict = {
-    "type": "function",
-    "function": {
-        "name": "patch_file",
-        "description": (
-            "Replace one exact, unique fragment in an existing file. Prefer this for a "
-            "localized validator repair. The expected sha256 prefix prevents stale edits."
-        ),
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "path": {"type": "string"},
-                "expected_sha256": {
-                    "type": "string",
-                    "description": "The 16-character sha256 prefix supplied by the controller.",
-                },
-                "old": {"type": "string", "description": "Exact unique fragment to replace."},
-                "new": {"type": "string", "description": "Replacement fragment."},
-            },
-            "required": ["path", "expected_sha256", "old", "new"],
-        },
-    },
-}
-
 
 def _validator_commands_for_task(task: BenchTask) -> list[str]:
     commands = list(getattr(task, "allowed_validator_commands", []) or [])
@@ -651,8 +627,6 @@ def _build_active_tools(
 ) -> list[dict]:
     """Expose the smallest sufficient tool surface for accepted AEE work."""
     tools = _build_tools(condition_id, task)
-    if condition_id == "SPECSMITH_FULL":
-        tools = [_PATCH_FILE_TOOL, *tools]
     if condition_id == "SPECSMITH_FULL" and (composite_files or composite_reads):
         # Keep scalar tools schema-valid for earlier conversation turns while
         # adding a bounded composite path. Some OpenAI-compatible routes keep
@@ -661,7 +635,6 @@ def _build_active_tools(
     if condition_id != "SPECSMITH_FULL" or diagnostics_required:
         return tools
     initial_names = {"read_file", "write_file", "done"}
-    initial_names.add("patch_file")
     if composite_files:
         initial_names.add("write_files")
     if composite_reads:
@@ -1012,7 +985,7 @@ def _serialized_done_tool_call(
 
 
 _SERIAL_ACTION_TOOLS = frozenset(
-    {"read_file", "write_file", "patch_file", "list_files", "run_command", "run_validator"}
+    {"read_file", "write_file", "list_files", "run_command", "run_validator"}
 )
 
 
@@ -1040,7 +1013,7 @@ def _compact_completed_tool_exchange(
 
     for call, serialized in zip(tool_calls, serialized_calls, strict=True):
         result = results_by_id.get(call.id)
-        if call.name not in {"write_file", "write_files", "patch_file"}:
+        if call.name not in {"write_file", "write_files"}:
             retained_calls.append(serialized)
             if result is not None:
                 retained_results.append(result)
@@ -1051,14 +1024,14 @@ def _compact_completed_tool_exchange(
         outcome = str((result or {}).get("content") or "no tool result").replace("\n", " ")
         file_args = (
             [args]
-            if call.name in {"write_file", "patch_file"}
+            if call.name == "write_file"
             else [item for item in (args.get("files") or []) if isinstance(item, dict)]
         )
         if not file_args:
             file_args = [{"path": "(missing path)", "content": ""}]
         for item in file_args:
             path = str(item.get("path") or "(missing path)")
-            content = item.get("content", item.get("new"))
+            content = item.get("content")
             body = content if isinstance(content, str) else ""
             digest = hashlib.sha256(body.encode("utf-8")).hexdigest()[:16]
             write_summaries.append(
@@ -1086,8 +1059,8 @@ def _compact_completed_tool_exchange(
                 "role": "user",
                 "content": (
                     "Completed write_file state summary. File bodies were omitted from "
-                    "history; files on disk are authoritative. Use read_file before repairing "
-                    "an existing file unless controller context supplies its current digest.\n"
+                    "history; files on disk are authoritative. Use controller-provided repair "
+                    "context or read_file before sending a complete replacement body.\n"
                     + "\n".join(write_summaries)
                 ),
             }
@@ -1346,10 +1319,9 @@ def _single_repair_context(
     max_chars = min(MAX_FILE_BYTES, 4_000)
     if len(content) > max_chars:
         content = content[:max_chars] + f"\n... [repair context truncated at {max_chars} chars]"
-    digest = hashlib.sha256(_exec_read_file(project_root, path).encode("utf-8")).hexdigest()[:16]
     return (
-        f"Current content for {path} (controller-provided; sha256={digest}; "
-        "do not reread this file). Prefer patch_file for a localized repair:\n"
+        f"Current content for {path} (controller-provided; do not reread this file). "
+        "Send one corrected complete replacement body with write_file:\n"
         f"```\n{content}\n```"
     )
 
@@ -1380,48 +1352,6 @@ def _exec_write_file(project_root: Path, path: str, content: str, files_written:
     if path not in files_written:
         files_written.append(path)
     return f"OK: wrote {len(content)} bytes to {path}"
-
-
-def _exec_patch_file(
-    project_root: Path,
-    path: str,
-    expected_sha256: str,
-    old: str,
-    new: str,
-    files_written: list[str],
-) -> str:
-    """Apply one stale-safe, exact replacement to an existing project file."""
-    p, error = _resolve_project_path(project_root, path)
-    if p is None:
-        return error
-    if _model_hidden_path(project_root, p):
-        return "ERROR: controller governance state cannot be changed by model file tools"
-    if not p.is_file():
-        return f"ERROR: file not found: {path}"
-    if not all(isinstance(value, str) for value in (expected_sha256, old, new)):
-        return "ERROR: expected_sha256, old, and new must be text"
-    try:
-        content = p.read_text(encoding="utf-8", errors="replace")
-    except OSError as exc:
-        return f"ERROR: unable to read file ({type(exc).__name__})"
-    digest = hashlib.sha256(content.encode("utf-8")).hexdigest()[:16]
-    if expected_sha256.casefold() != digest:
-        return (
-            f"ERROR: stale patch for {path}; expected sha256={expected_sha256}, "
-            f"current sha256={digest}"
-        )
-    if not old or old == new:
-        return "ERROR: old must be non-empty and new must differ"
-    occurrences = content.count(old)
-    if occurrences != 1:
-        return f"ERROR: patch fragment must occur exactly once; found {occurrences}"
-    output = _exec_write_file(
-        project_root,
-        path,
-        content.replace(old, new, 1),
-        files_written,
-    )
-    return output.replace("OK: wrote", "OK: patched", 1)
 
 
 def _exec_read_files_with_evidence(
@@ -1719,7 +1649,7 @@ def _tool_call_target(tool_call: NormalizedToolCall) -> str:
     """Return a content-free target label for transcript and loop diagnostics."""
     parsed = _json_loads_maybe(tool_call.arguments)
     args = parsed if isinstance(parsed, dict) else {}
-    if tool_call.name in {"read_file", "write_file", "patch_file"}:
+    if tool_call.name in {"read_file", "write_file"}:
         target = str(args.get("path") or "")
     elif tool_call.name == "read_files":
         target = ",".join(str(path) for path in (args.get("paths") or [])[:MAX_COMPOSITE_FILE_OPS])
@@ -2808,7 +2738,7 @@ def _run_agent_loop(
                 recovery = (
                     "The controller already supplied authoritative focused-repair evidence "
                     "in the preceding tool result and adaptive progress. Apply that repair "
-                    "now with patch_file or write_file; do not stop to request the same evidence."
+                    "now with write_file; do not stop to request the same evidence."
                 )
                 messages.append({"role": "user", "content": recovery})
                 agent_transcript.append(
@@ -2895,28 +2825,6 @@ def _run_agent_loop(
                         _invalidate_validation_evidence(
                             task,
                             batch_write_paths,
-                            lint_verified,
-                            tests_verified,
-                            validator_verified,
-                        )
-                    )
-
-            elif fn_name == "patch_file":
-                path = str(args.get("path") or "")
-                out = _exec_patch_file(
-                    project_root,
-                    path,
-                    args.get("expected_sha256"),
-                    args.get("old"),
-                    args.get("new"),
-                    files_written,
-                )
-                if out.startswith("OK:"):
-                    successful_write_paths.append(path)
-                    lint_verified, tests_verified, validator_verified = (
-                        _invalidate_validation_evidence(
-                            task,
-                            [path],
                             lint_verified,
                             tests_verified,
                             validator_verified,

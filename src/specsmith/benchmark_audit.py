@@ -326,7 +326,9 @@ def _focused_repair_paths(row: dict[str, Any]) -> list[str]:
             str(event.get("focused_repair") or "").replace("\\", "/"),
         ):
             normalized = _normalized_path(path.rstrip(".,;:"))
-            if not normalized.startswith(("tools/", ".venv/")):
+            if "." in normalized.rsplit("/", 1)[-1] and not normalized.startswith(
+                ("tools/", ".venv/")
+            ):
                 paths.append(normalized)
     return paths
 
@@ -1088,7 +1090,7 @@ def audit_benchmark_rows(
     first_pass_regressions: list[tuple[str, str, float, float]] = []
     late_validation_rows: list[dict[str, Any]] = []
     for (model, task, condition), group in grouped_turns.items():
-        if len(group) < 5 or not condition.startswith("SPECSMITH"):
+        if len(group) < 3 or not condition.startswith("SPECSMITH"):
             continue
         repair_rows = [
             row
@@ -1096,7 +1098,9 @@ def audit_benchmark_rows(
             if _as_int(row.get("rework_turns")) > 1 or _focused_repair_events(row)
         ]
         first_pass_rows = [row for row in group if row not in repair_rows]
-        repair_paths = Counter(path for row in repair_rows for path in _focused_repair_paths(row))
+        repair_paths = Counter(
+            path for row in repair_rows for path in set(_focused_repair_paths(row))
+        )
         if repair_paths:
             path, count = repair_paths.most_common(1)[0]
             if count >= 3 and count / len(group) >= 0.5:

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import io
 import json
 import runpy
@@ -41,7 +40,6 @@ from govern_bench.harness import (  # noqa: E402
     _completion_gate,
     _copy_project_fixture,
     _exec_list_files,
-    _exec_patch_file,
     _exec_read_file,
     _exec_run_command,
     _exec_run_validator,
@@ -550,35 +548,6 @@ def test_active_milestone_context_is_bounded_and_counts_missing_files_as_evidenc
         [str(path) for path in task.milestones[0]["files"]],
         evidence,
     )
-
-
-def test_patch_file_requires_current_digest_and_unique_fragment(tmp_path: Path) -> None:
-    path = tmp_path / "backend.py"
-    path.write_text("items = []\nreturn items\n", encoding="utf-8")
-    digest = hashlib.sha256(path.read_text(encoding="utf-8").encode("utf-8")).hexdigest()[:16]
-    written: list[str] = []
-
-    stale = _exec_patch_file(
-        tmp_path,
-        "backend.py",
-        "0" * 16,
-        "return items",
-        "return list(items)",
-        written,
-    )
-    assert stale.startswith("ERROR: stale patch")
-
-    output = _exec_patch_file(
-        tmp_path,
-        "backend.py",
-        digest,
-        "return items",
-        "return list(items)",
-        written,
-    )
-    assert output.startswith("OK: patched")
-    assert path.read_text(encoding="utf-8").endswith("return list(items)\n")
-    assert written == ["backend.py"]
 
 
 def test_completed_milestone_runs_only_its_missing_validators(
@@ -1491,15 +1460,15 @@ def test_full_repair_write_forces_controller_owned_revalidation(
 
     assert result.stop_reason == "done"
     assert result.llm_turns == 4
-    assert tool_surfaces[1] == {"write_file", "patch_file", "done"}
+    assert tool_surfaces[1] == {"write_file", "done"}
     assert "Current content for app/main.py" in message_snapshots[1]
     assert "do not reread this file" in message_snapshots[1]
-    assert tool_surfaces[2] == {"write_file", "patch_file", "done"}, (
+    assert tool_surfaces[2] == {"write_file", "done"}, (
         tool_surfaces,
         result.agent_transcript,
     )
     assert "already supplied authoritative focused-repair evidence" in message_snapshots[2]
-    assert tool_surfaces[3] == {"write_file", "patch_file", "done"}
+    assert tool_surfaces[3] == {"write_file", "done"}
     assert any(event.get("focused_repair_continuation") for event in result.agent_transcript)
     assert any(
         event.get("adaptive_tool_surface", {}).get("reason") == "single_repair_context_provided"

@@ -243,6 +243,34 @@ def test_audit_identifies_repeated_late_repair_and_context_cost() -> None:
     assert report.next_experiment.action == "optimize_and_rerun"
 
 
+def test_three_row_diagnostic_exposes_unanimous_repair_hotspot() -> None:
+    rows = []
+    for rep in range(1, 4):
+        row = _row(
+            condition="SPECSMITH_FULL",
+            passed=True,
+            input_tokens=10_000,
+            rep=rep,
+        )
+        row["rework_turns"] = 3
+        row["agent_transcript"] = [
+            {
+                "turn": 3,
+                "role": "controller",
+                "focused_repair": (
+                    "Public validator repair boundary: deterministic project checks "
+                    "-> backend/main.py."
+                ),
+            }
+        ]
+        rows.append(row)
+
+    report = audit_benchmark_rows(rows)
+
+    assert "systematic_repair_hotspot" in {weakness.code for weakness in report.weaknesses}
+    assert report.next_experiment.action == "optimize_and_rerun"
+
+
 def test_default_run_bench_audit_path_tracks_json_output() -> None:
     from govern_bench.run_bench import _default_audit_path
 
