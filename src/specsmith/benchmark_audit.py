@@ -9,6 +9,7 @@ judgement.
 from __future__ import annotations
 
 import json
+import re
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field
 from itertools import product
@@ -136,8 +137,13 @@ def _next_experiment_decision(
         "context_dominance",
         "cursor_efficiency_regression",
         "milestone_fragmentation",
+        "first_pass_regression",
+        "initial_scope_overread",
+        "late_boundary_validation",
+        "provider_cache_discontinuity",
         "repeated_tool_loop",
         "scope_expansion",
+        "systematic_repair_hotspot",
         "token_amplification",
         "tool_call_serialization",
         "verification_repair_outlier",
@@ -302,6 +308,59 @@ def _assistant_tool_counts(row: dict[str, Any]) -> list[int]:
         if isinstance(calls, list) and calls:
             counts.append(len(calls))
     return counts
+
+
+def _focused_repair_events(row: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        event
+        for event in row.get("agent_transcript") or []
+        if isinstance(event, dict) and event.get("focused_repair")
+    ]
+
+
+def _focused_repair_paths(row: dict[str, Any]) -> list[str]:
+    paths: list[str] = []
+    for event in _focused_repair_events(row):
+        for path in re.findall(
+            r"(?<![\w.-])[\w.-]+(?:/[\w.-]+)+",
+            str(event.get("focused_repair") or "").replace("\\", "/"),
+        ):
+            normalized = _normalized_path(path.rstrip(".,;:"))
+            if not normalized.startswith(("tools/", ".venv/")):
+                paths.append(normalized)
+    return paths
+
+
+def _initial_read_count(row: dict[str, Any]) -> int:
+    for event in row.get("agent_transcript") or []:
+        if not isinstance(event, dict) or event.get("role") != "assistant":
+            continue
+        targets = [str(target) for target in event.get("tool_targets") or []]
+        if not targets:
+            continue
+        if not all(target.startswith(("read_file:", "read_files:")) for target in targets):
+            return 0
+        return sum(
+            len(target.removeprefix("read_files:").split(","))
+            if target.startswith("read_files:")
+            else 1
+            for target in targets
+        )
+    return 0
+
+
+def _has_cache_discontinuity(row: dict[str, Any]) -> bool:
+    usage = [item for item in row.get("call_usage") or [] if isinstance(item, dict)]
+    first_cached = next(
+        (index for index, item in enumerate(usage) if _as_int(item.get("cached_input_tokens")) > 0),
+        None,
+    )
+    if first_cached is None:
+        return False
+    later_uncached = sum(
+        _as_int(item.get("cached_input_tokens")) == 0 for item in usage[first_cached + 1 :]
+    )
+    return later_uncached >= 2
 
 
 def _failed_after_tool_result(row: dict[str, Any]) -> bool:
@@ -1024,6 +1083,153 @@ def audit_benchmark_rows(
                 str(row.get("condition")),
             )
         ].append(row)
+
+    repair_hotspots: list[tuple[str, str, str, str, int, int]] = []
+    first_pass_regressions: list[tuple[str, str, float, float]] = []
+    late_validation_rows: list[dict[str, Any]] = []
+    for (model, task, condition), group in grouped_turns.items():
+        if len(group) < 5 or not condition.startswith("SPECSMITH"):
+            continue
+        repair_rows = [
+            row
+            for row in group
+            if _as_int(row.get("rework_turns")) > 1 or _focused_repair_events(row)
+        ]
+        first_pass_rows = [row for row in group if row not in repair_rows]
+        repair_paths = Counter(path for row in repair_rows for path in _focused_repair_paths(row))
+        if repair_paths:
+            path, count = repair_paths.most_common(1)[0]
+            if count >= 3 and count / len(group) >= 0.5:
+                repair_hotspots.append((model, task, condition, path, count, len(group)))
+        first_pass_rate = len(first_pass_rows) / len(group)
+        if first_pass_rate < 0.5 and repair_rows:
+            first_pass_tokens = (
+                sum(
+                    _as_int(row.get("input_tokens")) + _as_int(row.get("output_tokens"))
+                    for row in first_pass_rows
+                )
+                / len(first_pass_rows)
+                if first_pass_rows
+                else 0.0
+            )
+            repair_tokens = sum(
+                _as_int(row.get("input_tokens")) + _as_int(row.get("output_tokens"))
+                for row in repair_rows
+            ) / len(repair_rows)
+            repair_tax = max(0.0, repair_tokens - first_pass_tokens)
+            first_pass_regressions.append((task, condition, first_pass_rate, repair_tax))
+        for row in repair_rows:
+            events = _focused_repair_events(row)
+            if not events:
+                continue
+            first_turn = min(_as_int(event.get("turn")) for event in events)
+            llm_turns = max(1, _as_int(row.get("llm_turns")))
+            if first_turn / llm_turns >= 0.75:
+                late_validation_rows.append(row)
+
+    if repair_hotspots:
+        model, task, condition, path, count, rows_count = repair_hotspots[0]
+        weaknesses.append(
+            BenchmarkWeakness(
+                code="systematic_repair_hotspot",
+                severity="medium",
+                title="The same requirement boundary repeatedly fails first-pass validation",
+                evidence=(f"{model} repaired {path} in {count}/{rows_count} {task} rows."),
+                recommendation=(
+                    "Move the linked validator to that milestone boundary and make the "
+                    "recurring invariant explicit in the public requirement contract."
+                ),
+                tasks=sorted({item[1] for item in repair_hotspots}),
+                conditions=sorted({item[2] for item in repair_hotspots}),
+            )
+        )
+
+    if first_pass_regressions:
+        task, condition, rate, repair_tax = first_pass_regressions[0]
+        weaknesses.append(
+            BenchmarkWeakness(
+                code="first_pass_regression",
+                severity="medium",
+                title="First-pass correctness is too low for the governed path",
+                evidence=(
+                    f"{task} {condition} first-pass rate was {rate:.0%}; repaired rows "
+                    f"spent about {repair_tax:.0f} additional tokens."
+                ),
+                recommendation=(
+                    "Run deterministic checks at completed milestone boundaries and return "
+                    "only the failing file plus a patch-sized repair surface."
+                ),
+                tasks=sorted({item[0] for item in first_pass_regressions}),
+                conditions=sorted({item[1] for item in first_pass_regressions}),
+            )
+        )
+
+    if late_validation_rows:
+        weaknesses.append(
+            BenchmarkWeakness(
+                code="late_boundary_validation",
+                severity="medium",
+                title="Validator feedback arrives after most implementation turns are spent",
+                evidence=(
+                    f"{len(late_validation_rows)} row(s) first received focused repair "
+                    "evidence after 75% of their LLM turns."
+                ),
+                recommendation=(
+                    "Validate each declared milestone as soon as its files have write evidence."
+                ),
+                tasks=sorted({str(row.get("task")) for row in late_validation_rows}),
+                conditions=sorted({str(row.get("condition")) for row in late_validation_rows}),
+            )
+        )
+
+    initial_overreads = [
+        row
+        for row in valid
+        if str(row.get("condition")).startswith("SPECSMITH") and _initial_read_count(row) >= 8
+    ]
+    if initial_overreads:
+        weaknesses.append(
+            BenchmarkWeakness(
+                code="initial_scope_overread",
+                severity="medium",
+                title="The first action loads a broad project snapshot",
+                evidence=(
+                    f"{len(initial_overreads)} row(s) read at least eight files before "
+                    "their first implementation action."
+                ),
+                recommendation=(
+                    "Provide only the active milestone's current files from the controller "
+                    "and advance context after that milestone validates."
+                ),
+                tasks=sorted({str(row.get("task")) for row in initial_overreads}),
+                conditions=sorted({str(row.get("condition")) for row in initial_overreads}),
+            )
+        )
+
+    cache_discontinuities = [
+        row
+        for row in valid
+        if str(row.get("condition")).startswith("SPECSMITH") and _has_cache_discontinuity(row)
+    ]
+    if cache_discontinuities:
+        weaknesses.append(
+            BenchmarkWeakness(
+                code="provider_cache_discontinuity",
+                severity="low",
+                title="Provider prompt caching resets during the governed run",
+                evidence=(
+                    f"{len(cache_discontinuities)} row(s) had at least two uncached calls "
+                    "after caching had begun."
+                ),
+                recommendation=(
+                    "Keep the system prefix and tool schema stable; put changing milestone "
+                    "state in one compact trailing controller message."
+                ),
+                tasks=sorted({str(row.get("task")) for row in cache_discontinuities}),
+                conditions=sorted({str(row.get("condition")) for row in cache_discontinuities}),
+            )
+        )
+
     repair_outliers: list[dict[str, Any]] = []
     for group in grouped_turns.values():
         if len(group) < 5:

@@ -188,6 +188,61 @@ def test_audit_reports_turn_tool_and_verification_exhaustion() -> None:
     } <= codes
 
 
+def test_audit_identifies_repeated_late_repair_and_context_cost() -> None:
+    rows: list[dict] = []
+    for rep in range(1, 6):
+        repaired = rep <= 4
+        row = _row(
+            condition="SPECSMITH_FULL",
+            passed=True,
+            input_tokens=4_000 if repaired else 1_000,
+            output_tokens=500,
+            rep=rep,
+        )
+        row["llm_turns"] = 10
+        row["rework_turns"] = 2 if repaired else 1
+        row["agent_transcript"] = [
+            {
+                "turn": 1,
+                "role": "assistant",
+                "tool_calls": ["read_file"] * 10,
+                "tool_targets": [f"read_file:component/file{index}.py" for index in range(10)],
+            },
+            *(
+                [
+                    {
+                        "turn": 8,
+                        "role": "controller",
+                        "focused_repair": (
+                            "Public validator repair boundary: deterministic project checks "
+                            "-> backend/main.py. Repair now."
+                        ),
+                    }
+                ]
+                if repaired
+                else []
+            ),
+        ]
+        row["call_usage"] = [
+            {"turn": 1, "cached_input_tokens": 100},
+            {"turn": 2, "cached_input_tokens": 0},
+            {"turn": 3, "cached_input_tokens": 0},
+        ]
+        rows.append(row)
+
+    report = audit_benchmark_rows(rows)
+    codes = {item.code for item in report.weaknesses}
+
+    assert {
+        "systematic_repair_hotspot",
+        "first_pass_regression",
+        "late_boundary_validation",
+        "initial_scope_overread",
+        "provider_cache_discontinuity",
+    } <= codes
+    assert report.next_experiment.action == "optimize_and_rerun"
+
+
 def test_default_run_bench_audit_path_tracks_json_output() -> None:
     from govern_bench.run_bench import _default_audit_path
 

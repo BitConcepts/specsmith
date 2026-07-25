@@ -20,16 +20,24 @@ milestones:
       - contracts/incident.schema.json
       - backend/main.py
       - tests/test_backend.py
+    validators:
+      - "ruff check ."
+      - "pytest"
   - name: worker boundary
     files:
       - worker/main.go
       - worker/main_test.go
+    validators:
+      - "go -C worker test ./..."
   - name: interactive UI journey
     files:
       - ui/src/api.ts
       - ui/src/App.tsx
       - ui/src/styles.css
       - ui/tests/incident-console.spec.ts
+    validators:
+      - "python tools/validate_contract.py"
+      - "python tools/validate_ui.py"
   - name: architecture evidence
     files:
       - docs/architecture.md
@@ -52,6 +60,7 @@ task_prompt: |
   - GET /api/incidents lists incidents and supports optional severity and status filters
   - PATCH /api/incidents/{id}/ack acknowledges an incident and returns 404 for an unknown id
   - preserve GET /health and keep state deterministic and testable
+  - public tests and API routes must exercise the same resettable in-memory incident store
 
   Go worker:
   - implement exported NormalizeAlert(raw []byte) (Incident, error) in worker/main.go
@@ -125,6 +134,12 @@ validator:
     - "python tools/validate_contract.py"
     - "python tools/validate_ui.py"
   boundaries:
+    "ruff check .":
+      - backend/main.py
+      - tests/test_backend.py
+    "pytest":
+      - backend/main.py
+      - tests/test_backend.py
     "go -C worker test ./...":
       - worker/main.go
       - worker/main_test.go

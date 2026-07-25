@@ -116,6 +116,11 @@ class BenchTask:
                 {
                     "name": str(item.get("name") or "milestone"),
                     "files": [str(path) for path in (item.get("files") or [])],
+                    "validators": [
+                        str(command)
+                        for command in (item.get("validators") or [])
+                        if str(command).strip()
+                    ],
                 }
                 for item in (data.get("milestones") or [])
                 if isinstance(item, dict)

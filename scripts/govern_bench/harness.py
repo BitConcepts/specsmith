@@ -64,6 +64,7 @@ _SPECSMITH_DIR = Path(__file__).parent.parent.parent  # repo root
 MAX_TURNS_DEFAULT = 8
 MAX_FILE_BYTES = 12_000
 MAX_TOOL_RESULT_CHARS = 8_000
+MAX_BOUNDARY_CONTEXT_CHARS = 12_000
 # File bodies are retrieved just in time. The completed GPT-5.6 screen showed
 # that agents re-read eagerly injected files, multiplying the same context on
 # every turn. BENCH_CONTEXT_BYTES remains an opt-in diagnostic control.
@@ -436,6 +437,30 @@ _COMPOSITE_FILE_TOOLS: list[dict] = [
     },
 ]
 
+_PATCH_FILE_TOOL: dict = {
+    "type": "function",
+    "function": {
+        "name": "patch_file",
+        "description": (
+            "Replace one exact, unique fragment in an existing file. Prefer this for a "
+            "localized validator repair. The expected sha256 prefix prevents stale edits."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string"},
+                "expected_sha256": {
+                    "type": "string",
+                    "description": "The 16-character sha256 prefix supplied by the controller.",
+                },
+                "old": {"type": "string", "description": "Exact unique fragment to replace."},
+                "new": {"type": "string", "description": "Replacement fragment."},
+            },
+            "required": ["path", "expected_sha256", "old", "new"],
+        },
+    },
+}
+
 
 def _validator_commands_for_task(task: BenchTask) -> list[str]:
     commands = list(getattr(task, "allowed_validator_commands", []) or [])
@@ -467,6 +492,66 @@ def _validator_boundaries_for_task(task: BenchTask, command: str) -> list[str]:
         return []
     paths = boundaries.get(command) or []
     return [str(path) for path in paths if str(path).strip()] if isinstance(paths, list) else []
+
+
+def _invalidate_validation_evidence(
+    task: BenchTask,
+    written_paths: list[str],
+    lint_verified: bool,
+    tests_verified: bool,
+    validator_verified: set[str],
+) -> tuple[bool, bool, set[str]]:
+    """Invalidate only checks whose declared boundary intersects a write.
+
+    Tasks without boundary metadata retain the conservative historical
+    behaviour: every write invalidates every completion check.
+    """
+    written = {_normalized_history_path(path) for path in written_paths if path}
+    if not written:
+        return lint_verified, tests_verified, set(validator_verified)
+
+    def affected(command: str) -> bool:
+        boundaries = _validator_boundaries_for_task(task, command)
+        if not boundaries:
+            return True
+        return bool(
+            written & {_normalized_history_path(path) for path in boundaries if str(path).strip()}
+        )
+
+    if affected("ruff check ."):
+        lint_verified = False
+    if affected("pytest"):
+        tests_verified = False
+    updated = {command for command in validator_verified if not affected(command)}
+    return lint_verified, tests_verified, updated
+
+
+def _ready_milestone_validator_commands(
+    task: BenchTask,
+    files_written: list[str],
+    lint_verified: bool,
+    tests_verified: bool,
+    validator_verified: set[str],
+) -> list[str]:
+    """Return missing validators for fully implemented milestone boundaries."""
+    written = {_normalized_history_path(path) for path in files_written}
+    commands: list[str] = []
+    for milestone in task.milestones:
+        files = [_normalized_history_path(path) for path in (milestone.get("files") or [])]
+        if not files or not set(files).issubset(written):
+            continue
+        for raw_command in milestone.get("validators") or []:
+            command = str(raw_command).strip()
+            already_verified = (
+                lint_verified
+                if command == "ruff check ."
+                else tests_verified
+                if command == "pytest"
+                else command in validator_verified
+            )
+            if command and not already_verified and command not in commands:
+                commands.append(command)
+    return commands
 
 
 def _focused_validator_repair_boundaries(
@@ -566,6 +651,8 @@ def _build_active_tools(
 ) -> list[dict]:
     """Expose the smallest sufficient tool surface for accepted AEE work."""
     tools = _build_tools(condition_id, task)
+    if condition_id == "SPECSMITH_FULL":
+        tools = [_PATCH_FILE_TOOL, *tools]
     if condition_id == "SPECSMITH_FULL" and (composite_files or composite_reads):
         # Keep scalar tools schema-valid for earlier conversation turns while
         # adding a bounded composite path. Some OpenAI-compatible routes keep
@@ -574,6 +661,7 @@ def _build_active_tools(
     if condition_id != "SPECSMITH_FULL" or diagnostics_required:
         return tools
     initial_names = {"read_file", "write_file", "done"}
+    initial_names.add("patch_file")
     if composite_files:
         initial_names.add("write_files")
     if composite_reads:
@@ -724,10 +812,10 @@ def _milestone_contract(task: BenchTask) -> str:
         files = [str(path) for path in (milestone.get("files") or [])]
         lines.append(f"{index}. {name}: {', '.join(files)}")
     lines.append(
-        "Finish one milestone coherently. Issue independent read_file calls in one response, "
-        "use write_files for a coherent milestone, and do not reread unchanged files. Prefer "
-        "existing dependencies and standard libraries. The controller reports the next "
-        "incomplete milestone when needed."
+        "Finish one milestone coherently and use write_files for its independent files. "
+        "The controller supplies current content for each active milestone and validates "
+        "completed milestones immediately; do not reread supplied paths. Prefer existing "
+        "dependencies and standard libraries."
     )
     return "\n".join(lines)
 
@@ -791,6 +879,42 @@ def _next_incomplete_boundary_paths(task: BenchTask, files_written: list[str]) -
         for path in task.expected_files_changed
         if _normalized_history_path(path) not in written
     ]
+
+
+def _boundary_context_packet(
+    project_root: Path,
+    paths: list[str],
+    read_evidence: dict[str, tuple[str, int]],
+    *,
+    turn: int,
+) -> str:
+    """Return one bounded controller-owned packet for the active milestone."""
+    chunks: list[str] = []
+    used = 0
+    for path in paths:
+        remaining = MAX_BOUNDARY_CONTEXT_CHARS - used
+        if remaining <= 0:
+            break
+        content, _suppressed = _exec_read_file_with_evidence(
+            project_root,
+            path,
+            read_evidence,
+            turn=turn,
+            compress_unchanged=False,
+        )
+        chunk = f"## {path}\n{content}"
+        if len(chunk) > remaining:
+            chunk = chunk[:remaining] + "\n... [active boundary context truncated]"
+            read_evidence.pop(_normalized_history_path(path), None)
+        chunks.append(chunk)
+        used += len(chunk)
+    if not chunks:
+        return ""
+    return (
+        "Controller-provided current content for the active milestone. Treat it as the "
+        "authoritative read result and implement now without rereading these paths:\n\n"
+        + "\n\n".join(chunks)
+    )
 
 
 def _active_boundary_has_current_evidence(
@@ -888,7 +1012,7 @@ def _serialized_done_tool_call(
 
 
 _SERIAL_ACTION_TOOLS = frozenset(
-    {"read_file", "write_file", "list_files", "run_command", "run_validator"}
+    {"read_file", "write_file", "patch_file", "list_files", "run_command", "run_validator"}
 )
 
 
@@ -916,7 +1040,7 @@ def _compact_completed_tool_exchange(
 
     for call, serialized in zip(tool_calls, serialized_calls, strict=True):
         result = results_by_id.get(call.id)
-        if call.name not in {"write_file", "write_files"}:
+        if call.name not in {"write_file", "write_files", "patch_file"}:
             retained_calls.append(serialized)
             if result is not None:
                 retained_results.append(result)
@@ -927,14 +1051,14 @@ def _compact_completed_tool_exchange(
         outcome = str((result or {}).get("content") or "no tool result").replace("\n", " ")
         file_args = (
             [args]
-            if call.name == "write_file"
+            if call.name in {"write_file", "patch_file"}
             else [item for item in (args.get("files") or []) if isinstance(item, dict)]
         )
         if not file_args:
             file_args = [{"path": "(missing path)", "content": ""}]
         for item in file_args:
             path = str(item.get("path") or "(missing path)")
-            content = item.get("content")
+            content = item.get("content", item.get("new"))
             body = content if isinstance(content, str) else ""
             digest = hashlib.sha256(body.encode("utf-8")).hexdigest()[:16]
             write_summaries.append(
@@ -963,7 +1087,7 @@ def _compact_completed_tool_exchange(
                 "content": (
                     "Completed write_file state summary. File bodies were omitted from "
                     "history; files on disk are authoritative. Use read_file before repairing "
-                    "an existing file, and send complete replacement bodies when repairing.\n"
+                    "an existing file unless controller context supplies its current digest.\n"
                     + "\n".join(write_summaries)
                 ),
             }
@@ -1222,8 +1346,10 @@ def _single_repair_context(
     max_chars = min(MAX_FILE_BYTES, 4_000)
     if len(content) > max_chars:
         content = content[:max_chars] + f"\n... [repair context truncated at {max_chars} chars]"
+    digest = hashlib.sha256(_exec_read_file(project_root, path).encode("utf-8")).hexdigest()[:16]
     return (
-        f"Current content for {path} (controller-provided; do not reread this file):\n"
+        f"Current content for {path} (controller-provided; sha256={digest}; "
+        "do not reread this file). Prefer patch_file for a localized repair:\n"
         f"```\n{content}\n```"
     )
 
@@ -1254,6 +1380,48 @@ def _exec_write_file(project_root: Path, path: str, content: str, files_written:
     if path not in files_written:
         files_written.append(path)
     return f"OK: wrote {len(content)} bytes to {path}"
+
+
+def _exec_patch_file(
+    project_root: Path,
+    path: str,
+    expected_sha256: str,
+    old: str,
+    new: str,
+    files_written: list[str],
+) -> str:
+    """Apply one stale-safe, exact replacement to an existing project file."""
+    p, error = _resolve_project_path(project_root, path)
+    if p is None:
+        return error
+    if _model_hidden_path(project_root, p):
+        return "ERROR: controller governance state cannot be changed by model file tools"
+    if not p.is_file():
+        return f"ERROR: file not found: {path}"
+    if not all(isinstance(value, str) for value in (expected_sha256, old, new)):
+        return "ERROR: expected_sha256, old, and new must be text"
+    try:
+        content = p.read_text(encoding="utf-8", errors="replace")
+    except OSError as exc:
+        return f"ERROR: unable to read file ({type(exc).__name__})"
+    digest = hashlib.sha256(content.encode("utf-8")).hexdigest()[:16]
+    if expected_sha256.casefold() != digest:
+        return (
+            f"ERROR: stale patch for {path}; expected sha256={expected_sha256}, "
+            f"current sha256={digest}"
+        )
+    if not old or old == new:
+        return "ERROR: old must be non-empty and new must differ"
+    occurrences = content.count(old)
+    if occurrences != 1:
+        return f"ERROR: patch fragment must occur exactly once; found {occurrences}"
+    output = _exec_write_file(
+        project_root,
+        path,
+        content.replace(old, new, 1),
+        files_written,
+    )
+    return output.replace("OK: wrote", "OK: patched", 1)
 
 
 def _exec_read_files_with_evidence(
@@ -1551,7 +1719,7 @@ def _tool_call_target(tool_call: NormalizedToolCall) -> str:
     """Return a content-free target label for transcript and loop diagnostics."""
     parsed = _json_loads_maybe(tool_call.arguments)
     args = parsed if isinstance(parsed, dict) else {}
-    if tool_call.name in {"read_file", "write_file"}:
+    if tool_call.name in {"read_file", "write_file", "patch_file"}:
         target = str(args.get("path") or "")
     elif tool_call.name == "read_files":
         target = ",".join(str(path) for path in (args.get("paths") or [])[:MAX_COMPOSITE_FILE_OPS])
@@ -2206,6 +2374,54 @@ def _run_missing_completion_validators(
     return lint_verified, tests_verified, validator_verified, failures
 
 
+def _run_ready_milestone_validators(
+    project_root: Path,
+    task: BenchTask,
+    files_written: list[str],
+    lint_verified: bool,
+    tests_verified: bool,
+    validator_verified: set[str],
+) -> tuple[bool, bool, set[str], list[str], list[str]]:
+    """Validate completed long-horizon milestones before later work can hide defects."""
+    failures: list[str] = []
+    receipts: list[str] = []
+    commands = _ready_milestone_validator_commands(
+        task,
+        files_written,
+        lint_verified,
+        tests_verified,
+        validator_verified,
+    )
+    for command in commands:
+        if command == "ruff check .":
+            succeeded, output, receipt = _run_ruff_with_bounded_safe_fix(
+                project_root,
+                phase="milestone validation",
+            )
+            if receipt:
+                receipts.append(receipt)
+        elif command == "pytest":
+            succeeded, output = _exec_run_command(project_root, command)
+        else:
+            succeeded, output = _exec_run_validator(project_root, task, command)
+        if command in {"ruff check .", "pytest"}:
+            lint_verified, tests_verified = _updated_verification_evidence(
+                command,
+                succeeded,
+                lint_verified,
+                tests_verified,
+            )
+        else:
+            validator_verified = _updated_validator_evidence(
+                command,
+                succeeded,
+                validator_verified,
+            )
+        if not succeeded:
+            failures.append(f"{command} FAILED:\n{_compact_tool_result(output)}")
+    return lint_verified, tests_verified, validator_verified, failures, receipts
+
+
 def _run_ruff_with_bounded_safe_fix(
     project_root: Path,
     *,
@@ -2320,6 +2536,7 @@ def _run_agent_loop(
 
     del specsmith_dir  # governance state is isolated inside project_root
     diagnostics_required = False
+    read_evidence: dict[str, tuple[str, int]] = {}
     composite_files = condition.id == "SPECSMITH_FULL" and task.is_long_horizon
     composite_reads = False
     tools = _build_active_tools(
@@ -2377,11 +2594,42 @@ def _run_agent_loop(
     # Preload a bounded task-relevant context; the agent can read more on demand.
     file_listing = _exec_list_files(project_root)
     file_context = _build_file_context(project_root, file_listing)
+    boundary_context = ""
+    if condition.id == "SPECSMITH_FULL" and task.is_long_horizon:
+        boundary_context = _boundary_context_packet(
+            project_root,
+            _next_incomplete_boundary_paths(task, []),
+            read_evidence,
+            turn=0,
+        )
+        if boundary_context and _active_boundary_has_current_evidence(
+            task,
+            [],
+            read_evidence,
+        ):
+            tools = _without_read_tools(tools)
+            agent_transcript.append(
+                {
+                    "turn": 0,
+                    "role": "controller",
+                    "active_boundary_context": _next_incomplete_boundary_paths(task, []),
+                    "adaptive_tool_surface": {
+                        "reason": "active_boundary_context_provided",
+                        "removed_tools": sorted(_READ_TOOL_NAMES),
+                    },
+                }
+            )
 
     prompt_parts = [f"# Task: {task.title}", task.task_prompt]
     if visible_criteria:
         prompt_parts.append(f"## Acceptance criteria\n{visible_criteria}")
-    prompt_parts.extend([f"## Current project files\n```\n{file_listing}\n```", file_context])
+    prompt_parts.extend(
+        [
+            f"## Current project files\n```\n{file_listing}\n```",
+            file_context,
+            boundary_context,
+        ]
+    )
     user_msg = "\n\n".join(part for part in prompt_parts if part)
 
     messages: list[dict] = []
@@ -2412,7 +2660,6 @@ def _run_agent_loop(
     repeated_write_streak = 0
     unchanged_read_only_streak = 0
     read_tools_suspended = False
-    read_evidence: dict[str, tuple[str, int]] = {}
     active_repair_focus = ""
     stop_reason = "max_turns"
 
@@ -2560,6 +2807,7 @@ def _run_agent_loop(
         finished = False
         validation_failed = False
         repair_context_provided = False
+        next_boundary_context = ""
         active_tool_names = _active_tool_names(tools)
         for tc in msg.tool_calls:
             fn_name = tc.name
@@ -2599,10 +2847,17 @@ def _run_agent_loop(
                     project_root, args.get("path", ""), args.get("content", ""), files_written
                 )
                 if out.startswith("OK:"):
-                    successful_write_paths.append(str(args.get("path") or ""))
-                    lint_verified = False
-                    tests_verified = False
-                    validator_verified.clear()
+                    path = str(args.get("path") or "")
+                    successful_write_paths.append(path)
+                    lint_verified, tests_verified, validator_verified = (
+                        _invalidate_validation_evidence(
+                            task,
+                            [path],
+                            lint_verified,
+                            tests_verified,
+                            validator_verified,
+                        )
+                    )
 
             elif fn_name == "write_files":
                 out, batch_write_paths = _exec_write_files(
@@ -2612,9 +2867,37 @@ def _run_agent_loop(
                 )
                 if batch_write_paths:
                     successful_write_paths.extend(batch_write_paths)
-                    lint_verified = False
-                    tests_verified = False
-                    validator_verified.clear()
+                    lint_verified, tests_verified, validator_verified = (
+                        _invalidate_validation_evidence(
+                            task,
+                            batch_write_paths,
+                            lint_verified,
+                            tests_verified,
+                            validator_verified,
+                        )
+                    )
+
+            elif fn_name == "patch_file":
+                path = str(args.get("path") or "")
+                out = _exec_patch_file(
+                    project_root,
+                    path,
+                    args.get("expected_sha256"),
+                    args.get("old"),
+                    args.get("new"),
+                    files_written,
+                )
+                if out.startswith("OK:"):
+                    successful_write_paths.append(path)
+                    lint_verified, tests_verified, validator_verified = (
+                        _invalidate_validation_evidence(
+                            task,
+                            [path],
+                            lint_verified,
+                            tests_verified,
+                            validator_verified,
+                        )
+                    )
 
             elif fn_name == "list_files":
                 out = _exec_list_files(project_root, args.get("directory", "."))
@@ -2770,6 +3053,80 @@ def _run_agent_loop(
                 }
             )
 
+        if successful_write_paths and condition.id == "SPECSMITH_FULL" and task.is_long_horizon:
+            milestone_commands = _ready_milestone_validator_commands(
+                task,
+                files_written,
+                lint_verified,
+                tests_verified,
+                validator_verified,
+            )
+            (
+                lint_verified,
+                tests_verified,
+                validator_verified,
+                milestone_failures,
+                milestone_receipts,
+            ) = _run_ready_milestone_validators(
+                project_root,
+                task,
+                files_written,
+                lint_verified,
+                tests_verified,
+                validator_verified,
+            )
+            if milestone_receipts:
+                agent_transcript.append(
+                    {
+                        "turn": turn + 1,
+                        "role": "controller",
+                        "deterministic_repairs": milestone_receipts,
+                    }
+                )
+            if milestone_failures:
+                validation_failed = True
+                active_repair_focus = _focused_validator_repair_progress(
+                    task,
+                    milestone_failures,
+                )
+                repair_context = _single_repair_context(
+                    project_root,
+                    task,
+                    milestone_failures,
+                )
+                repair_context_provided = bool(repair_context)
+                milestone_output = (
+                    "Milestone validation failed immediately; repair this boundary before "
+                    "starting the next milestone.\n\n" + "\n\n".join(milestone_failures)
+                )
+                if repair_context:
+                    milestone_output += f"\n\n{repair_context}"
+                if tool_results:
+                    tool_results[-1]["content"] = _compact_tool_result(
+                        f"{tool_results[-1]['content']}\n\n{milestone_output}"
+                    )
+            elif active_repair_focus:
+                diagnostics_required = False
+                active_repair_focus = ""
+            if milestone_commands or milestone_failures or milestone_receipts:
+                agent_transcript.append(
+                    {
+                        "turn": turn + 1,
+                        "role": "controller",
+                        "milestone_validation": {
+                            "commands": milestone_commands,
+                            "failures": milestone_failures,
+                            "verified": sorted(
+                                {
+                                    *(["ruff check ."] if lint_verified else []),
+                                    *(["pytest"] if tests_verified else []),
+                                    *validator_verified,
+                                }
+                            ),
+                        },
+                    }
+                )
+
         if successful_write_paths:
             _record_written_evidence(
                 project_root,
@@ -2803,7 +3160,35 @@ def _run_agent_loop(
                 if suppressed_unchanged_reads
                 else ""
             )
+            next_boundary_paths = _next_incomplete_boundary_paths(task, files_written)
+            if (
+                successful_write_paths
+                and task.is_long_horizon
+                and not validation_failed
+                and next_boundary_paths
+                and not _active_boundary_has_current_evidence(
+                    task,
+                    files_written,
+                    read_evidence,
+                )
+            ):
+                next_boundary_context = _boundary_context_packet(
+                    project_root,
+                    next_boundary_paths,
+                    read_evidence,
+                    turn=turn + 1,
+                )
+                if next_boundary_context:
+                    agent_transcript.append(
+                        {
+                            "turn": turn + 1,
+                            "role": "controller",
+                            "active_boundary_context": next_boundary_paths,
+                        }
+                    )
             progress = f"{suppression_note}{progress_detail}"
+            if next_boundary_context:
+                progress += f"\n\n{next_boundary_context}"
             messages = _replace_adaptive_progress_message(messages, progress)
             agent_transcript.append(
                 {
@@ -2935,6 +3320,8 @@ def _run_agent_loop(
                     "evidence. Read tools remain suspended; implement from that evidence. "
                     f"{progress_detail}"
                 )
+                if next_boundary_context:
+                    known_boundary += f"\n\n{next_boundary_context}"
                 messages = _replace_adaptive_progress_message(messages, known_boundary)
                 agent_transcript.append(
                     {

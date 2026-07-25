@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import runpy
@@ -29,6 +30,8 @@ from govern_bench.harness import (  # noqa: E402
     NormalizedLLMResponse,
     NormalizedToolCall,
     NormalizedUsage,
+    _active_boundary_has_current_evidence,
+    _boundary_context_packet,
     _build_file_context,
     _build_project_diff,
     _build_tools,
@@ -38,17 +41,20 @@ from govern_bench.harness import (  # noqa: E402
     _completion_gate,
     _copy_project_fixture,
     _exec_list_files,
+    _exec_patch_file,
     _exec_read_file,
     _exec_run_command,
     _exec_run_validator,
     _exec_write_file,
     _get_project_dir,
     _install_acceptance_oracle,
+    _invalidate_validation_evidence,
     _openai_completion_token_param,
     _openai_reasoning_params,
     _run_agent_loop,
     _run_governance_controller,
     _run_missing_completion_validators,
+    _run_ready_milestone_validators,
     _updated_validator_evidence,
     _updated_verification_evidence,
 )
@@ -494,6 +500,119 @@ def test_long_horizon_task_has_polyglot_ui_scope_and_extended_turn_budget() -> N
     assert (project / "backend" / "main.py").is_file()
     assert (project / "worker" / "main.go").is_file()
     assert (project / "ui" / "src" / "App.tsx").is_file()
+    assert task.milestones[0]["validators"] == ["ruff check .", "pytest"]
+    assert task.milestones[1]["validators"] == ["go -C worker test ./..."]
+
+
+def test_t28_validation_evidence_is_invalidated_by_declared_boundary() -> None:
+    task = get_task("T28")
+    validators = set(task.allowed_validator_commands)
+
+    lint_ok, tests_ok, remaining = _invalidate_validation_evidence(
+        task,
+        ["docs/architecture.md"],
+        True,
+        True,
+        validators,
+    )
+    assert lint_ok and tests_ok
+    assert remaining == validators
+
+    lint_ok, tests_ok, remaining = _invalidate_validation_evidence(
+        task,
+        ["backend/main.py"],
+        True,
+        True,
+        validators,
+    )
+    assert not lint_ok and not tests_ok
+    assert "python tools/validate_contract.py" not in remaining
+    assert "python tools/validate_ui.py" in remaining
+    assert "go -C worker test ./..." in remaining
+
+
+def test_active_milestone_context_is_bounded_and_counts_missing_files_as_evidence(
+    tmp_path: Path,
+) -> None:
+    task = get_task("T28")
+    project = tmp_path / "project"
+    _copy_project_fixture(_get_project_dir(task.project), project)
+    evidence: dict[str, tuple[str, int]] = {}
+    paths = [str(path) for path in task.milestones[1]["files"]]
+
+    packet = _boundary_context_packet(project, paths, evidence, turn=2)
+
+    assert "worker/main.go" in packet
+    assert "worker/main_test.go" in packet
+    assert "file not found" in packet
+    assert _active_boundary_has_current_evidence(
+        task,
+        [str(path) for path in task.milestones[0]["files"]],
+        evidence,
+    )
+
+
+def test_patch_file_requires_current_digest_and_unique_fragment(tmp_path: Path) -> None:
+    path = tmp_path / "backend.py"
+    path.write_text("items = []\nreturn items\n", encoding="utf-8")
+    digest = hashlib.sha256(path.read_text(encoding="utf-8").encode("utf-8")).hexdigest()[:16]
+    written: list[str] = []
+
+    stale = _exec_patch_file(
+        tmp_path,
+        "backend.py",
+        "0" * 16,
+        "return items",
+        "return list(items)",
+        written,
+    )
+    assert stale.startswith("ERROR: stale patch")
+
+    output = _exec_patch_file(
+        tmp_path,
+        "backend.py",
+        digest,
+        "return items",
+        "return list(items)",
+        written,
+    )
+    assert output.startswith("OK: patched")
+    assert path.read_text(encoding="utf-8").endswith("return list(items)\n")
+    assert written == ["backend.py"]
+
+
+def test_completed_milestone_runs_only_its_missing_validators(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task = get_task("T28")
+    commands: list[str] = []
+    monkeypatch.setattr(
+        harness_module,
+        "_run_ruff_with_bounded_safe_fix",
+        lambda *_args, **_kwargs: (True, "passed", ""),
+    )
+
+    def fake_command(_root: Path, command: str) -> tuple[bool, str]:
+        commands.append(command)
+        return True, "passed"
+
+    monkeypatch.setattr(harness_module, "_exec_run_command", fake_command)
+    files = [str(path) for path in task.milestones[0]["files"]]
+
+    lint_ok, tests_ok, validators, failures, receipts = _run_ready_milestone_validators(
+        tmp_path,
+        task,
+        files,
+        False,
+        False,
+        set(),
+    )
+
+    assert lint_ok and tests_ok
+    assert validators == set()
+    assert failures == receipts == []
+    assert commands == ["pytest"]
 
 
 def test_t28_oracle_accepts_equivalent_schema_and_empty_state_forms(
@@ -1363,10 +1482,10 @@ def test_full_repair_write_forces_controller_owned_revalidation(
 
     assert result.stop_reason == "done"
     assert result.llm_turns == 3
-    assert tool_surfaces[1] == {"write_file", "done"}
+    assert tool_surfaces[1] == {"write_file", "patch_file", "done"}
     assert "Current content for app/main.py" in message_snapshots[1]
     assert "do not reread this file" in message_snapshots[1]
-    assert tool_surfaces[2] == {"write_file", "done"}, (
+    assert tool_surfaces[2] == {"write_file", "patch_file", "done"}, (
         tool_surfaces,
         result.agent_transcript,
     )
