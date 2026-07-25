@@ -498,7 +498,11 @@ def test_long_horizon_task_has_polyglot_ui_scope_and_extended_turn_budget() -> N
     assert (project / "backend" / "main.py").is_file()
     assert (project / "worker" / "main.go").is_file()
     assert (project / "ui" / "src" / "App.tsx").is_file()
-    assert task.milestones[0]["validators"] == ["ruff check .", "pytest"]
+    assert task.milestones[0]["validators"] == [
+        "ruff check .",
+        "pytest",
+        "python tools/validate_api.py",
+    ]
     assert task.milestones[1]["validators"] == ["go -C worker test ./..."]
 
 
@@ -566,7 +570,12 @@ def test_completed_milestone_runs_only_its_missing_validators(
         commands.append(command)
         return True, "passed"
 
+    def fake_validator(_root: Path, _task: object, command: str) -> tuple[bool, str]:
+        commands.append(command)
+        return True, "passed"
+
     monkeypatch.setattr(harness_module, "_exec_run_command", fake_command)
+    monkeypatch.setattr(harness_module, "_exec_run_validator", fake_validator)
     files = [str(path) for path in task.milestones[0]["files"]]
 
     lint_ok, tests_ok, validators, failures, receipts = _run_ready_milestone_validators(
@@ -579,9 +588,9 @@ def test_completed_milestone_runs_only_its_missing_validators(
     )
 
     assert lint_ok and tests_ok
-    assert validators == set()
+    assert validators == {"python tools/validate_api.py"}
     assert failures == receipts == []
-    assert commands == ["pytest"]
+    assert commands == ["pytest", "python tools/validate_api.py"]
 
 
 def test_t28_oracle_accepts_equivalent_schema_and_empty_state_forms(
@@ -891,6 +900,21 @@ def test_t28_visible_contract_validator_rejects_incomplete_starter(tmp_path: Pat
     assert not passed
     assert "Schema properties missing" in output
     assert "acknowledged_at" in output
+
+
+def test_t28_visible_api_validator_rejects_incomplete_starter(tmp_path: Path) -> None:
+    task = get_task("T28")
+    project = tmp_path / "project"
+    _copy_project_fixture(_get_project_dir(task.project), project)
+
+    passed, output = _exec_run_validator(
+        project,
+        task,
+        "python tools/validate_api.py",
+    )
+
+    assert not passed
+    assert "POST /api/incidents must return HTTP 201" in output
 
 
 def test_t28_visible_contract_validator_preserves_worker_package(tmp_path: Path) -> None:

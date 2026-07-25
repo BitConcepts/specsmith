@@ -23,6 +23,7 @@ milestones:
     validators:
       - "ruff check ."
       - "pytest"
+      - "python tools/validate_api.py"
   - name: worker boundary
     files:
       - worker/main.go
@@ -132,6 +133,7 @@ validator:
   shell: auto
   commands:
     - "go -C worker test ./..."
+    - "python tools/validate_api.py"
     - "python tools/validate_contract.py"
     - "python tools/validate_ui.py"
   boundaries:
@@ -141,6 +143,8 @@ validator:
     "pytest":
       - backend/main.py
       - tests/test_backend.py
+    "python tools/validate_api.py":
+      - backend/main.py
     "go -C worker test ./...":
       - worker/main.go
       - worker/main_test.go
@@ -157,4 +161,5 @@ validator:
     - "^pytest( .*)?$"
     - "^go -C worker test( .*)?$"
     - "^python tools/validate_contract.py$"
+    - "^python tools/validate_api.py$"
     - "^python tools/validate_ui.py$"
