@@ -2796,6 +2796,30 @@ def _run_agent_loop(
                     }
                 )
                 continue
+            if (
+                content
+                and condition.id == "SPECSMITH_FULL"
+                and active_repair_focus
+                and text_continuation_retries < 1
+                and turn + 1 < max_turns
+            ):
+                text_continuation_retries += 1
+                rework_turns += 1
+                recovery = (
+                    "The controller already supplied authoritative focused-repair evidence "
+                    "in the preceding tool result and adaptive progress. Apply that repair "
+                    "now with patch_file or write_file; do not stop to request the same evidence."
+                )
+                messages.append({"role": "user", "content": recovery})
+                agent_transcript.append(
+                    {
+                        "turn": turn + 1,
+                        "role": "controller",
+                        "recovery": recovery,
+                        "focused_repair_continuation": True,
+                    }
+                )
+                continue
             # A non-empty pure text response is an intentional model stop. A
             # second empty response fails closed rather than spending the budget.
             stop_reason = "text_response" if content else "empty_response"
@@ -3085,7 +3109,7 @@ def _run_agent_loop(
                 )
             if milestone_failures:
                 validation_failed = True
-                active_repair_focus = _focused_validator_repair_progress(
+                repair_focus = _focused_validator_repair_progress(
                     task,
                     milestone_failures,
                 )
@@ -3101,6 +3125,7 @@ def _run_agent_loop(
                 )
                 if repair_context:
                     milestone_output += f"\n\n{repair_context}"
+                active_repair_focus = f"{repair_focus}\n\n{milestone_output}"
                 if tool_results:
                     tool_results[-1]["content"] = _compact_tool_result(
                         f"{tool_results[-1]['content']}\n\n{milestone_output}"

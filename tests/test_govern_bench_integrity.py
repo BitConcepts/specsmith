@@ -1395,6 +1395,15 @@ def test_full_repair_write_forces_controller_owned_revalidation(
             ),
             NormalizedLLMResponse(
                 message=NormalizedAssistantMessage(
+                    content=(
+                        "Unable to repair because no current file content was provided. "
+                        "Please provide it."
+                    )
+                ),
+                usage=NormalizedUsage(prompt_tokens=10, completion_tokens=1),
+            ),
+            NormalizedLLMResponse(
+                message=NormalizedAssistantMessage(
                     tool_calls=[
                         NormalizedToolCall(
                             id="write-repair",
@@ -1477,11 +1486,11 @@ def test_full_repair_write_forces_controller_owned_revalidation(
         condition=get_condition("SPECSMITH_FULL"),
         project_root=project,
         specsmith_dir=tmp_path,
-        max_turns=3,
+        max_turns=4,
     )
 
     assert result.stop_reason == "done"
-    assert result.llm_turns == 3
+    assert result.llm_turns == 4
     assert tool_surfaces[1] == {"write_file", "patch_file", "done"}
     assert "Current content for app/main.py" in message_snapshots[1]
     assert "do not reread this file" in message_snapshots[1]
@@ -1489,6 +1498,9 @@ def test_full_repair_write_forces_controller_owned_revalidation(
         tool_surfaces,
         result.agent_transcript,
     )
+    assert "already supplied authoritative focused-repair evidence" in message_snapshots[2]
+    assert tool_surfaces[3] == {"write_file", "patch_file", "done"}
+    assert any(event.get("focused_repair_continuation") for event in result.agent_transcript)
     assert any(
         event.get("adaptive_tool_surface", {}).get("reason") == "single_repair_context_provided"
         for event in result.agent_transcript
