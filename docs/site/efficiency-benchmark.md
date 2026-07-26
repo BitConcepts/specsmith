@@ -1,5 +1,36 @@
 # Specsmith Governance Efficiency Benchmark
 
+## July 25 optimized long-horizon result
+
+[Workflow 30179751802](https://github.com/layer1labs/specsmith/actions/runs/30179751802)
+is the current release-quality `T28` envelope: GPT-5.6 Sol plus Specsmith FULL
+passed all ten public and evaluator-isolated acceptance cells at commit
+`390e037`.
+
+| Sol FULL screen | Correct | TPCA | Mean input | Mean output | Mean cost | Mean turns | Mean wall time |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Prior release envelope | 10/10 | 30,317 | 23,634 | 6,683 | $0.2767 | 10.3 | 85.8s |
+| Current optimized envelope | 10/10 | 17,634 | 11,348 | 6,286 | $0.2204 | 5.0 | 57.5s |
+
+The current controller reduced TPCA by 41.8%, input tokens by 52.0%, measured
+cost by 20.4%, turns by 51.5%, and wall time by 33.0%, with unchanged observed
+correctness. The ten-run TPCA range was 17,313–17,882; sample CV was 1.1% and
+the approximate 95% t-interval was 17,494–17,773. The deterministic audit found
+no weakness and selected `publish_or_expand`.
+
+A matched five-repetition `T28` screen in
+[workflow 30179361862](https://github.com/layer1labs/specsmith/actions/runs/30179361862)
+passed 5/5 in both conditions. FULL used 17,688 TPCA versus Cursor rules at
+36,492: 51.5% fewer tokens, 18.6% lower measured cost, 28.6% fewer turns, and
+7.5% lower wall time. “Cursor rules” means this repository's versioned
+Cursor-style rules condition, not every feature or future release of Cursor.
+
+The improvement came from controller-owned milestones, path-scoped validator
+evidence, immediate validation at completed boundaries, and retaining focused
+repair evidence through history compression. A bounded micro-patch experiment
+regressed to 55,451 TPCA; it was removed rather than accumulated. The simpler
+full-file path then stabilized at five turns and one repair in every n=10 row.
+
 ## Current matched screen
 
 The current screening evidence uses `gpt-5.6-sol`, Chat Completions with
@@ -110,12 +141,12 @@ no weakness and selected `publish_or_expand`.
 | Final learning n=5 | 5/5 | 26,499 | 20,204 | 6,294 | $0.2414 | 9.8 | — | 60% |
 | Release-quality n=10 | 10/10 | 30,317 | 23,634 | 6,683 | $0.2767 | 10.3 | 85.8s | 20% |
 
-The larger sample is 14.4% above the favorable n=5 point estimate and 7.1%
+This historical larger sample is 14.4% above the favorable n=5 point estimate and 7.1%
 above the preceding 28,314-token n=5 screen, but remains 5.3% below the 32,020
 matched n=5 screen. Its observed range was 23,316–36,108 tokens; the mean's
 95% t-interval is approximately 27,573–33,061. The evidence therefore supports
-100% observed correctness and a robust 30,316.8-token release envelope, not a
-claim that the n=5 efficiency reduction was statistically settled.
+100% observed correctness for that commit. It has been superseded by the
+17,633.7-token July 25 release envelope above.
 
 The preceding seven-route n=1 admission
 [workflow 30091184259](https://github.com/layer1labs/specsmith/actions/runs/30091184259)

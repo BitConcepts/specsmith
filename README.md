@@ -138,7 +138,24 @@ the [`examples/policies`](examples/policies) directory.
 
 ## Governance efficiency benchmark
 
-The current matched GPT-5.6 Sol screen covers eight task types—feature, bug,
+The current release-quality long-horizon result is GPT-5.6 Sol plus Specsmith
+FULL at **17,633.7 tokens per correct answer**: 10/10 correct, exactly five
+turns per row, $0.2204 mean measured cost, and no deterministic audit weakness
+([workflow 30179751802](https://github.com/layer1labs/specsmith/actions/runs/30179751802)).
+That is 41.8% lower TPCA than the preceding 30,316.8-token n=10 envelope with
+the same model and task. In the current matched T28 screen, both conditions
+passed 5/5; FULL used 17.7k TPCA versus the versioned Cursor-style condition at
+36.5k, a 51.5% reduction
+([workflow 30179361862](https://github.com/layer1labs/specsmith/actions/runs/30179361862)).
+
+The improvement came from fewer, stronger primitives: controller-owned
+milestones, path-scoped validator evidence, immediate boundary validation, and
+focused-repair context that survives compression. An experimental micro-patch
+tool regressed TPCA to 55.5k and was removed. This is evidence for the stated
+model, suite, condition, and commits—not a universal claim about the commercial
+Cursor product or every repository.
+
+The preceding matched GPT-5.6 Sol screen covers eight task types—feature, bug,
 API, schema, CLI, ambiguity, destructive safety, and the polyglot `T28`
 long-horizon product—under Cursor rules and Specsmith FULL. Each cell has five
 repetitions (80 valid rows) at commit `f474bb6`.
@@ -172,14 +189,14 @@ again passed 5/5 and reduced TPCA to 26.5k, mean turns to 9.8, and measured
 cost per correct run to $0.2414. This is 6.4% fewer tokens than the 28.3k
 screen, with a 60% first-pass rate and no audit weakness.
 
-The unchanged release-quality n=10 confirmation at commit `b327b8d`
+The superseded release-quality n=10 confirmation at commit `b327b8d`
 ([run 30099279843](https://github.com/layer1labs/specsmith/actions/runs/30099279843))
 passed 10/10 with no audit weakness and averaged 30.3k TPCA, 10.3 turns,
 $0.2767, and 85.8 seconds. Its larger-sample TPCA is 14.4% above the favorable
 n=5 point estimate, 7.1% above the preceding focused n=5 screen, and 5.3% below
-the 32.0k matched n=5 screen. The 30.3k release-sized result is the current
-machine-readable T28 Sol envelope; these FULL-only screens are not recombined
-with the older matched Cursor grid.
+the 32.0k matched n=5 screen. That 30.3k result has been replaced by the
+17.6k machine-readable T28 Sol envelope above; incompatible screens are never
+recombined.
 
 The receipts are split into two complete, non-overlapping matched workflows:
 [T1/T6/T7/T13 run 29963772623](https://github.com/layer1labs/specsmith/actions/runs/29963772623)
@@ -187,7 +204,16 @@ and [T2/T10/T11/T28 run 29963515885](https://github.com/layer1labs/specsmith/act
 The result is evidence for this model, task set, prompts, and commit—not a claim
 that every repository or model will behave identically.
 
-Managed Hugging Face Qwen evidence remains diagnostic, not publication quality.
+Managed Hugging Face evidence remains diagnostic, not publication quality.
+In the selective July 25 replay
+([workflow 30180139456](https://github.com/layer1labs/specsmith/actions/runs/30180139456)),
+Qwen3.6/DeepInfra passed T28 at 129.9k tokens and 19 turns—7.4× the current Sol
+envelope. Qwen3-Coder-480B/Novita failed after 56.0k tokens in a serialized
+repair loop, and GLM-5.2/DeepInfra failed after repeating a promised UI action
+without issuing it. The bounded recovery had already fired, so further retries
+were rejected rather than billed as progress.
+
+Earlier managed Qwen evidence is retained for provenance.
 The best recent Qwen3.6/DeepInfra T28 cell,
 [run 30010219286](https://github.com/layer1labs/specsmith/actions/runs/30010219286),
 was correct but used 180,895 tokens and all 20 turns. Trace-driven read and

@@ -4,6 +4,9 @@
 
 | Evidence | Model/routes | Repetitions | Treatment |
 |---|---|---:|---|
+| [30179751802](https://github.com/layer1labs/specsmith/actions/runs/30179751802) | GPT-5.6 Sol | 10 T28 FULL | Current release control: 10/10, 17.6k TPCA, five turns, no audit weakness |
+| [30179361862](https://github.com/layer1labs/specsmith/actions/runs/30179361862) | GPT-5.6 Sol | 5 per T28 condition | Current matched control: both 5/5; FULL 17.7k versus Cursor-style 36.5k TPCA |
+| [30180139456](https://github.com/layer1labs/specsmith/actions/runs/30180139456) | Qwen3.6, Qwen3-Coder-480B, GLM-5.2 | 1 T28 FULL each | Validator-repair replay: only Qwen3.6 passed, at 129.9k TPCA; no candidate promoted |
 | [30099279843](https://github.com/layer1labs/specsmith/actions/runs/30099279843) | GPT-5.6 Sol | 10 T28 FULL | Release-quality control: 10/10, 30.3k TPCA, no audit weakness |
 | [30093712102](https://github.com/layer1labs/specsmith/actions/runs/30093712102) | GPT-5.6 Sol | 5 T28 FULL | Final learning commit: 5/5, 26.5k TPCA, no audit weakness |
 | [30093614453](https://github.com/layer1labs/specsmith/actions/runs/30093614453) | DeepSeek-V4 Pro + GLM-5.2 | 1 T28 FULL each | Both correct after targeted repairs; 84.4k and 73.6k TPCA, not promoted |
@@ -33,6 +36,10 @@ function-tool compatibility in every condition.
 
 ## Current frontier screen
 
+The current long-horizon frontier is GPT-5.6 Sol plus FULL at 17.6k TPCA
+(10/10). In the matched five-repetition comparison, FULL passed 5/5 at 17.7k
+TPCA and the versioned Cursor-style condition passed 5/5 at 36.5k.
+
 | Condition | Correct | Tokens/correct | Cost | Mean turns |
 |---|---:|---:|---:|---:|
 | Cursor rules | 34/40 | 33.8k | $5.1779 | 6.38 |
@@ -45,6 +52,18 @@ claim about every interactive feature or future version of the commercial
 Cursor product.
 
 ## Managed Qwen findings
+
+The July 25 selective replay promoted hidden failures into public API, schema,
+Go-tag, and accessible-UI validators, then reran only the affected candidates:
+
+| Route | Result | Tokens | Turns | Decision |
+|---|---:|---:|---:|---|
+| `Qwen/Qwen3.6-35B-A3B:deepinfra` | pass | 129,905 | 19 | correct but 7.4× current Sol TPCA; reject repetition |
+| `Qwen/Qwen3-Coder-480B-A35B-Instruct:novita` | fail | 55,953 | 12 | serialized repair loop and text stop; reject |
+| `zai-org/GLM-5.2:deepinfra` | fail | 29,864 | 5 | completed API/Go, then repeated UI narration after bounded recovery; reject |
+
+These are diagnostic n=1 cells. Workflow success means the harness completed;
+only the first row passed the acceptance oracle.
 
 | Route | Cursor correct | FULL correct | FULL TPCA | Serving observation |
 |---|---:|---:|---:|---|

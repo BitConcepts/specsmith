@@ -11,6 +11,10 @@ consolidated into the next published release.
 ## [Unreleased]
 
 ### Added
+- Publish the July 25 release-quality T28 envelope: GPT-5.6 Sol plus FULL passed
+  10/10 at 17,633.7 tokens per correct answer, five turns, and $0.2204 mean
+  measured cost; add public API-journey, Go-tag, and accessible-UI validators
+  for failures previously visible only to the evaluator-isolated oracle.
 - Complete an eight-task, five-repetition GPT-5.6 Sol Cursor/FULL screen:
   FULL passed 40/40 versus Cursor rules 34/40 while reducing tokens per correct
   answer by 73.3%. Publish exact workflow, commit, task, cost, turn, and
@@ -22,6 +26,11 @@ consolidated into the next published release.
   repair boundaries while preserving the independent hidden acceptance oracle.
 
 ### Changed
+- Reduce long-horizon input tokens through controller-owned active milestones,
+  path-scoped validator evidence, immediate boundary validation, and focused
+  repair retention. Remove the experimental micro-patch surface after it
+  regressed TPCA to 55,451; the simpler path reduced the prior n=10 envelope
+  from 30,316.8 to 17,633.7 TPCA without losing a correct result.
 - Benchmark documentation now separates mixed-suite gains from coding-only
   outcomes and treats tokens per correct answer as the provider-neutral primary
   metric.

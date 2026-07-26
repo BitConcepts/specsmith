@@ -6,6 +6,28 @@ tests, and architecture documentation. Its result is reported separately as
 well as in the eight-task suite so cheap governance gates cannot hide
 long-horizon cost.
 
+## Current release envelope and stopping decision
+
+[Workflow 30179751802](https://github.com/layer1labs/specsmith/actions/runs/30179751802)
+ran GPT-5.6 Sol plus Specsmith FULL ten times on commit `390e037`. All ten rows
+passed public checks and the evaluator-isolated oracle.
+
+| FULL release screen | Correct | TPCA | Mean input | Mean output | Mean turns | Mean cost |
+|---|---:|---:|---:|---:|---:|---:|
+| Superseded | 10/10 | 30,316.8 | 23,634 | 6,683 | 10.3 | $0.2767 |
+| Current | 10/10 | 17,633.7 | 11,348 | 6,286 | 5.0 | $0.2204 |
+
+The audit found no current weakness and selected `publish_or_expand`. The
+matched n=5 screen in
+[workflow 30179361862](https://github.com/layer1labs/specsmith/actions/runs/30179361862)
+also passed every cell and measured 17,688 FULL TPCA versus 36,492 under the
+versioned Cursor-style condition.
+
+The stopping decision is evidence-based: adding a micro-patch tool increased
+FULL to 55,451 TPCA, while removing it and making lint and milestone invariants
+explicit produced ten stable five-turn runs (1.1% TPCA CV). No open-model
+diagnostic exposed another controller change that improved a correct result.
+
 ## Matched five-repetition screen
 
 [Workflow 30045327768](https://github.com/layer1labs/specsmith/actions/runs/30045327768)
@@ -66,8 +88,8 @@ then passed 10/10 at 30,316.8 TPCA, 23,634 mean input tokens, 10.3 turns,
 $0.2767 mean cost, and 85.8 seconds. Its audit found no weakness and selected
 `publish_or_expand`. The larger-sample mean is 14.4% above the n=5 learning
 point estimate, with an observed 23,316–36,108 range and approximate 95%
-t-interval of 27,573–33,061. The release-sized result therefore replaces the
-smaller point estimate as the machine-readable frontier envelope.
+t-interval of 27,573–33,061. That result replaced the smaller point estimate
+at the time and is now superseded by the July 25 envelope above.
 
 The measured weaknesses that produced the final revision came from open-model
 traces, not another judge call:

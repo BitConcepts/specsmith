@@ -423,10 +423,10 @@ def test_shipped_frontier_reference_tracks_release_quality_sol_screen() -> None:
 
     assert reference["condition"] == "SPECSMITH_FULL"
     assert reference["model"] == "gpt-5.6-sol"
-    assert reference["tokens_per_correct_answer"] == pytest.approx(30_316.8)
+    assert reference["tokens_per_correct_answer"] == pytest.approx(17_633.7)
     assert reference["repetitions"] == 10
-    assert reference["commit"] == "b327b8df4e9fb3be170c40a698747ca8527ee653"
-    assert reference["source"].endswith("/actions/runs/30099279843")
+    assert reference["commit"] == "390e037ada46e78e6f7d78cf0332ae313ddec3f1"
+    assert reference["source"].endswith("/actions/runs/30179751802")
 
 
 def test_specsmith_audit_writes_combined_project_and_benchmark_report(tmp_path: Path) -> None:
