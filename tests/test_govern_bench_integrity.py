@@ -1707,13 +1707,13 @@ def test_full_repair_write_forces_controller_owned_revalidation(
     assert result.llm_turns == 4
     stable_surface = {"read_files", "write_files", "read_file", "write_file", "done"}
     assert all(surface == stable_surface for surface in tool_surfaces)
-    assert "Current content for app/main.py" in message_snapshots[1]
-    assert "do not reread this file" in message_snapshots[1]
+    assert "## app/main.py" in message_snapshots[1]
+    assert "do not reread these files" in message_snapshots[1]
     assert "already supplied authoritative focused-repair evidence" in message_snapshots[2]
     assert len({usage["tool_schema_hash"] for usage in result.call_usage}) == 1
     assert any(event.get("focused_repair_continuation") for event in result.agent_transcript)
     assert any(
-        event.get("adaptive_tool_surface", {}).get("reason") == "single_repair_context_provided"
+        event.get("adaptive_tool_surface", {}).get("reason") == "focused_repair_context_provided"
         for event in result.agent_transcript
     )
     assert any(

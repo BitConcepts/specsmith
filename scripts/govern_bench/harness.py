@@ -534,14 +534,14 @@ def _focused_validator_repair_boundaries(
     task: BenchTask,
     failures: list[str],
 ) -> list[tuple[str, list[str]]]:
-    """Map public validator failures to requirement-linked repair paths."""
+    """Select one public failure and its requirement-linked repair paths.
+
+    A controller that returns every simultaneously failing boundary encourages
+    weaker models to rewrite unrelated components.  Process the first
+    executable repair boundary and leave the remaining validator receipts
+    queued for the next deterministic validation cycle.
+    """
     boundaries: list[tuple[str, list[str]]] = []
-    for command in _validator_commands_for_task(task):
-        if not any(failure.startswith(f"{command} FAILED:") for failure in failures):
-            continue
-        paths = _validator_boundaries_for_task(task, command)
-        if paths:
-            boundaries.append((command, paths))
     lint_failures = [failure for failure in failures if failure.startswith("ruff check . FAILED:")]
     if lint_failures:
         normalized_failures = "\n".join(lint_failures).replace("\\", "/").casefold()
@@ -553,15 +553,22 @@ def _focused_validator_repair_boundaries(
         if not linked_paths:
             linked_paths = [str(path) for path in task.expected_files_changed]
         if linked_paths:
-            boundaries.append(("ruff check .", linked_paths))
+            return [("ruff check .", linked_paths)]
 
-    if any(failure.startswith("pytest FAILED:") for failure in failures):
-        # A traceback names the asserting test file even when the defect is in
-        # production code. Preserve the complete declared change boundary so a
-        # focused repair cannot become trapped in model-authored tests.
-        linked_paths = [str(path) for path in task.expected_files_changed]
-        if linked_paths:
-            boundaries.append(("pytest", linked_paths))
+    commands = [*_validator_commands_for_task(task), "pytest"]
+    for failure in failures:
+        for command in commands:
+            if not failure.startswith(f"{command} FAILED:"):
+                continue
+            paths = _validator_boundaries_for_task(task, command)
+            if paths:
+                return [(command, paths)]
+            if command == "pytest":
+                # Tasks without explicit pytest boundaries retain a safe
+                # fallback that includes implementation and public tests.
+                linked_paths = [str(path) for path in task.expected_files_changed]
+                if linked_paths:
+                    return [("pytest", linked_paths)]
     return boundaries
 
 
@@ -572,10 +579,11 @@ def _focused_validator_repair_progress(task: BenchTask, failures: list[str]) -> 
     if not focus:
         return ""
     return (
-        "Public validator repair boundary: "
+        "Active public-validator repair boundary: "
         + "; ".join(focus)
-        + ". The failure output is authoritative. Edit these requirement-linked files now; "
-        "do not reread validator implementation or unrelated project files."
+        + ". The matching failure output is authoritative. Repair only this "
+        "requirement-linked boundary now; the controller will queue and recheck "
+        "other failures. Do not reread validator implementation or unrelated files."
     )
 
 
@@ -979,6 +987,40 @@ def _serialized_done_tool_call(
     )
 
 
+def _serialized_function_tool_call(
+    content: str,
+    active_tool_names: set[str],
+    *,
+    turn: int,
+) -> NormalizedToolCall | None:
+    """Recover one exact text-serialized function call from compatible routes.
+
+    Some OpenAI-compatible providers return ``<function=name>{...}`` in the
+    assistant text field even when the request supplied native tool schemas.
+    Accept only a full-string match, a currently active tool, and a JSON object.
+    The recovered call still passes through the ordinary path, scope, command,
+    and blank-overwrite guards.
+    """
+    match = re.fullmatch(
+        r"\s*<function=([a-zA-Z_][a-zA-Z0-9_]*)>\s*(\{.*\})\s*",
+        content,
+        flags=re.DOTALL,
+    )
+    if match is None:
+        return None
+    name, arguments = match.groups()
+    if name not in active_tool_names:
+        return None
+    payload = _json_loads_maybe(arguments)
+    if not isinstance(payload, dict):
+        return None
+    return NormalizedToolCall(
+        id=f"serialized-function-{turn}",
+        name=name,
+        arguments=json.dumps(payload, separators=(",", ":")),
+    )
+
+
 _SERIAL_ACTION_TOOLS = frozenset(
     {"read_file", "write_file", "list_files", "run_command", "run_validator"}
 )
@@ -1297,7 +1339,7 @@ def _single_repair_context(
     task: BenchTask,
     failures: list[str],
 ) -> str:
-    """Return bounded current content when validation identifies one repair file."""
+    """Return bounded current content for one active repair boundary."""
     paths = list(
         dict.fromkeys(
             path
@@ -1305,19 +1347,27 @@ def _single_repair_context(
             for path in boundary_paths
         )
     )
-    if len(paths) != 1:
+    if not paths or len(paths) > 3:
         return ""
-    path = paths[0]
-    content = _exec_read_file(project_root, path)
-    if content.startswith("ERROR:"):
+    chunks: list[str] = []
+    remaining_chars = min(MAX_BOUNDARY_CONTEXT_CHARS, 10_000)
+    for path in paths:
+        content = _exec_read_file(project_root, path)
+        if content.startswith("ERROR:"):
+            continue
+        allowance = min(MAX_FILE_BYTES, 4_000, remaining_chars)
+        if allowance <= 0:
+            break
+        if len(content) > allowance:
+            content = content[:allowance] + f"\n... [repair context truncated at {allowance} chars]"
+        chunks.append(f"## {path}\n{content}")
+        remaining_chars -= len(content)
+    if not chunks:
         return ""
-    max_chars = min(MAX_FILE_BYTES, 4_000)
-    if len(content) > max_chars:
-        content = content[:max_chars] + f"\n... [repair context truncated at {max_chars} chars]"
     return (
-        f"Current content for {path} (controller-provided; do not reread this file). "
-        "Send one corrected complete replacement body with write_file:\n"
-        f"```\n{content}\n```"
+        "Current content for the active repair boundary (controller-provided; "
+        "do not reread these files). Send corrected complete replacement bodies "
+        "with write_file or write_files:\n\n" + "\n\n".join(chunks)
     )
 
 
@@ -2646,16 +2696,26 @@ def _run_agent_loop(
 
         msg = response.message
         serialized_done_recovered = False
+        serialized_function_recovered = False
         if not msg.tool_calls and condition.id == "SPECSMITH_FULL":
-            serialized_done = _serialized_done_tool_call(
+            serialized_function = _serialized_function_tool_call(
                 msg.content,
-                task,
-                files_written,
+                _active_tool_names(tools),
                 turn=turn + 1,
             )
-            if serialized_done is not None:
-                msg = NormalizedAssistantMessage(content="", tool_calls=[serialized_done])
-                serialized_done_recovered = True
+            if serialized_function is not None:
+                msg = NormalizedAssistantMessage(content="", tool_calls=[serialized_function])
+                serialized_function_recovered = True
+            else:
+                serialized_done = _serialized_done_tool_call(
+                    msg.content,
+                    task,
+                    files_written,
+                    turn=turn + 1,
+                )
+                if serialized_done is not None:
+                    msg = NormalizedAssistantMessage(content="", tool_calls=[serialized_done])
+                    serialized_done_recovered = True
         assistant_message = _normalized_message_to_openai_dict(msg)
         tc_names = [tc.name for tc in msg.tool_calls]
         tc_targets = [_tool_call_target(tc) for tc in msg.tool_calls]
@@ -2679,6 +2739,16 @@ def _run_agent_loop(
                     "role": "controller",
                     "serialized_done_recovered": True,
                     "reason": "exact_done_schema_after_complete_write_scope",
+                }
+            )
+        if serialized_function_recovered:
+            agent_transcript.append(
+                {
+                    "turn": turn + 1,
+                    "role": "controller",
+                    "serialized_function_recovered": True,
+                    "reason": "exact_active_function_schema",
+                    "tool": msg.tool_calls[0].name,
                 }
             )
 
@@ -3200,7 +3270,7 @@ def _run_agent_loop(
                         "turn": turn + 1,
                         "role": "controller",
                         "adaptive_tool_surface": {
-                            "reason": "single_repair_context_provided",
+                            "reason": "focused_repair_context_provided",
                             "schema_stable": True,
                             "tool_schema_hash": _tool_schema_hash(tools),
                         },

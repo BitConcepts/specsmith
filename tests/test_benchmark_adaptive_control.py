@@ -36,6 +36,7 @@ from govern_bench.harness import (  # noqa: E402
     _scope_contract,
     _scope_progress,
     _serialized_done_tool_call,
+    _serialized_function_tool_call,
     _updated_serialized_action_count,
     _updated_unchanged_read_only_streak,
 )
@@ -308,10 +309,10 @@ def test_serialized_routes_receive_bounded_composite_file_tools(tmp_path: Path) 
             "python tools/validate_ui.py FAILED:\nmissing role selector",
         ],
     )
-    assert "contracts/incident.schema.json" in focus
     assert "ui/src/App.tsx" in focus
-    assert "ui/tests/incident-console.spec.ts" in focus
-    assert "do not reread validator" in focus
+    assert "contracts/incident.schema.json" not in focus
+    assert "queue and recheck" in focus
+    assert "do not reread validator" in focus.casefold()
 
 
 def test_pytest_repair_keeps_implementation_and_test_boundaries() -> None:
@@ -469,6 +470,37 @@ def test_serialized_done_recovery_requires_exact_schema_and_complete_scope() -> 
             task,
             complete_scope,
             turn=17,
+        )
+        is None
+    )
+
+
+def test_text_serialized_active_function_is_recovered_through_normal_tools() -> None:
+    content = '<function=write_files>{"files":[{"path":"one.py","content":"VALUE = 1\\n"}]}'
+
+    recovered = _serialized_function_tool_call(
+        content,
+        {"read_files", "write_files", "done"},
+        turn=5,
+    )
+
+    assert recovered is not None
+    assert recovered.id == "serialized-function-5"
+    assert recovered.name == "write_files"
+    assert '"path":"one.py"' in recovered.arguments
+    assert (
+        _serialized_function_tool_call(
+            '<function=run_command>{"command":"rm -rf ."}',
+            {"write_files", "done"},
+            turn=5,
+        )
+        is None
+    )
+    assert (
+        _serialized_function_tool_call(
+            'Narration <function=write_files>{"files":[]}',
+            {"write_files"},
+            turn=5,
         )
         is None
     )
