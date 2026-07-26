@@ -72,6 +72,12 @@ expected_files_changed:
   - app/main.py          # new route — must be before /{todo_id}
   - tests/test_main.py   # new stats tests
 
+# FULL receives exactly these requirement-linked files in its initial context.
+# The bounded preload replaces repeated discovery reads with current evidence.
+initial_context_paths:
+  - app/main.py
+  - tests/test_main.py
+
 regression_risk: high  # placing route after /{todo_id} silently breaks it
 
 known_failure_modes:

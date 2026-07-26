@@ -18,6 +18,8 @@ if str(_SCRIPTS_DIR) not in sys.path:
 
 import govern_bench.harness as harness_module  # noqa: E402
 from govern_bench.compare_runs import (  # noqa: E402
+    governance_substitution_comparisons,
+    render_comparison,
     rollup,
     split_input_spec,
     validate_comparable,
@@ -63,6 +65,7 @@ from govern_bench.probe_models import (  # noqa: E402
     _http_error_message,
     _probe_chat_endpoint,
 )
+from govern_bench.profiles import PROFILES, resolve_profile  # noqa: E402
 from govern_bench.report import _task_list_label  # noqa: E402
 from govern_bench.run_bench import _configure_console_output, incomplete_real_run  # noqa: E402
 from govern_bench.tasks import get_task  # noqa: E402
@@ -93,6 +96,79 @@ def _row(
         "skipped": skipped,
         "error": error,
     }
+
+
+def test_locked_benchmark_profiles_preserve_admission_and_release_controls() -> None:
+    tasks, conditions, repetitions = resolve_profile(
+        "admission",
+        tasks=None,
+        conditions=None,
+        repetitions=None,
+    )
+    assert (tasks, conditions, repetitions) == (["T28"], ["SPECSMITH_FULL"], 1)
+    assert PROFILES["controller-admission"].tasks == ("T1", "T10", "T28")
+    assert PROFILES["controller-admission"].repetitions == 1
+    assert PROFILES["release-controls"].tasks == ("T10", "T13", "T28")
+    assert PROFILES["release-controls"].repetitions == 10
+    assert PROFILES["broad-release"].tasks == (
+        "T1",
+        "T2",
+        "T6",
+        "T7",
+        "T10",
+        "T11",
+        "T13",
+        "T28",
+    )
+    assert PROFILES["broad-release"].repetitions == 10
+    with pytest.raises(ValueError, match="locked benchmark profile"):
+        resolve_profile(
+            "release-controls",
+            tasks=["T10"],
+            conditions=None,
+            repetitions=None,
+        )
+
+
+def test_comparison_reports_smaller_governed_vs_frontier_ungoverned() -> None:
+    def rows(model: str, *, full_tokens: int, raw_tokens: int) -> list[dict]:
+        result: list[dict] = []
+        for condition, tokens in (
+            ("UNGOVERNED", raw_tokens),
+            ("SPECSMITH_FULL", full_tokens),
+        ):
+            for rep in range(1, 6):
+                row = _row(
+                    task="T28",
+                    condition=condition,
+                    rep=rep,
+                    model=model,
+                )
+                row["tokens"] = tokens
+                row["cost_usd"] = tokens / 1_000_000
+                result.append(row)
+        return result
+
+    smaller_rows = rows(
+        "Qwen/Qwen3.6-35B-A3B:deepinfra",
+        full_tokens=15_000,
+        raw_tokens=40_000,
+    )
+    frontier_rows = rows("gpt-5.6-sol", full_tokens=10_000, raw_tokens=25_000)
+    models = [
+        ("Qwen/Qwen3.6-35B-A3B", rollup(smaller_rows)),
+        ("gpt-5.6-sol", rollup(frontier_rows)),
+    ]
+
+    comparisons = governance_substitution_comparisons(models, ["T28"])
+    rendered = render_comparison(models, tasks=["T28"])
+
+    assert len(comparisons) == 1
+    assert comparisons[0]["smaller_model"] == "Qwen/Qwen3.6-35B-A3B"
+    assert "Governance as model-capability substitution" in rendered
+    assert "Qwen/Qwen3.6-35B-A3B + FULL" in rendered
+    assert "gpt-5.6-sol + UNGOVERNED" in rendered
+    assert "Matches/exceeds correctness with lower TPCA" in rendered
 
 
 def test_file_bodies_are_just_in_time_by_default(
@@ -1577,15 +1653,12 @@ def test_full_repair_write_forces_controller_owned_revalidation(
 
     assert result.stop_reason == "done"
     assert result.llm_turns == 4
-    assert tool_surfaces[1] == {"write_file", "done"}
+    stable_surface = {"read_files", "write_files", "read_file", "write_file", "done"}
+    assert all(surface == stable_surface for surface in tool_surfaces)
     assert "Current content for app/main.py" in message_snapshots[1]
     assert "do not reread this file" in message_snapshots[1]
-    assert tool_surfaces[2] == {"write_file", "done"}, (
-        tool_surfaces,
-        result.agent_transcript,
-    )
     assert "already supplied authoritative focused-repair evidence" in message_snapshots[2]
-    assert tool_surfaces[3] == {"write_file", "done"}
+    assert len({usage["tool_schema_hash"] for usage in result.call_usage}) == 1
     assert any(event.get("focused_repair_continuation") for event in result.agent_transcript)
     assert any(
         event.get("adaptive_tool_surface", {}).get("reason") == "single_repair_context_provided"

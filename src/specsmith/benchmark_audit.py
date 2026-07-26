@@ -145,6 +145,7 @@ def _next_experiment_decision(
         "systematic_repair_hotspot",
         "token_amplification",
         "tool_call_serialization",
+        "tool_schema_discontinuity",
         "verification_repair_outlier",
     }
 
@@ -362,6 +363,16 @@ def _has_cache_discontinuity(row: dict[str, Any]) -> bool:
         _as_int(item.get("cached_input_tokens")) == 0 for item in usage[first_cached + 1 :]
     )
     return later_uncached >= 2
+
+
+def _has_tool_schema_discontinuity(row: dict[str, Any]) -> bool:
+    """Return whether provider-visible tool definitions changed between calls."""
+    hashes = {
+        str(item.get("tool_schema_hash") or "")
+        for item in row.get("call_usage") or []
+        if isinstance(item, dict) and item.get("tool_schema_hash")
+    }
+    return len(hashes) > 1
 
 
 def _failed_after_tool_result(row: dict[str, Any]) -> bool:
@@ -1230,6 +1241,29 @@ def audit_benchmark_rows(
                 ),
                 tasks=sorted({str(row.get("task")) for row in cache_discontinuities}),
                 conditions=sorted({str(row.get("condition")) for row in cache_discontinuities}),
+            )
+        )
+
+    schema_discontinuities = [
+        row
+        for row in valid
+        if str(row.get("condition")).startswith("SPECSMITH") and _has_tool_schema_discontinuity(row)
+    ]
+    if schema_discontinuities:
+        weaknesses.append(
+            BenchmarkWeakness(
+                code="tool_schema_discontinuity",
+                severity="medium",
+                title="Provider-visible tools changed during the governed run",
+                evidence=(
+                    f"{len(schema_discontinuities)} row(s) used more than one tool-schema hash."
+                ),
+                recommendation=(
+                    "Use one compact task-scoped tool schema for every model call; enforce "
+                    "phase restrictions in the controller without redefining provider tools."
+                ),
+                tasks=sorted({str(row.get("task")) for row in schema_discontinuities}),
+                conditions=sorted({str(row.get("condition")) for row in schema_discontinuities}),
             )
         )
 

@@ -276,6 +276,78 @@ def _delta(a: float, b: float) -> str:
     return f"{ratio:.1f}× costlier"
 
 
+_TIER_RANK = {
+    "nano": 0,
+    "open-small": 0,
+    "mini": 1,
+    "open-mid": 1,
+    "mid": 2,
+    "open-large": 2,
+    "open-xl": 3,
+    "frontier": 4,
+}
+
+
+def _aggregate_condition(
+    data: dict[str, dict[str, dict]],
+    tasks: list[str],
+    condition: str,
+) -> dict[str, float] | None:
+    """Aggregate one condition across an identical task grid."""
+    selected = [data.get(task, {}).get(condition) for task in tasks]
+    if not selected or any(item is None for item in selected):
+        return None
+    stats = [item for item in selected if item is not None]
+    runs = sum(int(item["n_reps"]) for item in stats)
+    passes = sum(float(item["pass_rate"]) * int(item["n_reps"]) for item in stats)
+    tokens = sum(float(item["avg_tokens"]) * int(item["n_reps"]) for item in stats)
+    cost = sum(float(item["avg_cost"]) * int(item["n_reps"]) for item in stats)
+    pass_rate = passes / runs if runs else 0.0
+    return {
+        "runs": float(runs),
+        "pass_rate": pass_rate,
+        "tokens_per_correct_answer": tokens / passes if passes else float("inf"),
+        "cost_of_pass": cost / passes if passes else float("inf"),
+    }
+
+
+def governance_substitution_comparisons(
+    models: list[tuple[str, dict[str, dict[str, dict]]]],
+    tasks: list[str],
+) -> list[dict[str, object]]:
+    """Return valid 2×2 smaller-governed/frontier-ungoverned comparisons."""
+    comparisons: list[dict[str, object]] = []
+    for smaller_name, smaller_data in models:
+        smaller_rank = _TIER_RANK.get(model_tier(smaller_name))
+        if smaller_rank is None:
+            continue
+        for stronger_name, stronger_data in models:
+            stronger_rank = _TIER_RANK.get(model_tier(stronger_name))
+            if stronger_rank is None or smaller_rank >= stronger_rank:
+                continue
+            smaller_full = _aggregate_condition(smaller_data, tasks, "SPECSMITH_FULL")
+            smaller_raw = _aggregate_condition(smaller_data, tasks, "UNGOVERNED")
+            stronger_full = _aggregate_condition(stronger_data, tasks, "SPECSMITH_FULL")
+            stronger_raw = _aggregate_condition(stronger_data, tasks, "UNGOVERNED")
+            if not all((smaller_full, smaller_raw, stronger_full, stronger_raw)):
+                continue
+            assert smaller_full is not None
+            assert smaller_raw is not None
+            assert stronger_full is not None
+            assert stronger_raw is not None
+            comparisons.append(
+                {
+                    "smaller_model": smaller_name,
+                    "stronger_model": stronger_name,
+                    "smaller_full": smaller_full,
+                    "smaller_ungoverned": smaller_raw,
+                    "stronger_full": stronger_full,
+                    "stronger_ungoverned": stronger_raw,
+                }
+            )
+    return comparisons
+
+
 # ---------------------------------------------------------------------------
 # Report generation
 # ---------------------------------------------------------------------------
@@ -288,6 +360,12 @@ def render_comparison(
     lines: list[str] = []
     all_tasks = tasks or sorted({t for _, d in models for t in d})
     reps_label = _reps_label(models)
+    screening_ready = all(
+        stats["n_reps"] >= 5
+        for _model, data in models
+        for conditions in data.values()
+        for stats in conditions.values()
+    )
 
     lines += [
         "# specsmith Governance Efficiency — Model Comparison",
@@ -388,17 +466,66 @@ def render_comparison(
         lines.append("|".join(row))
     lines.append("")
 
+    substitutions = governance_substitution_comparisons(models, all_tasks)
+    if substitutions:
+        lines += [
+            "## Governance as model-capability substitution",
+            "",
+            "This is a 2×2 factorial comparison: both models run both UNGOVERNED and "
+            "SPECSMITH_FULL on the identical task and repetition grid. The headline pair "
+            "asks whether the smaller governed model can match the stronger ungoverned "
+            "model; the other two cells preserve the within-model governance controls.",
+            "",
+        ]
+        if not screening_ready:
+            lines += [
+                "**Diagnostic only:** every cell needs at least five repetitions before "
+                "making a substitution claim.",
+                "",
+            ]
+        lines += [
+            "| Smaller governed model | Pass | TPCA | CoP | Stronger ungoverned model | "
+            "Pass | TPCA | CoP | Outcome |",
+            "|---|---:|---:|---:|---|---:|---:|---:|---|",
+        ]
+        for item in substitutions:
+            smaller = item["smaller_full"]
+            stronger = item["stronger_ungoverned"]
+            assert isinstance(smaller, dict)
+            assert isinstance(stronger, dict)
+            smaller_pass = float(smaller["pass_rate"])
+            stronger_pass = float(stronger["pass_rate"])
+            smaller_tpca = float(smaller["tokens_per_correct_answer"])
+            stronger_tpca = float(stronger["tokens_per_correct_answer"])
+            if smaller_pass < stronger_pass:
+                outcome = "Does not match stronger-model correctness"
+            elif smaller_tpca <= stronger_tpca:
+                outcome = "Matches/exceeds correctness with lower TPCA"
+            else:
+                outcome = "Matches/exceeds correctness with a token premium"
+            if not screening_ready:
+                outcome = f"Diagnostic: {outcome.casefold()}"
+            lines.append(
+                "| "
+                f"{item['smaller_model']} + FULL | {_pct(smaller_pass)} | "
+                f"{_tok(smaller_tpca)} | {_cop(float(smaller['cost_of_pass']))} | "
+                f"{item['stronger_model']} + UNGOVERNED | {_pct(stronger_pass)} | "
+                f"{_tok(stronger_tpca)} | {_cop(float(stronger['cost_of_pass']))} | "
+                f"{outcome} |"
+            )
+        lines += [
+            "",
+            "A positive substitution result means governance compensated for measured "
+            "capability on this task grid. It does not imply that model size is irrelevant "
+            "or that the smaller model matches the frontier model outside the evaluated work.",
+            "",
+        ]
+
     # ── Headline findings ──────────────────────────────────────────────────
     lines += [
         "## Headline findings",
         "",
     ]
-    screening_ready = all(
-        stats["n_reps"] >= 5
-        for _model, data in models
-        for conditions in data.values()
-        for stats in conditions.values()
-    )
     if not screening_ready:
         lines += [
             "No superiority claim is made: every matched slice needs at least 5 "

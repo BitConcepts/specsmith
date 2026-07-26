@@ -355,6 +355,24 @@ def test_audit_selects_next_experiment_from_measured_evidence() -> None:
     assert cache_observation.next_experiment.action == "expand_release_sample"
     assert cache_observation.next_experiment.ready_for_repetition
 
+    schema_churn_rows = []
+    for rep in range(1, 6):
+        row = _row(
+            condition="SPECSMITH_FULL",
+            passed=True,
+            input_tokens=1_000,
+            output_tokens=300,
+            rep=rep,
+        )
+        row["call_usage"] = [
+            {"turn": 1, "tool_schema_hash": "schema-a"},
+            {"turn": 2, "tool_schema_hash": "schema-b"},
+        ]
+        schema_churn_rows.append(row)
+    schema_churn = audit_benchmark_rows(schema_churn_rows)
+    assert "tool_schema_discontinuity" in {weakness.code for weakness in schema_churn.weaknesses}
+    assert schema_churn.next_experiment.action == "optimize_and_rerun"
+
     correctness_failure = audit_benchmark_rows(
         [
             _row(condition="CURSOR_RULES", passed=True, input_tokens=1_000),

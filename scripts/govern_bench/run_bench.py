@@ -53,6 +53,7 @@ if str(_HERE) not in sys.path:
 
 from govern_bench.conditions import CONDITION_MAP, CONDITIONS  # noqa: E402
 from govern_bench.metrics import BenchReport, RunResult  # noqa: E402
+from govern_bench.profiles import PROFILES, resolve_profile  # noqa: E402
 from govern_bench.report import write_report  # noqa: E402
 from govern_bench.tasks import BenchTask, load_all_tasks  # noqa: E402
 
@@ -78,6 +79,17 @@ def _parse_args() -> argparse.Namespace:
         epilog=__doc__,
     )
     parser.add_argument(
+        "--profile",
+        choices=["custom", *PROFILES],
+        default="custom",
+        help=(
+            "Locked benchmark profile. admission=n1 T28/FULL; "
+            "controller-admission=n1 T1/T10/T28 FULL; "
+            "release-controls=n10 T10/T13/T28; broad-release=n10 eight-task grid; "
+            "substitution-screen=n5 coding/long-horizon 2x2 model-governance screen."
+        ),
+    )
+    parser.add_argument(
         "--task",
         "-t",
         action="append",
@@ -99,8 +111,8 @@ def _parse_args() -> argparse.Namespace:
         "--reps",
         "-r",
         type=int,
-        default=5,
-        help="Number of repetitions per task × condition cell (default: 5)",
+        default=None,
+        help="Number of repetitions per task × condition cell (custom default: 5)",
     )
     parser.add_argument(
         "--output",
@@ -340,6 +352,17 @@ def main() -> int:
         _list_all()
         return 0
 
+    try:
+        args.task, args.condition, args.reps = resolve_profile(
+            args.profile,
+            tasks=args.task,
+            conditions=args.condition,
+            repetitions=args.reps,
+        )
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 2
+
     # Resolve tasks and conditions
     all_tasks = load_all_tasks()
     task_map = {t.id: t for t in all_tasks}
@@ -364,7 +387,8 @@ def main() -> int:
 
     total_runs = len(tasks) * len(conditions) * args.reps
     print(
-        f"Benchmark: {len(tasks)} tasks × {len(conditions)} conditions × {args.reps} reps "
+        f"Benchmark [{args.profile}]: "
+        f"{len(tasks)} tasks × {len(conditions)} conditions × {args.reps} reps "
         f"= {total_runs} total runs"
     )
     if args.dry_run:
@@ -424,6 +448,8 @@ def main() -> int:
                 report.runs.append(result)
 
     rows = _result_rows(report, args.provider, tasks, dry_run=args.dry_run)
+    for row in rows:
+        row["benchmark_profile"] = args.profile
 
     # Write JSON output if requested
     if args.json_output:

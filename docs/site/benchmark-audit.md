@@ -6,6 +6,18 @@ tests, and architecture documentation. Its result is reported separately as
 well as in the eight-task suite so cheap governance gates cannot hide
 long-horizon cost.
 
+Controller changes must now pass the locked `controller-admission` profile on
+T1, T10, and T28 before a broad paid run. Benchmark audits also reject FULL
+tool-schema discontinuity: controller phases may suspend reads, but the compact
+advertised schema and its recorded hash must remain stable. This turns provider
+cache stability into a deterministic, testable release property.
+
+For model-capability substitution, the audit accepts conclusions only from a
+matched 2×2 grid: weaker/raw, weaker/FULL, stronger/raw, and stronger/FULL on
+the same tasks and repetition count. The smaller governed model must preserve
+correctness and improve tokens per correct answer or cost per pass to count as
+a viable substitute.
+
 ## Current broad audit and repair decision
 
 [Workflow 30199359636](https://github.com/layer1labs/specsmith/actions/runs/30199359636)

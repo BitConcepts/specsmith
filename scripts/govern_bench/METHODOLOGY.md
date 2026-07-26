@@ -32,6 +32,24 @@ Recommended repetitions:
 
 Cells with fewer repetitions should be reported as provisional.
 
+### 2.1 Locked promotion profiles
+
+Paid runs use versioned profiles so task selection, conditions, and repetition
+counts cannot drift between experiments:
+
+| Profile | Cells per model | Purpose |
+|---|---:|---|
+| `admission` | T28/FULL × 1 | Cheap one-cell model/tool-route admission |
+| `controller-admission` | T1/T10/T28/FULL × 1 | Admit a controller or tool-schema change |
+| `release-controls` | T10/T13/T28 × Cursor/FULL × 10 | Mandatory release regression controls |
+| `broad-release` | 8 tasks × Cursor/FULL × 10 | One same-commit aggregate release claim |
+| `substitution-screen` | T1/T10/T13/T28 × raw/FULL × 5 | Fair model-capability substitution screen |
+
+The promotion funnel is `n=1 admission → n=5 screening → n=10 release
+replication`. A failed admission is repaired or rejected; it is not made
+publishable by spending on more repetitions. Locked-profile task, condition,
+or repetition overrides fail closed.
+
 ## 3) Core Metrics
 
 ### 3.1 Primary metric
@@ -104,6 +122,21 @@ Interpretation:
 - `= 1.0` parity.
 - `> 1.0` no democratization advantage.
 
+This comparison requires the complete matched 2×2 counterfactual grid:
+
+- weaker model + `UNGOVERNED`,
+- weaker model + `SPECSMITH_FULL`,
+- stronger model + `UNGOVERNED`,
+- stronger model + `SPECSMITH_FULL`.
+
+All four slices must use identical tasks and repetition counts. The headline
+comparison is weaker+FULL versus stronger+UNGOVERNED, but the other two cells
+are required to distinguish governance lift from task/model variance. A
+smaller governed model is a viable substitute only when it preserves or
+improves correctness and improves at least one efficiency measure such as
+tokens per correct answer or cost per pass. Under five repetitions is
+diagnostic only.
+
 ## 5) Pareto Frontier
 
 To summarize efficiency-quality tradeoffs, compute the Pareto frontier over points:
@@ -153,11 +186,14 @@ Do not publish comparative claims when intervals overlap substantially without c
   use evaluator output to select a repair.
 - Agent-loop equilibrium uses public completion evidence only. Never install or
   run the hidden oracle inside the model loop; it cannot trigger a repair turn.
-- Start accepted FULL work with the smallest sufficient tool surface. Expand
-  diagnostics only after a validator failure. If two action turns contain a
-  single executable operation, add bounded composite reads/writes and record
-  the adaptation in the transcript. Keep earlier scalar schemas valid because
-  some compatible routes select historically advertised tools after refresh.
+- Give FULL one compact, stable five-tool schema for the entire run:
+  `read_files`, `write_files`, `read_file`, `write_file`, and `done`.
+  Controller phases may suspend a capability, but must not mutate the advertised
+  schema. Record the schema hash in usage and transcript evidence so cache
+  discontinuities fail the efficiency audit.
+- Preload only versioned requirement-linked files. T1 and T10 receive their
+  implementation and public-test files; T28 receives only its active milestone
+  boundary. Do not expose repository-wide context or evaluator evidence.
 - Long-horizon milestone maps and requirement-linked change boundaries are
   versioned task metadata, not evaluator evidence. Report only the next
   incomplete boundary and replace stale progress messages.

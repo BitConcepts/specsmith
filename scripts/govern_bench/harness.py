@@ -629,21 +629,17 @@ def _build_active_tools(
     composite_files: bool = False,
     composite_reads: bool = False,
 ) -> list[dict]:
-    """Expose the smallest sufficient tool surface for accepted AEE work."""
+    """Expose a compact, phase-stable tool surface for accepted AEE work."""
     tools = _build_tools(condition_id, task)
-    if condition_id == "SPECSMITH_FULL" and (composite_files or composite_reads):
-        # Keep scalar tools schema-valid for earlier conversation turns while
-        # adding a bounded composite path. Some OpenAI-compatible routes keep
-        # selecting a previously advertised scalar tool after a tool refresh.
-        tools = [*_COMPOSITE_FILE_TOOLS, *tools]
-    if condition_id != "SPECSMITH_FULL" or diagnostics_required:
+    if condition_id != "SPECSMITH_FULL":
         return tools
-    initial_names = {"read_file", "write_file", "done"}
-    if composite_files:
-        initial_names.add("write_files")
-    if composite_reads:
-        initial_names.add("read_files")
-    return [tool for tool in tools if tool["function"]["name"] in initial_names]
+    # A fixed schema lets provider prompt caches retain the prefix across
+    # implementation, repair, and completion phases. Controller-owned
+    # validation means FULL needs only bounded file operations plus done.
+    del diagnostics_required, composite_files, composite_reads
+    stable_names = {"read_file", "write_file", "done"}
+    scalar_tools = [tool for tool in tools if tool["function"]["name"] in stable_names]
+    return [*_COMPOSITE_FILE_TOOLS, *scalar_tools]
 
 
 def _active_tool_names(tools: list[dict]) -> set[str]:
@@ -653,6 +649,12 @@ def _active_tool_names(tools: list[dict]) -> set[str]:
         for tool in tools
         if isinstance(tool, dict) and isinstance(tool.get("function"), dict)
     }
+
+
+def _tool_schema_hash(tools: list[dict]) -> str:
+    """Return a stable digest for provider-visible tool-schema telemetry."""
+    payload = json.dumps(tools, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
 _READ_TOOL_NAMES = frozenset({"read_file", "read_files"})
@@ -673,15 +675,6 @@ def _read_paths_from_calls(tool_calls: list[NormalizedToolCall]) -> list[str]:
     return paths
 
 
-def _without_read_tools(tools: list[dict]) -> list[dict]:
-    """Temporarily remove read tools while retaining every active mutation/gate tool."""
-    return [
-        tool
-        for tool in tools
-        if str(tool.get("function", {}).get("name") or "") not in _READ_TOOL_NAMES
-    ]
-
-
 def _build_focused_repair_tools(
     condition_id: str,
     task: BenchTask,
@@ -690,20 +683,15 @@ def _build_focused_repair_tools(
     composite_reads: bool = False,
     repair_written: bool = False,
 ) -> list[dict]:
-    """Expose only evidence needed for one controller-identified repair.
-
-    The controller owns validation, so public validator commands and broad
-    discovery tools add no evidence here. After a repair write, even reads are
-    suspended: the next useful action is ``done``, which reruns missing checks.
-    """
-    tools = _build_active_tools(
+    """Retain the fixed FULL schema during one controller-identified repair."""
+    del repair_written
+    return _build_active_tools(
         condition_id,
         task,
         diagnostics_required=False,
         composite_files=composite_files,
         composite_reads=composite_reads,
     )
-    return _without_read_tools(tools) if repair_written else tools
 
 
 def _updated_unchanged_read_only_streak(
@@ -806,6 +794,7 @@ def _scope_contract(task: BenchTask) -> str:
         "AEE change map (requirement-linked, not evaluator evidence):\n"
         f"- likely change boundaries: {', '.join(files)}\n"
         "- inspect each relevant existing file once; do not investigate unrelated defects\n"
+        "- preserve unrelated lines and append focused tests instead of rewriting fixtures\n"
         "- issue independent tool calls in one response when the provider supports batching"
     )
 
@@ -865,7 +854,7 @@ def _boundary_context_packet(
     *,
     turn: int,
 ) -> str:
-    """Return one bounded controller-owned packet for the active milestone."""
+    """Return one bounded controller-owned packet for the active boundary."""
     chunks: list[str] = []
     used = 0
     for path in paths:
@@ -888,7 +877,7 @@ def _boundary_context_packet(
     if not chunks:
         return ""
     return (
-        "Controller-provided current content for the active milestone. Treat it as the "
+        "Controller-provided current content for the active requirement boundary. Treat it as the "
         "authoritative read result and implement now without rereading these paths:\n\n"
         + "\n\n".join(chunks)
     )
@@ -2471,8 +2460,9 @@ def _run_agent_loop(
     del specsmith_dir  # governance state is isolated inside project_root
     diagnostics_required = False
     read_evidence: dict[str, tuple[str, int]] = {}
-    composite_files = condition.id == "SPECSMITH_FULL" and task.is_long_horizon
-    composite_reads = False
+    composite_files = condition.id == "SPECSMITH_FULL"
+    composite_reads = condition.id == "SPECSMITH_FULL"
+    read_tools_suspended = False
     tools = _build_active_tools(
         condition.id,
         task,
@@ -2529,27 +2519,35 @@ def _run_agent_loop(
     file_listing = _exec_list_files(project_root)
     file_context = _build_file_context(project_root, file_listing)
     boundary_context = ""
-    if condition.id == "SPECSMITH_FULL" and task.is_long_horizon:
+    initial_context_paths: list[str] = []
+    if condition.id == "SPECSMITH_FULL":
+        initial_context_paths = (
+            list(task.initial_context_paths)
+            if task.initial_context_paths
+            else _next_incomplete_boundary_paths(task, [])
+            if task.is_long_horizon
+            else []
+        )
+    if initial_context_paths:
         boundary_context = _boundary_context_packet(
             project_root,
-            _next_incomplete_boundary_paths(task, []),
+            initial_context_paths,
             read_evidence,
             turn=0,
         )
-        if boundary_context and _active_boundary_has_current_evidence(
-            task,
-            [],
-            read_evidence,
+        if boundary_context and all(
+            _normalized_history_path(path) in read_evidence for path in initial_context_paths
         ):
-            tools = _without_read_tools(tools)
+            read_tools_suspended = True
             agent_transcript.append(
                 {
                     "turn": 0,
                     "role": "controller",
-                    "active_boundary_context": _next_incomplete_boundary_paths(task, []),
+                    "active_boundary_context": initial_context_paths,
                     "adaptive_tool_surface": {
                         "reason": "active_boundary_context_provided",
-                        "removed_tools": sorted(_READ_TOOL_NAMES),
+                        "schema_stable": True,
+                        "tool_schema_hash": _tool_schema_hash(tools),
                     },
                 }
             )
@@ -2593,7 +2591,6 @@ def _run_agent_loop(
     last_single_write_target = ""
     repeated_write_streak = 0
     unchanged_read_only_streak = 0
-    read_tools_suspended = False
     active_repair_focus = ""
     stop_reason = "max_turns"
 
@@ -2641,6 +2638,7 @@ def _run_agent_loop(
                 "output_tokens": response.usage.completion_tokens,
                 "cached_input_tokens": response.usage.cached_tokens,
                 "cache_write_tokens": response.usage.cache_write_tokens,
+                "tool_schema_hash": _tool_schema_hash(tools),
             }
         )
 
@@ -2778,6 +2776,18 @@ def _run_agent_loop(
                     f"ERROR: tool {fn_name!r} is not available in the current phase. "
                     f"Use one of: {', '.join(sorted(active_tool_names))}."
                 )
+            elif fn_name in _READ_TOOL_NAMES and read_tools_suspended:
+                raw_paths = (
+                    [str(args.get("path") or "")]
+                    if fn_name == "read_file"
+                    else [str(path) for path in (args.get("paths") or [])]
+                )
+                suppressed_unchanged_reads.extend(path for path in raw_paths if path)
+                out = (
+                    "READ SUSPENDED: the controller already supplied current content for "
+                    "this requirement boundary. Reuse that evidence and implement now."
+                )
+
             elif fn_name == "read_file":
                 path = str(args.get("path") or "")
                 out, suppressed = _exec_read_file_with_evidence(
@@ -3189,7 +3199,8 @@ def _run_agent_loop(
                         "role": "controller",
                         "adaptive_tool_surface": {
                             "reason": "single_repair_context_provided",
-                            "removed_tools": sorted(_READ_TOOL_NAMES),
+                            "schema_stable": True,
+                            "tool_schema_hash": _tool_schema_hash(tools),
                         },
                     }
                 )
@@ -3246,7 +3257,7 @@ def _run_agent_loop(
             )
             if _active_boundary_has_current_evidence(task, files_written, read_evidence):
                 read_tools_suspended = True
-                tools = _without_read_tools(base_tools)
+                tools = base_tools
                 progress_detail = (
                     _milestone_progress(task, files_written)
                     if task.is_long_horizon
@@ -3266,7 +3277,8 @@ def _run_agent_loop(
                         "role": "controller",
                         "adaptive_tool_surface": {
                             "reason": "next_boundary_already_known",
-                            "removed_tools": sorted(_READ_TOOL_NAMES),
+                            "schema_stable": True,
+                            "tool_schema_hash": _tool_schema_hash(tools),
                         },
                     }
                 )
@@ -3302,7 +3314,8 @@ def _run_agent_loop(
                     "role": "controller",
                     "adaptive_tool_surface": {
                         "reason": "repair_write_ready_for_validation",
-                        "removed_tools": sorted(_READ_TOOL_NAMES),
+                        "schema_stable": True,
+                        "tool_schema_hash": _tool_schema_hash(tools),
                     },
                 }
             )
@@ -3320,7 +3333,6 @@ def _run_agent_loop(
             and not validation_failed
         ):
             read_tools_suspended = True
-            tools = _without_read_tools(tools)
             progress_detail = (
                 _milestone_progress(task, files_written)
                 if task.is_long_horizon
@@ -3339,7 +3351,8 @@ def _run_agent_loop(
                     "adaptive_tool_surface": {
                         "reason": "unchanged_read_loop",
                         "count": unchanged_read_only_streak,
-                        "removed_tools": sorted(_READ_TOOL_NAMES),
+                        "schema_stable": True,
+                        "tool_schema_hash": _tool_schema_hash(tools),
                     },
                 }
             )

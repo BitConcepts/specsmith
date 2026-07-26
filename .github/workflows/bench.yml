@@ -11,6 +11,18 @@ on:
       - "scripts/govern_bench/**"
   workflow_dispatch:
     inputs:
+      profile:
+        description: "Locked run profile: custom, admission, controller-admission, release-controls, broad-release, substitution-screen."
+        required: false
+        type: choice
+        options:
+          - custom
+          - admission
+          - controller-admission
+          - release-controls
+          - broad-release
+          - substitution-screen
+        default: custom
       groups:
         description: "Model groups to run (comma-separated: open,open-qwen,open-frontier,open-direct,openai,anthropic,google). Default: open."
         required: false
@@ -36,7 +48,7 @@ on:
         required: false
         default: ""
       reps:
-        description: "Repetitions per cell (2 = cost run; 5 = publication)"
+        description: "Custom-profile repetitions per cell. Locked profiles ignore this input."
         required: false
         default: "5"
       dry_run:
@@ -130,6 +142,21 @@ jobs:
             --output /tmp/bench-smoke-hf.md \
             --json-output /tmp/bench-smoke-hf.json
 
+      - name: Verify locked benchmark profiles
+        env:
+          BENCH_DRY_RUN: "1"
+        run: |
+          python scripts/govern_bench/run_bench.py \
+            --profile controller-admission \
+            --provider openai --model gpt-4o-mini \
+            --output /tmp/bench-smoke-controller.md \
+            --json-output /tmp/bench-smoke-controller.json
+          python scripts/govern_bench/run_bench.py \
+            --profile substitution-screen \
+            --provider openai --model gpt-4o-mini \
+            --output /tmp/bench-smoke-substitution.md \
+            --json-output /tmp/bench-smoke-substitution.json
+
       - name: Upload smoke report
         uses: actions/upload-artifact@v7
         with:
@@ -141,6 +168,12 @@ jobs:
             /tmp/bench-smoke-hf.md
             /tmp/bench-smoke-hf.json
             /tmp/bench-smoke-hf.audit.json
+            /tmp/bench-smoke-controller.md
+            /tmp/bench-smoke-controller.json
+            /tmp/bench-smoke-controller.audit.json
+            /tmp/bench-smoke-substitution.md
+            /tmp/bench-smoke-substitution.json
+            /tmp/bench-smoke-substitution.audit.json
           retention-days: 7
 
   # ──────────────────────────────────────────────────────────────────────────
@@ -274,17 +307,21 @@ jobs:
       - name: Build task/condition arguments
         id: build-args
         run: |
-          ARGS=""
-          IFS=',' read -ra TASKS <<< "${{ github.event.inputs.tasks }}"
-          for t in "${TASKS[@]}"; do
-            t=$(echo "$t" | xargs)
-            [ -n "$t" ] && ARGS="$ARGS --task $t"
-          done
-          IFS=',' read -ra CONDS <<< "${{ github.event.inputs.conditions }}"
-          for c in "${CONDS[@]}"; do
-            c=$(echo "$c" | xargs)
-            [ -n "$c" ] && ARGS="$ARGS --condition $c"
-          done
+          PROFILE="${{ github.event.inputs.profile || 'custom' }}"
+          ARGS="--profile $PROFILE"
+          if [ "$PROFILE" = "custom" ]; then
+            IFS=',' read -ra TASKS <<< "${{ github.event.inputs.tasks }}"
+            for t in "${TASKS[@]}"; do
+              t=$(echo "$t" | xargs)
+              [ -n "$t" ] && ARGS="$ARGS --task $t"
+            done
+            IFS=',' read -ra CONDS <<< "${{ github.event.inputs.conditions }}"
+            for c in "${CONDS[@]}"; do
+              c=$(echo "$c" | xargs)
+              [ -n "$c" ] && ARGS="$ARGS --condition $c"
+            done
+            ARGS="$ARGS --reps ${{ github.event.inputs.reps || '5' }}"
+          fi
           echo "args=$ARGS" >> "$GITHUB_OUTPUT"
 
       - name: "Run benchmark — ${{ matrix.label }} (${{ matrix.provider }}/${{ matrix.model }})"
@@ -302,7 +339,6 @@ jobs:
           [ "${{ github.event.inputs.dry_run }}" = "true" ] && DRY_FLAG="--dry-run"
           python scripts/govern_bench/run_bench.py \
             ${{ steps.build-args.outputs.args }} \
-            --reps ${{ github.event.inputs.reps || '5' }} \
             --provider ${{ matrix.provider }} \
             --model "${{ matrix.model }}" \
             --output   "bench-report-${{ matrix.label }}.md" \
@@ -386,6 +422,7 @@ jobs:
           {
             echo "## GovernanceBench — Model Comparison"
             echo ""
+            echo "- Profile: ${{ github.event.inputs.profile || 'custom' }}"
             echo "- Groups: ${{ github.event.inputs.groups || 'open' }}"
             echo "- Tasks: ${{ github.event.inputs.tasks || 'T1,T2,T6,T7,T10,T11,T13' }}"
             echo "- Reps: ${{ github.event.inputs.reps || '5' }}"

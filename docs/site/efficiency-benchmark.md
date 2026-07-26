@@ -1,5 +1,28 @@
 # Specsmith Governance Efficiency Benchmark
 
+## Current promotion and release protocol
+
+Benchmark spend now follows locked, versioned profiles:
+
+1. `admission`: one T28/FULL cell for a new model or route;
+2. `controller-admission`: one T1, T10, and T28 FULL cell after controller changes;
+3. `substitution-screen`: T1/T10/T13/T28, raw and FULL, n=5 for two-model
+   capability-substitution evidence;
+4. `release-controls`: T10/T13/T28, Cursor-style and FULL, n=10;
+5. `broad-release`: the eight-task Cursor/FULL matrix at n=10 for one aggregate
+   same-commit release claim.
+
+Profile task, condition, and repetition overrides fail closed. A failed n=1
+admission is repaired or rejected instead of repeated. The weaker-governed
+versus stronger-ungoverned question requires all four matched counterfactuals,
+not a comparison assembled from unrelated historical runs.
+
+The FULL controller now keeps one compact five-tool schema throughout a run
+and records its hash for cache-efficiency auditing. T1 and T10 preload only
+their versioned implementation/public-test boundary; T28 still receives only
+its active milestone. These changes target retrieval turns without widening
+model-visible context or exposing evaluator evidence.
+
 ## July 26 broad n=10 replication
 
 [Workflow 30199359636](https://github.com/layer1labs/specsmith/actions/runs/30199359636)

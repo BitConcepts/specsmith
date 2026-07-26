@@ -47,6 +47,12 @@ expected_files_changed:
   - app/main.py
   - tests/test_main.py
 
+# FULL receives exactly these requirement-linked files in its initial context.
+# This removes a retrieval turn without exposing evaluator-only tests.
+initial_context_paths:
+  - app/main.py
+  - tests/test_main.py
+
 # Regression risk: the existing GET /todos test will break if the agent
 # changes the return type or removes the route.
 regression_risk: medium

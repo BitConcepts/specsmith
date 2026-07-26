@@ -11,6 +11,11 @@ consolidated into the next published release.
 ## [Unreleased]
 
 ### Added
+- Add locked admission, controller-admission, release-control, broad-release,
+  and model-substitution benchmark profiles with fail-closed task, condition,
+  and repetition selection.
+- Add matched weaker-governed versus stronger-ungoverned 2×2 reporting so model
+  capability and governance lift are not conflated.
 - Complete the 160-row GPT-5.6 Sol broad n=10 replication at `71b316f`.
   FULL used 10,148 tokens per correct answer versus Cursor-style rules at
   23,933, but the audit blocks publication because coding correctness was
@@ -38,6 +43,9 @@ consolidated into the next published release.
   repair boundaries while preserving the independent hidden acceptance oracle.
 
 ### Changed
+- Keep one compact five-tool FULL schema for the entire benchmark run, record
+  its stable hash, and preload only versioned T1/T10 requirement-linked files
+  to remove avoidable retrieval turns without widening context.
 - Current user guidance is forward-only: version-pinned and retired-mode
   instructions are removed, while Zoo Code setup and doctor continue to back up
   and repair malformed, obsolete, or tampered Specsmith-managed assets.

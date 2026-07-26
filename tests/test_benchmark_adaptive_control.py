@@ -38,7 +38,6 @@ from govern_bench.harness import (  # noqa: E402
     _serialized_done_tool_call,
     _updated_serialized_action_count,
     _updated_unchanged_read_only_streak,
-    _without_read_tools,
 )
 from govern_bench.metrics import estimate_cost, model_tier  # noqa: E402
 from govern_bench.select_models import load_registry, select  # noqa: E402
@@ -133,7 +132,7 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
     assert "supplies current content for each active milestone" in contract
     assert "validates completed milestones immediately" in contract
     assert "existing dependencies and standard libraries" in contract
-    assert tools == ["write_files", "read_file", "write_file", "done"]
+    assert tools == ["read_files", "write_files", "read_file", "write_file", "done"]
     assert "backend/main.py" in _milestone_progress(task, ["contracts/incident.schema.json"])
     assert "worker boundary" in _milestone_progress(
         task,
@@ -182,7 +181,7 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
     assert messages[0]["content"].endswith("second")
 
 
-def test_accepted_aee_work_starts_with_minimal_tools_and_bounded_scope() -> None:
+def test_accepted_aee_work_uses_one_compact_schema_and_bounded_scope() -> None:
     task = get_task("T1")
     active = _build_active_tools("SPECSMITH_FULL", task)
     initial = [tool["function"]["name"] for tool in active]
@@ -191,9 +190,9 @@ def test_accepted_aee_work_starts_with_minimal_tools_and_bounded_scope() -> None
         for tool in _build_active_tools("SPECSMITH_FULL", task, diagnostics_required=True)
     ]
 
-    assert initial == ["read_file", "write_file", "done"]
+    assert initial == ["read_files", "write_files", "read_file", "write_file", "done"]
+    assert diagnostic == initial
     assert "run_command" not in _active_tool_names(active)
-    assert not (_active_tool_names(_without_read_tools(active)) & {"read_file", "read_files"})
     repair_names = _active_tool_names(
         _build_focused_repair_tools(
             "SPECSMITH_FULL",
@@ -202,9 +201,10 @@ def test_accepted_aee_work_starts_with_minimal_tools_and_bounded_scope() -> None
             repair_written=True,
         )
     )
-    assert repair_names == {"write_files", "write_file", "done"}
-    assert {"list_files", "run_command", "ask_clarification"}.issubset(diagnostic)
+    assert repair_names == set(initial)
+    assert not {"list_files", "run_command", "ask_clarification"} & set(diagnostic)
     assert "app/main.py" in _scope_contract(task)
+    assert task.initial_context_paths == ["app/main.py", "tests/test_main.py"]
     assert "tests/test_main.py" in _scope_progress(task, ["app/main.py"])
     assert "call done" in _scope_progress(task, task.expected_files_changed)
 

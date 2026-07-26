@@ -40,6 +40,14 @@ python -m govern_bench.run_bench --list
 # Dry-run (deterministic dummy data, useful for CI and report plumbing)
 python -m govern_bench.run_bench --dry-run --reps 5
 
+# Admit a model cheaply before any repeated spend
+python -m govern_bench.run_bench --profile admission \
+  --provider openai --model gpt-5.6-sol
+
+# Admit controller/tool-schema changes on the affected paths
+python -m govern_bench.run_bench --profile controller-admission \
+  --provider openai --model gpt-5.6-sol
+
 # Run governance-gate tasks only (T6 + T7)
 python -m govern_bench.run_bench --task T6 --task T7 --dry-run
 
@@ -59,6 +67,23 @@ Each raw-result audit contains a deterministic `next_experiment` decision.
 Only `repeat_screen` advances an n=1 diagnostic to five repetitions; correctness
 or efficiency findings select a focused repair/optimization rerun, and malformed
 or synthetic evidence is rejected.
+
+For a weaker-governed versus stronger-ungoverned experiment, run both models
+through the locked `substitution-screen` profile. It produces the complete
+raw/FULL 2×2 grid on identical tasks at n=5. Never compare a smaller FULL slice
+with an unrelated frontier baseline: without both counterfactual cells, model
+capability and governance lift are confounded.
+
+The paid-run profiles are:
+
+- `admission`: T28/FULL, n=1;
+- `controller-admission`: T1/T10/T28/FULL, n=1;
+- `release-controls`: T10/T13/T28, Cursor/FULL, n=10;
+- `broad-release`: T1/T2/T6/T7/T10/T11/T13/T28, Cursor/FULL, n=10;
+- `substitution-screen`: T1/T10/T13/T28, raw/FULL, n=5.
+
+Profile task, condition, and repetition counts are locked. Use `custom` only
+for explicitly diagnostic work.
 
 ---
 
@@ -122,9 +147,10 @@ file write. T28 additionally requires fresh Go-test, shared-contract, and
 deterministic UI-validator evidence, so a Python-only implementation cannot declare success. A failed check
 sends the agent back through a repair turn; those turns and tokens remain part of
 the measured cost. FULL may apply one Ruff default-safe-fix pass before returning
-a lint-only failure; unsafe fixes are never enabled. After two one-action turns,
-FULL adds bounded composite reads/writes so serial serving routes can batch one
-active boundary while earlier scalar schemas remain valid. Failed task-specific
+a lint-only failure; unsafe fixes are never enabled. FULL exposes one compact
+five-tool schema for the entire run and records its hash so provider caching
+cannot be disrupted by controller phase changes. Requirement-linked files are
+preloaded only where versioned task metadata permits it. Failed task-specific
 validators point to versioned repair files and discourage unchanged validator
 rereads. Other conditions do not
 receive this completion gate. Hidden acceptance tests remain evaluator-only

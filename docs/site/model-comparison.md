@@ -1,5 +1,27 @@
 # Governance Efficiency Model Comparison
 
+## Governance as model-capability substitution
+
+The next comparison asks a stricter question than “which model scores best?”:
+can a smaller or weaker model with Specsmith match a stronger ungoverned model
+at lower tokens per correct answer or cost per pass?
+
+GovernanceBench now reports that result only from a complete matched 2×2
+experiment:
+
+| Required cell | What it isolates |
+|---|---|
+| weaker + raw | weaker-model baseline |
+| weaker + FULL | governance-assisted candidate |
+| stronger + raw | substitution target |
+| stronger + FULL | governance lift at the frontier |
+
+The locked `substitution-screen` uses T1, T10, T13, and T28 with five
+repetitions per cell. The smaller+FULL headline must preserve correctness
+against stronger+raw; lower token or dollar cost cannot compensate for fewer
+correct outcomes. One-run admission remains mandatory before this 80-cell
+screen, and a release claim requires n=10 replication.
+
 ## Evidence levels
 
 | Evidence | Model/routes | Repetitions | Treatment |
