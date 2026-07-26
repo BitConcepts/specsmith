@@ -83,6 +83,7 @@ nav:
     - Changelog: esdb/changelog.md
   - Benchmarks:
     - Governance Efficiency: efficiency-benchmark.md
+    - Preprint & Public Claims: preprint.md
     - Model Comparison: model-comparison.md
     - Long-Horizon & Weakness Audit: benchmark-audit.md
 

@@ -21,6 +21,9 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from govern_bench.metrics import model_tier, strip_provider_route
 from govern_bench.substitution import substitution_inference
 
@@ -482,8 +485,8 @@ def render_comparison(
             "",
             "This is a 2×2 factorial comparison: both models run both UNGOVERNED and "
             "SPECSMITH_FULL on the identical task and repetition grid. The headline pair "
-            "asks whether the smaller governed model can match the stronger ungoverned "
-            "model; the other two cells preserve the within-model governance controls.",
+            "asks whether the lower-tier governed route can match the frontier ungoverned "
+            "route; the other two cells preserve the within-model governance controls.",
             "",
         ]
         if not screening_ready:
@@ -493,7 +496,7 @@ def render_comparison(
                 "",
             ]
         lines += [
-            "| Smaller governed model | Pass | TPCA | CoP | Stronger ungoverned model | "
+            "| Lower-tier governed route | Pass | TPCA | CoP | Frontier ungoverned route | "
             "Pass | TPCA | CoP | Outcome |",
             "|---|---:|---:|---:|---|---:|---:|---:|---|",
         ]
@@ -555,8 +558,8 @@ def render_comparison(
         lines += [
             "",
             "A positive substitution result means governance compensated for measured "
-            "capability on this task grid. It does not imply that model size is irrelevant "
-            "or that the smaller model matches the frontier model outside the evaluated work.",
+            "capability on this task grid. It does not imply a model parameter count or that "
+            "the lower-tier route matches the frontier route outside the evaluated work.",
             "",
         ]
 

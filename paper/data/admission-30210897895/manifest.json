@@ -1,0 +1,59 @@
+{
+  "cell_fields": [
+    "workflow_id",
+    "commit_sha",
+    "task",
+    "category",
+    "horizon",
+    "condition",
+    "rep",
+    "model",
+    "provider",
+    "model_tier",
+    "benchmark_profile",
+    "passed",
+    "acceptance_oracle_passed",
+    "project_tests_passed",
+    "input_tokens",
+    "output_tokens",
+    "cached_input_tokens",
+    "cache_write_tokens",
+    "tokens",
+    "cost_usd",
+    "rework_turns",
+    "governance_turns",
+    "llm_turns",
+    "wall_clock_s",
+    "stop_reason",
+    "expected_file_count",
+    "written_file_count",
+    "language_count",
+    "tool_schema_hashes"
+  ],
+  "cells_canonical_sha256": "42d520ae347842e7df102cfd74ff2ea44f209aa0d57e99ba82715f36323eb8fa",
+  "cells_csv_sha256": "4f9e2249195d52fd9af82e2352f2ab4e20cb49d080cb08f8036e81e2639c7846",
+  "commit_sha": "75a8c7911187abe8db2b6ca77f0e08fa7859ffe7",
+  "excluded_fields": [
+    "agent_transcript",
+    "final_diff",
+    "governance_decision",
+    "lint_output",
+    "test_output",
+    "verify_result"
+  ],
+  "row_count": 2,
+  "schema": "governancebench-evidence-v1",
+  "source_artifacts": [
+    {
+      "name": "bench-results-gpt-4o-mini.json",
+      "rows": 1,
+      "sha256": "84da68fc0c6a6e6d0e0333adf9fb90c77a526664920d221502184e3b2c6a9aa8"
+    },
+    {
+      "name": "bench-results-llama-3.1-8b.json",
+      "rows": 1,
+      "sha256": "b435e1a0da561e5473fd60faea8c41dc7829fd116be05c46f9f1c34ce87df218"
+    }
+  ],
+  "workflow_id": "30210897895"
+}

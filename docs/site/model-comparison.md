@@ -2,30 +2,40 @@
 
 ## Governance as model-capability substitution
 
-The next comparison asks a stricter question than “which model scores best?”:
-can a smaller or weaker model with Specsmith match a stronger ungoverned model
-at lower tokens per correct answer or cost per pass?
+The comparison asks a stricter question than “which model scores best?”: can a
+lower-tier model with Specsmith match a frontier ungoverned model at lower
+tokens per correct answer or cost per pass?
 
 GovernanceBench now reports that result only from a complete matched 2×2
 experiment:
 
 | Required cell | What it isolates |
 |---|---|
-| weaker + raw | weaker-model baseline |
-| weaker + FULL | governance-assisted candidate |
-| stronger + raw | substitution target |
-| stronger + FULL | governance lift at the frontier |
+| lower-tier + raw | lower-tier route baseline |
+| lower-tier + FULL | governance-assisted candidate |
+| frontier + raw | substitution target |
+| frontier + FULL | governance lift at the frontier |
 
 The locked `substitution-screen` uses T1, T10, T13, and T28 with five
-repetitions per cell. The smaller+FULL headline must preserve correctness
-against stronger+raw; lower token or dollar cost cannot compensate for fewer
-correct outcomes. One-run admission remains mandatory before this 80-cell
-screen, and a release claim requires n=10 replication.
+repetitions per cell. The release profile uses all eight tasks at n=10. The
+lower-tier+FULL headline must preserve correctness against frontier raw; lower
+token or dollar cost cannot compensate for fewer correct outcomes. One-run
+admission remains mandatory before repeated spend.
+
+The preregistered release
+[workflow 30210886840](https://github.com/layer1labs/specsmith/actions/runs/30210886840)
+completed 320/320 valid cells. Terra+FULL passed 80/80 at 11.7k TPCA versus
+Sol raw at 65/80 and 28.0k. Mixed-suite fixed-suite and task-cluster gates
+passed. The coding-only sensitivity was 60/60 at 15.6k versus 55/60 at 30.3k,
+but its correctness lower bound missed the non-inferiority margin by 0.7
+percentage points. The supported claim is therefore mixed-suite,
+task-conditional substitution—not general small-model replacement.
 
 ## Evidence levels
 
 | Evidence | Model/routes | Repetitions | Treatment |
 |---|---|---:|---|
+| [30210886840](https://github.com/layer1labs/specsmith/actions/runs/30210886840) | GPT-5.6 Terra + Sol | 10 per eight tasks × raw/FULL | 320 valid; mixed-suite substitution gates pass; coding-only gate is inconclusive |
 | [30209142281](https://github.com/layer1labs/specsmith/actions/runs/30209142281) | GPT-5.6 Sol | 1 per T1/T10/T11/T13/T28 FULL | Post-broad admission: T11 improved to 11.2k/2 turns; T13 preload regressed and was removed |
 | [30206398622](https://github.com/layer1labs/specsmith/actions/runs/30206398622) | GPT-5.6 Sol | 10 per eight tasks × Cursor/FULL | 160 valid; FULL 80/80 at 10.7k, Cursor 70/80 at 24.8k TPCA |
 | [30206394966](https://github.com/layer1labs/specsmith/actions/runs/30206394966) | GPT-5.6 Terra + Sol | 5 per T1/T10/T13/T28 × raw/FULL | Terra+FULL 20/20 at 19.1k; Sol raw 20/20 at 29.2k TPCA |
@@ -66,17 +76,15 @@ Results are never combined across incompatible commits, task grids, routes, or
 repetition sets. GPT-5.6 uses Chat Completions with `reasoning_effort=none` for
 function-tool compatibility in every condition.
 
-## Current frontier screen
+## Frontier control and earlier broad diagnostic
 
-At n=1, Terra is the first weaker candidate to match the governed Sol T28
-envelope: 17,655 versus Sol's 17,502-token release anchor, with five turns and
-$0.1157 measured cost. Luna was also correct but used 43,112 tokens and eleven
-turns. Terra advances to a matched n=5 raw/FULL 2×2 experiment; this diagnostic
-alone is not a substitution claim.
+The promotion funnel first admitted Terra at n=1, then at n=5, before the
+completed n=10 release result above. Luna was also correct at admission but
+used 43,112 tokens and eleven turns, so it did not advance.
 
-The current long-horizon frontier is GPT-5.6 Sol plus FULL at 17.5k TPCA
-(10/10). In the same broad n=10 run, the versioned Cursor-style condition also
-passed 10/10 at 54.1k TPCA.
+The earlier long-horizon frontier control was GPT-5.6 Sol plus FULL at 17.5k
+TPCA (10/10). In the same broad n=10 run, the versioned Cursor-style condition
+also passed 10/10 at 54.1k TPCA.
 
 | Condition | Correct | Tokens/correct | Cost | Mean turns |
 |---|---:|---:|---:|---:|
@@ -104,7 +112,7 @@ so far: 67,701 tokens, twelve turns, $0.0249 measured route cost, and one stable
 tool-schema hash. That is a 47.9% reduction from the prior 129,905-token correct
 diagnostic, but still 3.87× the release-quality Sol FULL anchor. The deterministic
 audit selected `advance_candidate`, so this route is not repeated and cannot be
-used in a weaker-governed versus stronger-raw claim.
+used in a lower-tier-governed versus frontier-raw claim.
 
 The July 25 selective replay promoted hidden failures into public API, schema,
 Go-tag, and accessible-UI validators, then reran only the affected candidates:

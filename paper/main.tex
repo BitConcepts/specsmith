@@ -1,0 +1,362 @@
+\documentclass[10pt,twocolumn]{article}
+
+\usepackage[margin=0.75in]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+
+\hypersetup{
+  pdftitle={Governance as Inference-Time Capability Substitution},
+  pdfauthor={Layer 1 Labs},
+  pdfsubject={GovernanceBench model-substitution preprint},
+  pdfkeywords={software engineering agents, LLM governance, model routing,
+    token efficiency, reproducibility}
+}
+
+\title{Governance as Inference-Time Capability Substitution:\\
+Reducing Tokens per Correct Software-Engineering Task with Deterministic
+Requirements and Verification}
+\author{Layer 1 Labs\\
+\url{https://github.com/layer1labs/specsmith}}
+\date{Preprint --- July 2026}
+
+\newcommand{\specsmith}{\textsc{Specsmith}}
+\newcommand{\tpca}{\mathrm{TPCA}}
+\newcommand{\cop}{\mathrm{CoP}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Language-model comparisons usually hold the agent scaffold fixed and vary the
+model. We study the complementary systems question: can deterministic
+governance compensate for measured model capability in repository-level
+software tasks? We introduce GovernanceBench, an executable benchmark and
+matched $2\times2$ design in which a lower-tier and frontier model each run
+with an ungoverned agent loop and with \specsmith{} FULL governance. The
+controller exposes a stable five-tool interface, retrieves only
+requirement-linked context, enforces visible tests without exposing hidden
+acceptance oracles, and audits every trace. Our primary efficiency measure is
+tokens per correct answer; correctness is a hard non-inferiority constraint.
+In the preregistered eight-task, ten-repetition experiment, GPT-5.6 Terra with
+FULL governance passed 80/80 cells at 11,737 tokens per correct answer, while
+GPT-5.6 Sol in the raw loop passed 65/80 at 28,023. The TPCA ratio was 0.419
+(fixed-suite 95\% interval 0.358--0.485; task-cluster interval 0.212--0.708).
+Both preregistered mixed-suite substitution gates passed. In a prespecified
+coding-only sensitivity, Terra FULL passed 60/60 at 15,649 TPCA versus Sol raw
+55/60 at 30,250, but its correctness lower bound was $-5.7$ percentage points,
+just outside the $-5$-point non-inferiority margin. Published 8B and mini-model
+routes failed admission. The evidence supports task-conditional substitution
+for the exact API routes and benchmark distribution, not universal model
+equivalence or a claim that small models replace frontier models.
+\end{abstract}
+
+\section{Introduction}
+
+Repository-level coding agents must localize requirements, edit multiple
+files, run tools, interpret failures, and decide when evidence is sufficient.
+Benchmarks such as SWE-bench expose this interaction complexity
+\citep{jimenez2024swebench}, while SWE-agent shows that the agent-computer
+interface itself can materially change performance \citep{yang2024sweagent}.
+Consequently, ``which model is best?'' is incomplete: practical outcomes depend
+on the joint system of model, context policy, tools, validators, and stopping
+rules.
+
+This paper asks whether a governance controller can act as
+\emph{inference-time capability substitution}. The target is not to make a
+lower-tier route intrinsically equivalent to a frontier model. It is to determine
+whether a lower-tier model embedded in a deterministic, evidence-seeking
+controller can preserve task correctness while consuming fewer tokens or
+dollars than a frontier model in an ungoverned loop.
+
+The question connects three literatures. Interactive reasoning methods ground
+generation in external actions and feedback \citep{yao2023react,
+shinn2023reflexion,madaan2023selfrefine}. Simpler software-agent pipelines can
+outperform more elaborate loops \citep{xia2024agentless}. Model cascades and
+routers exploit heterogeneous cost--quality tradeoffs \citep{chen2023frugalgpt,
+ong2024routellm}. \specsmith{} differs by routing not only between models but
+between probabilistic generation and deterministic governance operations:
+requirement lookup, scoped retrieval, test execution, safety refusal, evidence
+compression, and stopping.
+
+We make four contributions:
+\begin{enumerate}
+  \item a matched $2\times2$ experimental design separating model capability
+        from governance lift;
+  \item a primary metric, tokens per correct answer, coupled to a preregistered
+        correctness non-inferiority gate;
+  \item deterministic fixed-suite and task-cluster uncertainty analysis plus
+        machine-readable claim gates; and
+  \item a versioned compact evidence artifact containing per-cell outcomes,
+        workflow provenance, negative results, and a post-run weakness audit,
+        backed by versioned tasks, validators, and hidden acceptance oracles.
+\end{enumerate}
+
+\section{Related Work}
+
+\paragraph{Executable software-engineering benchmarks.}
+SWE-bench evaluates issue resolution against executable repository tests
+\citep{jimenez2024swebench}. Static benchmark contamination and memorization
+are material threats \citep{liang2025illusion}; SWE-bench-Live addresses
+freshness and repository diversity with continuously updated tasks and
+containerized environments \citep{zhang2025swebenchlive}. GovernanceBench is
+smaller and synthetic by design. It cannot estimate population-level coding
+ability, but its fixtures make controller ablation, exact counterfactual
+matching, and trace-level token accounting practical.
+
+\paragraph{Agent interfaces and feedback.}
+SWE-agent attributes substantial gains to a model-oriented interface
+\citep{yang2024sweagent}. ReAct interleaves reasoning with environmental
+actions \citep{yao2023react}; Reflexion and Self-Refine use iterative feedback
+without parameter updates \citep{shinn2023reflexion,madaan2023selfrefine}.
+Agentless demonstrates that constrained localization, repair, and validation
+can be competitive at low cost \citep{xia2024agentless}. These findings
+motivate a compact tool surface and controller-owned validation rather than a
+large catalogue of agent skills.
+
+\paragraph{Cost-aware model selection.}
+FrugalGPT and RouteLLM demonstrate that heterogeneous models can be cascaded or
+routed to improve cost--quality tradeoffs \citep{chen2023frugalgpt,
+ong2024routellm}. Our unit of analysis is a complete software task, and our
+router signal is not a learned preference score. Admission and post-run audit
+use executable correctness, requirements, scope boundaries, token receipts,
+and task-specific historical envelopes.
+
+\paragraph{Reproducibility and variance.}
+Benchmark point estimates can be dominated by uncontrolled variation
+\citep{bouthillier2021variance}. Recent analysis of 640 LLM-for-software-
+engineering papers reports persistent artifact, environment, and versioning
+gaps \citep{siddiq2025reproducibility}. We therefore repeat every release cell,
+pin task and controller revisions to one commit, reject missing provider cells,
+record model routes and tool-schema hashes, and publish interval estimates
+rather than relying on means alone.
+
+\section{System}
+
+\subsection{Governance controller}
+
+\specsmith{} FULL wraps a language model with six mechanisms:
+\begin{enumerate}
+  \item \textbf{Requirement contracts}: accepted requirements, linked tests,
+        scope, risk, and epistemic constraints are loaded before edits.
+  \item \textbf{Bounded context}: versioned requirement-linked files may be
+        preloaded; all other content is retrieved just in time.
+  \item \textbf{Stable interface}: every model turn sees the same five tools:
+        batched and scalar read/write operations plus completion.
+  \item \textbf{Deterministic gates}: ambiguous or destructive tasks can stop
+        without an LLM call; coding completion requires current public
+        validation evidence.
+  \item \textbf{Evidence compression}: unchanged reads become digest receipts,
+        superseded observations are removed, and only active milestone state
+        remains in long-horizon context.
+  \item \textbf{Hidden scoring}: acceptance oracles run only after the model
+        stops and never supply repair hints.
+\end{enumerate}
+
+The design intentionally excludes broad repository preloads, mutable tool
+schemas, evaluator leakage, and unbounded self-reflection. A deterministic
+post-run audit identifies correctness, scope, retrieval, repair, tool-schema,
+and cost weaknesses and selects the next admissible experiment.
+
+\subsection{Promotion funnel}
+
+New model routes receive one long-horizon governed admission. Controller
+changes receive one cell on each affected path. Successful candidates advance
+to a four-task, five-repetition $2\times2$ screen. Only then may the complete
+eight-task, ten-repetition substitution profile run. This funnel prevents a
+failed candidate from becoming persuasive merely through additional spend.
+
+\section{GovernanceBench}
+
+\subsection{Tasks and conditions}
+
+The release grid contains eight tasks: two feature/bug tasks, two deterministic
+clarification or safety gates, three cross-file feature/refactor tasks, and one
+long-horizon polyglot incident console spanning Python, Go, TypeScript/React,
+JSON Schema, browser tests, and documentation. Six tasks require code changes;
+two assess whether the system declines or clarifies unsafe or underspecified
+work.
+
+The substitution experiment crosses two models with two conditions:
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Cell & Purpose \\
+\midrule
+Lower-tier raw & lower-tier capability baseline \\
+Lower-tier FULL & candidate governed system \\
+Frontier raw & substitution target \\
+Frontier FULL & frontier governance control \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+All four cells use identical task fixtures, repetition identifiers, provider
+APIs, temperature policy, turn cap, completion cap, and hidden oracles.
+Provider errors invalidate a cell rather than counting as free failures.
+
+\subsection{Metrics}
+
+For runs $i=1,\ldots,n$, with token count $t_i$, cost $c_i$, and correctness
+$y_i\in\{0,1\}$, we report
+\begin{align}
+\tpca &= \frac{\sum_i t_i}{\sum_i y_i}, &
+\cop &= \frac{\sum_i c_i}{\sum_i y_i}.
+\end{align}
+This formulation charges failed attempts to the expected cost of obtaining a
+correct answer. Raw tokens are primary because provider prices and cache
+discounts change; estimated dollars are secondary.
+
+Correctness is evaluated by deterministic lint, public tests, task-specific
+contract validators, and an evaluator-isolated acceptance oracle. We also
+record turns, wall time, files read and written, scope expansion, first-pass
+rate, provider-reported cache tokens, and a stable tool-schema hash.
+
+\subsection{Hypotheses and claim gates}
+
+The release profile and thresholds were committed at revision
+\texttt{75a8c79} before workflow dispatch. The primary comparison is
+lower-tier FULL minus frontier raw:
+\begin{description}
+  \item[H1: correctness non-inferiority.] The lower 95\% bound on the pass-rate
+        difference is at least $-5$ percentage points.
+  \item[H2: token superiority.] The upper 95\% bound on the TPCA ratio is below
+        1.
+  \item[H3: cross-task robustness.] H1 and H2 also hold when task identifiers,
+        not only repetitions, are resampled.
+  \item[H4: governance lift.] Lower-tier FULL improves correctness or TPCA
+        relative to the same lower-tier raw model.
+\end{description}
+
+We use Wilson score bounds for binomial rates \citep{wilson1927probable} and a
+deterministically seeded, 10,000-sample hierarchical bootstrap
+\citep{efron1979bootstrap}. The fixed-suite analysis resamples repetitions
+within each task. The task-cluster analysis additionally resamples task IDs;
+it tests robustness to resampling the benchmark tasks but cannot establish
+performance on fresh repositories. A result can therefore support fixed-suite
+substitution while failing cross-task substitution. No result supports
+universal model equivalence.
+
+\section{Results}
+
+\input{generated/results.tex}
+
+The primary mixed-suite point estimate corresponds to 58.1\% lower TPCA and
+60.1\% lower estimated cost per correct answer for Terra FULL than Sol raw.
+The task-cluster correctness lower bound was $-4.4$ percentage points, clearing
+the preregistered $-5$-point margin by 0.6 points. The coding-only sensitivity
+went in the same observed direction but did not clear that margin; deterministic
+clarification and safety gates therefore matter to the strength of the primary
+claim. We report both endpoints rather than relabelling the sensitivity after
+observing the result.
+
+The four-task screen demonstrates why both uncertainty views are needed. Its
+point TPCA ratio is 0.653. The fixed-suite 95\% interval is 0.539--0.784, while
+the task-cluster interval is 0.339--1.396. Terra FULL is less token-efficient
+than Sol raw on T1 and T10 but substantially more efficient on T13 and T28.
+The aggregate is therefore useful routing evidence, not a universal
+replacement result.
+
+\section{Trace-Guided Ablations}
+
+The benchmark audit converts failures and expensive correct runs into bounded
+controller experiments. Three examples illustrate the loop:
+\begin{itemize}
+  \item A T10 controller denied reads of an imported model and dependency
+        manifest. Adding exactly those files reduced one admission from 63,128
+        tokens and 11 turns to 9,305 tokens and two turns.
+  \item Repeated T11 first actions justified a bounded preload, reducing a
+        diagnostic from 23,472 tokens and six turns to 11,210 tokens and two
+        turns.
+  \item Applying the same idea to T13 increased tokens from a 14,424-token
+        broad-run mean to 16,190 in admission. The preload was removed.
+\end{itemize}
+The negative T13 result is important: more context is not monotonically
+beneficial, and governance optimization itself requires admission controls.
+
+Open-model admissions provide a second negative control. Qwen3.6-35B-A3B
+completed the long-horizon task with a stable tool schema but used 67,701
+tokens, 3.87 times the governed frontier anchor. It was not promoted to repeated
+spend. Correctness alone is insufficient for an efficiency claim.
+
+A published-size Llama 3.1 8B route failed three governed T28 admissions.
+Strict recovery of its text-serialized function calls removed a serving
+protocol ambiguity, but the final route still issued 20 actions serially,
+exhausted the turn cap, and failed at 98,543 tokens. GPT-4o mini also failed
+T28 at 107,896 tokens after focused-boundary repair. These admissions block
+the stronger marketing claim that an 8B or mini model replaces a frontier
+model. They do not negate the separately tested lower-tier Terra system, whose
+parameter count and architecture are not inferred.
+
+\section{Threats to Validity}
+
+\paragraph{Construct validity.}
+GovernanceBench measures repository-task execution under one controller, not
+general intelligence, developer productivity, code maintainability, or factual
+truth. Synthetic fixtures improve experimental control but may reward explicit
+contracts and validators more than naturally occurring repositories.
+
+\paragraph{Internal validity.}
+Proprietary model weights, serving stacks, and sampling implementations are not
+controlled. Repetition IDs do not guarantee identical provider randomness.
+Dollar costs are versioned estimates, not invoices. We mitigate these threats
+with same-commit matched cells, exact model-route labels, raw token receipts,
+fail-closed provider handling, and paired uncertainty.
+
+\paragraph{External validity.}
+Eight tasks are too few for an unconditional market-wide replacement claim.
+Task-cluster intervals expose this limitation but cannot manufacture diversity.
+The benchmark is public and may eventually be contaminated. Replication on
+fresh, real repositories such as SWE-bench-Live is necessary
+\citep{zhang2025swebenchlive}.
+
+\paragraph{Researcher degrees of freedom.}
+Earlier runs informed controller development, so the study includes adaptive
+optimization. The decisive release profile, thresholds, commit, and selected
+model pair were fixed before its run. We publish negative admissions and do
+not pool incompatible commits.
+
+\section{Operational Implications}
+
+The evidence motivates a guarded router rather than a single default model.
+Deterministic gates should handle tasks that do not require generation.
+Lower-tier governed models should receive bounded, validator-rich work for
+which they have passed admission. Frontier governed models remain appropriate
+for ambiguous localization, novel architectures, and task families whose
+lower-tier confidence bound crosses the correctness or efficiency threshold.
+Routing is therefore based on verified marginal value, consistent with the
+cost-aware motivation of FrugalGPT and RouteLLM
+\citep{chen2023frugalgpt,ong2024routellm}, but grounded in executable software
+evidence.
+
+\section{Reproducibility and Ethics}
+
+The repository publishes the harness, fixtures, controller, exact workflow
+inputs, analysis code, compact per-cell measurements, and SHA-256 evidence
+manifest. Full traces are retained with the cited GitHub Actions runs according
+to the repository's configured artifact-retention period; the compact evidence
+and source digests are versioned permanently. The paper reports model API
+identifiers but does not infer unpublished parameter counts or architecture.
+Hidden acceptance tests are isolated from model feedback. Safety tasks reward
+clarification or refusal rather than destructive execution. No human-subject
+data are collected.
+
+\section{Conclusion}
+
+Governance can move work from probabilistic model reasoning into deterministic
+requirements, retrieval, verification, and stopping. On the evaluated mixed
+task distribution, this substantially reduced the tokens required for correct
+software changes and allowed the governed Terra route to clear the
+preregistered substitution gates against raw Sol. The coding-only gate remained
+inconclusive by 0.7 percentage points, and the published-size admissions
+failed. The scientifically defensible result is task-conditional system
+substitution with explicit confidence and routing gates---not that smaller
+models universally replace frontier models.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

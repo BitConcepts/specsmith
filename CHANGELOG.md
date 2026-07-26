@@ -11,11 +11,25 @@ consolidated into the next published release.
 ## [Unreleased]
 
 ### Added
+- Complete preregistered substitution-release workflow `30210886840` at
+  `75a8c791`: Terra+FULL passed 80/80 mixed-suite cells at 11,737 TPCA versus
+  Sol raw at 65/80 and 28,023. Fixed-suite and task-cluster substitution gates
+  passed; the separately reported coding-only correctness gate missed its
+  non-inferiority margin by 0.7 percentage points.
+- Add a peer-reviewable GovernanceBench preprint, compact cell-level
+  reproducibility bundles with SHA-256 provenance, a fail-closed LaTeX results
+  renderer, and an explicit public-claim ladder.
+- Add admission coverage for GPT-4o mini and Llama 3.1 8B. Their current T28
+  failures are retained as negative evidence and block any broad claim that
+  published 8B or mini models replace frontier models.
 - Add locked admission, controller-admission, release-control, broad-release,
   and model-substitution benchmark profiles with fail-closed task, condition,
   and repetition selection.
 - Add matched weaker-governed versus stronger-ungoverned 2×2 reporting so model
   capability and governance lift are not conflated.
+- Verify compact evidence plus raw artifact hashes directly from recursively
+  nested `gh run download` trees, failing closed on missing or ambiguous source
+  filenames.
 - Record locked admissions `30205541608` and `30205537706`: Qwen3.6 passed T28
   at 67,701 tokens but was rejected at 3.87× the Sol anchor; Sol passed T1,
   T10, and T28 but exposed a 63,128-token controller-caused T10 repair loop.
@@ -56,6 +70,10 @@ consolidated into the next published release.
   repair boundaries while preserving the independent hidden acceptance oracle.
 
 ### Changed
+- Recover exact text-serialized active tool calls from compatible routes
+  through the existing execution guards, focus repair on one failing
+  requirement boundary at a time, and stop repeated multi-file write loops
+  before they consume the full budget.
 - Add an immutable eight-task n=10 model-substitution release profile and
   machine-readable paired inference. Claims now require correctness
   non-inferiority plus token superiority under fixed-suite and task-cluster

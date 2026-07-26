@@ -2351,3 +2351,506 @@ Phase 4: feature flags, instinct/learning, eval harness, agent memory, multi-age
 - **Epistemic status**: high
 - **Chain hash**: `23d4bd2aa165d66d...`
 
+## Archived (57 entries)
+
+*Archived on 2026-07-21*
+
+- ## Archived (20 entries) — —
+- ## 2026-07-17T18:33 — wi_archive WI-C5DCFEC27C86: deferred — —
+- ## 2026-07-17T18:33 — wi_archive WI-DDA4E0719024: deferred — —
+- ## 2026-07-17T18:33 — wi_archive WI-F743E5AA20BC: deferred — —
+- ## 2026-07-17T18:33 — wi_archive WI-B4A68F34D7C9: deferred — —
+- ## 2026-07-17T18:33 — wi_archive WI-3BCF72F75C7C: deferred — —
+- ## 2026-07-17T18:33 — wi_archive WI-44B680B66DBA: deferred — —
+- ## 2026-07-17T18:33 — wi_archive WI-93A18BA03A7A: deferred — —
+- ## 2026-07-17T18:33 — wi_archive WI-2BA14DC4B58E: deferred — —
+- ## 2026-07-18T10:52 — KILL SWITCH ACTIVATED: emergency stop — —
+- ## 2026-07-18T11:22 — KILL SWITCH ACTIVATED: emergency stop — —
+- ## 2026-07-18T14:31 — KILL SWITCH ACTIVATED: emergency stop — —
+- ## 2026-07-18T14:56 — wi_archive WI-C1EB33EA2A85: Completed read-only benchmark control, status, analysis, or documentation-source lookup; no implementation change or test obligation. — —
+- ## 2026-07-18T14:56 — wi_archive WI-E4B8AEF90FDB: Completed read-only benchmark control, status, analysis, or documentation-source lookup; no implementation change or test obligation. — —
+- ## 2026-07-18T14:56 — wi_archive WI-8CE548E8242B: Completed read-only benchmark control, status, analysis, or documentation-source lookup; no implementation change or test obligation. — —
+- ## 2026-07-18T14:56 — wi_archive WI-BA05158EA90F: Completed read-only benchmark control, status, analysis, or documentation-source lookup; no implementation change or test obligation. — —
+- ## 2026-07-18T14:56 — wi_archive WI-486F7DFE085F: Completed read-only benchmark control, status, analysis, or documentation-source lookup; no implementation change or test obligation. — —
+- ## 2026-07-18T14:56 — wi_archive WI-C4BB548E4BD3: Completed read-only benchmark control, status, analysis, or documentation-source lookup; no implementation change or test obligation. — —
+- ## 2026-07-18T14:56 — wi_archive WI-BA2A6CCC884C: Completed read-only benchmark control, status, analysis, or documentation-source lookup; no implementation change or test obligation. — —
+- ## 2026-07-18T14:56 — wi_archive WI-3EE3721682AB: Completed read-only benchmark control, status, analysis, or documentation-source lookup; no implementation change or test obligation. — —
+- ## 2026-07-18T14:56 — wi_archive WI-675DF4193A2D: Completed read-only benchmark control, status, analysis, or documentation-source lookup; no implementation change or test obligation. — —
+- ## 2026-07-18T14:56 — wi_archive WI-14991818AAFC: Completed read-only benchmark control, status, analysis, or documentation-source lookup; no implementation change or test obligation. — —
+- ## 2026-07-18T14:57 — wi_archive WI-3A9BFC786ED7: Completed read-only benchmark control, status, analysis, or documentation-source lookup; no implementation change or test obligation. — —
+- ## 2026-07-18T14:57 — wi_archive WI-4CACDA8D61BB: Completed read-only benchmark control, status, analysis, or documentation-source lookup; no implementation change or test obligation. — —
+- ## 2026-07-18T14:57 — wi_archive WI-4B14A1000914: Completed read-only benchmark control, status, analysis, or documentation-source lookup; no implementation change or test obligation. — —
+- ## 2026-07-18T15:23 — wi_archive WI-78A143A42321: Documentation synchronization completed; no standalone implementation behavior. — —
+- ## 2026-07-18T15:23 — wi_archive WI-40986EEAF11F: Keep a Changelog synchronization completed; no standalone implementation behavior. — —
+- ## 2026-07-18T18:26 — test-ran TEST-308: passed (status: pending → implemented) — —
+- ## 2026-07-18T21:13 — KILL SWITCH ACTIVATED: emergency stop — —
+- ## 2026-07-18T21:39 — KILL SWITCH ACTIVATED: emergency stop — —
+- ## 2026-07-19T17:51 — wi_archive WI-84F159747478: Completed one-time merged release-branch cleanup; superseded by verified final branch inventory and not an enduring product requirement. — —
+- ## 2026-07-19T17:51 — wi_archive WI-EA9A0DEE9C7B: Duplicate confirmation record for completed release-branch cleanup; no enduring product behavior or test applies. — —
+- ## 2026-07-19T17:51 — wi_archive WI-ACB1C7B2BB73: Completed verified local release-ref cleanup; this transient operational record is retired. — —
+- ## 2026-07-20T07:40 — KILL SWITCH ACTIVATED: emergency stop — —
+- ## 2026-07-20T08:03 — wi_archive WI-1E2058B99D27: Duplicate naming-cleanup preflight was classified as read-only; implementation and tests are covered by WI-A612CD84A61D and the Grace runtime test suite. — —
+- ## 2026-07-20T08:05 — wi_archive WI-CA5C67C11D9C: Git publication preflight was classified as read-only and created no requirement/test links; the implementation remains covered by WI-1D103E0FF6EF, WI-290309DCF2FB, and WI-A612CD84A61D. — —
+- ## 2026-07-20T08:21 — KILL SWITCH ACTIVATED: emergency stop — —
+- ## 2026-07-20T08:29 — wi_archive WI-5B502724DBF8: Release-metadata preflight was classified as read-only and created no requirement/test links; release readiness is covered by the existing release governance requirements and CI gates. — —
+- ## 2026-07-20T11:28 — wi_archive WI-71B6EF793E19: Superseded by accepted focused CLI work item WI-B384A0936F7F — —
+- ## 2026-07-20T11:28 — wi_archive WI-B43847E586E1: Clarification-only preflight superseded by exact-path WI-7E4EFCDE0BD4 — —
+- ## 2026-07-20T11:28 — wi_archive WI-52E74BE65308: Clarification-only preflight superseded by exact-path documentation work — —
+- ## 2026-07-20T11:28 — wi_archive WI-4265BFF4BD3D: Deletion not performed; Kairos page was safely rewritten for Grace — —
+- ## 2026-07-20T11:28 — wi_archive WI-944E75ED7482: Deletion not performed; Kairos page was safely rewritten for Grace — —
+- ## 2026-07-20T11:30 — wi_close WI-AD8E664A4B4A: Implementation verified by full 2268-test suite and quality gates — —
+- ## 2026-07-20T11:30 — wi_close WI-9A844A38C97F: Implementation verified by full 2268-test suite and quality gates — —
+- ## 2026-07-20T11:30 — wi_close WI-6AEDD68A70F3: Implementation verified by full 2268-test suite and quality gates — —
+- ## 2026-07-20T11:30 — wi_close WI-A3703BACA2C7: Implementation verified by full 2268-test suite and quality gates — —
+- ## 2026-07-20T11:30 — wi_close WI-B384A0936F7F: Implementation verified by full 2268-test suite and quality gates — —
+- ## 2026-07-20T11:30 — wi_close WI-7E4EFCDE0BD4: Implementation verified by full 2268-test suite and quality gates — —
+- ## 2026-07-20T11:30 — wi_close WI-445110060D89: Implementation verified by full 2268-test suite and quality gates — —
+- ## 2026-07-20T11:30 — wi_close WI-EAB751E66449: Implementation verified by full 2268-test suite and quality gates — —
+- ## 2026-07-20T11:33 — wi_close WI-0ECB1F18589A: Ledger compression verified and governance threshold restored — —
+- ## 2026-07-20T11:55 — wi_close WI-BD69AB0192B2: Byte-for-byte fixture comparison verified with a single final newline — —
+- ## 2026-07-20T12:30 — wi_archive WI-C75FAEE12E60: Clarification preflight superseded by exact issue #357 behavior WI-1D0C052BED88 — —
+- ## 2026-07-20T12:30 — wi_close WI-1D0C052BED88: Issue #357 implementation verified by 2273-test full suite — —
+- ## 2026-07-20T12:53 — KILL SWITCH ACTIVATED: emergency stop — —
+- ## 2026-07-20T13:28 — KILL SWITCH ACTIVATED: emergency stop — —
+
+
+## 2026-07-20T13:28 — wi_archive WI-389194B37F20: Read-only version-policy assessment; no implementation work item was required.
+- **Author**: specsmith
+- **Type**: wi_archive
+- **Status**: complete
+- **Chain hash**: `b385aae8ab57666a...`
+
+
+
+## 2026-07-20T14:08 — wi_close WI-80855D228FD6: v0.25.0 release candidate prepared and verified: full tests, static quality, strict docs, governance, package/platform smoke, dependency audit, and sealed closure check passed.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `c8afa2cf72c812d4...`
+
+
+
+## 2026-07-20T14:08 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `a4628b67dbf78bda...`
+
+
+
+## 2026-07-20T14:35 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `7f5fbc689befee88...`
+
+
+
+## 2026-07-20T14:41 — wi_archive WI-BE5F37C67276: Superseded by explicit maintainer confirmation and accepted release preflight WI-2C46E6D43D25.
+- **Author**: specsmith
+- **Type**: wi_archive
+- **Status**: complete
+- **Chain hash**: `1e8dcb93f8f2fe02...`
+
+
+
+## 2026-07-20T14:42 — wi_close WI-2C46E6D43D25: v0.25.0 tag and trusted publication completed; GitHub Release, PyPI artifacts, release seal, checksums, and publication receipt verified.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `aa24294cf6eceb4d...`
+
+
+
+## 2026-07-20T18:37 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `d6a92bcf857c8d6a...`
+
+
+
+## 2026-07-21T07:39 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `3fd82427abc7ac46...`
+
+
+
+## 2026-07-21T18:25 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `367b9a5a5415eb71...`
+
+
+
+## 2026-07-21T18:32 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `1988b5c164715344...`
+
+
+## 2026-07-21T18:36 — wi_archive WI-41384171E218: Superseded by accepted REQ-308 work item WI-29A6E9D1D4C7; initial preflight was misclassified as a read-only ask
+- **Author**: specsmith
+- **Type**: wi_archive
+- **Status**: complete
+- **Chain hash**: `e41d061166c79546...`
+
+
+## 2026-07-21T19:03 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `aac2905f67152ac7...`
+
+
+## 2026-07-21T19:13 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `3fd83fe7b414d5ff...`
+
+
+## 2026-07-21T19:43 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `c809051ab40ec806...`
+
+
+## 2026-07-21T19:58 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `c7a9ed07c6a1e482...`
+
+
+## 2026-07-21T20:19 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `235e668917e9ecee...`
+
+
+## 2026-07-21T20:27 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `87ff04113dec3e57...`
+
+
+## 2026-07-21T20:59 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `32001a330cce630f...`
+
+
+## 2026-07-21T21:41 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `9d3566e459db3d24...`
+
+
+## 2026-07-22T07:38 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `0b427c68a0835ae7...`
+
+
+## 2026-07-22T08:04 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `14171160f0ea6798...`
+
+
+## 2026-07-22T09:17 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `82b023b75f0834fb...`
+
+
+## 2026-07-22T09:21 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `069b48722c1cc9d0...`
+
+
+## 2026-07-22T14:09 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `cd2357db7ad6c819...`
+
+
+## 2026-07-22T17:12 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `aa4bf9472d55968d...`
+
+
+## 2026-07-22T17:14 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `47f65433a436fabb...`
+
+
+## 2026-07-22T21:31 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `5d3011219633540e...`
+
+
+## 2026-07-23T08:26 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `7ee11506201f1f07...`
+
+
+## 2026-07-23T08:56 — wi_archive WI-F6172A943F6F: Completed read-only benchmark workflow dispatch and artifact analysis; no implementation change or test obligation.
+- **Author**: specsmith
+- **Type**: wi_archive
+- **Status**: complete
+- **Chain hash**: `13164f9c2f0e8932...`
+
+
+## 2026-07-23T09:05 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `63dbf4ef2ff4bb44...`
+
+
+## 2026-07-23T10:10 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `9a5c6d85003efc88...`
+
+
+## 2026-07-23T16:53 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `923a53d1662cf797...`
+
+
+## 2026-07-23T16:54 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `69e12f053cee97c3...`
+
+
+## 2026-07-23T17:19 — wi_archive WI-65AA2312B9E5: Read-only experiment authorization completed; implementation governed by WI-2A04F862351F with TEST-510 and TEST-516.
+- **Author**: specsmith
+- **Type**: wi_archive
+- **Status**: complete
+- **Chain hash**: `917a5d0429b3e8cf...`
+
+
+## 2026-07-23T17:46 — wi_archive WI-9F48DBBC0931: Robust artifact ingestion is covered by REQ-490 and WI-FC8A072FC519 with TEST-516.
+- **Author**: specsmith
+- **Type**: wi_archive
+- **Status**: complete
+- **Chain hash**: `f348e6d117547a53...`
+
+
+## 2026-07-24T07:15 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `ad5bd15ac65e463b...`
+
+
+## 2026-07-24T07:27 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `03b86bd7f2cf3d8f...`
+
+
+## 2026-07-24T07:42 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `78edbc2190d8fd82...`
+
+
+## 2026-07-24T08:34 — wi_close WI-FFCC57146BB1: Workflow 30092609859 completed with 5/5 correct T28 FULL repetitions and a causal baseline receipt
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `9cda2bda8c16939a...`
+
+
+## 2026-07-24T10:31 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `062b3320fa2ba843...`
+
+
+## 2026-07-24T18:26 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `641b642da48f3566...`
+
+
+## 2026-07-24T18:26 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `1a1a62c054a8ce88...`
+
+
+## 2026-07-24T18:32 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `4c5a23f1cfcdfaa8...`
+
+
+## 2026-07-25T18:18 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `0f9c4cefa77b4c48...`
+
+
+## 2026-07-25T20:39 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `3e5a22e1611c134d...`
+
+
+## 2026-07-26T07:00 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `074c4f3873439fc7...`
+
+
+## 2026-07-26T07:00 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `6d525b0e823ff394...`
+
+
+## 2026-07-26T09:09 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `30361d7768099a84...`
+
+
+## 2026-07-26T09:20 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `3ad2ee11ca7e636c...`
+
+
+## 2026-07-26T12:08 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `e16a1473b30cca47...`
+

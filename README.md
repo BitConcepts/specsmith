@@ -141,13 +141,18 @@ FULL passed 80/80 at 10.7k tokens per correct answer (TPCA); the versioned
 Cursor-style condition passed 70/80 at 24.8k. On coding-only tasks both passed
 60/60, while FULL used 14.3k versus 27.1k TPCA.
 
-A separate matched n=5 model-substitution screen found that mid-tier
-GPT-5.6 Terra + FULL matched frontier Sol raw correctness (20/20) while using
-19.1k versus 29.2k TPCA and 43.3% lower cost per pass. This is an aggregate
-four-task result, not an every-task or every-Cursor-feature claim.
+The preregistered matched n=10 substitution run found that GPT-5.6 Terra +
+FULL passed 80/80 mixed-suite cells at 11.7k TPCA, while frontier Sol raw
+passed 65/80 at 28.0k. Both mixed-suite confidence gates passed. The
+prespecified coding-only slice favored Terra + FULL (60/60 at 15.6k versus
+55/60 at 30.3k), but its correctness interval missed the non-inferiority
+margin by 0.7 percentage points. Published 8B and mini-model routes failed
+admission, so Specsmith does not claim that small models generally replace
+frontier models.
 
 See the
 [full benchmark report](https://specsmith.readthedocs.io/stable/efficiency-benchmark/),
+[preprint and claim guide](https://specsmith.readthedocs.io/stable/preprint/),
 [weakness audit](https://specsmith.readthedocs.io/stable/benchmark-audit/), and
 [model comparison](https://specsmith.readthedocs.io/stable/model-comparison/)
 for methodology, task-level results, historical receipts, limitations, and

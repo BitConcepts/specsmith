@@ -1,0 +1,91 @@
+{
+  "schema": "governancebench-model-comparison-v1",
+  "tasks": [
+    "T1",
+    "T10",
+    "T13",
+    "T28"
+  ],
+  "comparisons": [
+    {
+      "smaller_model": "gpt-5.6-terra",
+      "stronger_model": "gpt-5.6-sol",
+      "smaller_full": {
+        "runs": 20.0,
+        "pass_rate": 1.0,
+        "tokens_per_correct_answer": 19052.8,
+        "cost_of_pass": 0.09517400000000001
+      },
+      "smaller_ungoverned": {
+        "runs": 20.0,
+        "pass_rate": 0.8,
+        "tokens_per_correct_answer": 64758.875,
+        "cost_of_pass": 0.2207089375
+      },
+      "stronger_full": {
+        "runs": 20.0,
+        "pass_rate": 1.0,
+        "tokens_per_correct_answer": 13502.05,
+        "cost_of_pass": 0.11921495
+      },
+      "stronger_ungoverned": {
+        "runs": 20.0,
+        "pass_rate": 1.0,
+        "tokens_per_correct_answer": 29160.9,
+        "cost_of_pass": 0.16790145
+      },
+      "inference": {
+        "schema": "governancebench-substitution-v1",
+        "tasks": [
+          "T1",
+          "T10",
+          "T13",
+          "T28"
+        ],
+        "minimum_repetitions_per_task": 5,
+        "bootstrap_samples": 10000,
+        "noninferiority_margin": 0.05,
+        "point": {
+          "pass_rate_difference": 0.0,
+          "pass_rate_difference_low": -0.16112515805281935,
+          "pass_rate_difference_high": 0.16112515805281935,
+          "tpca_ratio": 0.6533680373376678,
+          "cost_of_pass_ratio": 0.5668444197474173
+        },
+        "fixed_suite_95_ci": {
+          "pass_rate_difference": [
+            -0.16112515805281935,
+            0.16112515805281935
+          ],
+          "tpca_ratio": [
+            0.5386911944459813,
+            0.7836781783350679
+          ],
+          "cost_of_pass_ratio": [
+            0.5027344904147006,
+            0.6369907508184506
+          ]
+        },
+        "task_cluster_95_ci": {
+          "pass_rate_difference": [
+            -0.16112515805281935,
+            0.16112515805281935
+          ],
+          "tpca_ratio": [
+            0.3386949014763411,
+            1.396231675327277
+          ],
+          "cost_of_pass_ratio": [
+            0.40030888944972337,
+            0.8354421547058314
+          ]
+        },
+        "claims": {
+          "release_ready": false,
+          "fixed_suite_substitution": false,
+          "cross_task_substitution": false
+        }
+      }
+    }
+  ]
+}

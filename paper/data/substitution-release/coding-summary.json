@@ -1,0 +1,95 @@
+{
+  "schema": "governancebench-model-comparison-v1",
+  "tasks": [
+    "T1",
+    "T2",
+    "T10",
+    "T11",
+    "T13",
+    "T28"
+  ],
+  "comparisons": [
+    {
+      "smaller_model": "gpt-5.6-terra",
+      "stronger_model": "gpt-5.6-sol",
+      "smaller_full": {
+        "runs": 60.0,
+        "pass_rate": 1.0,
+        "tokens_per_correct_answer": 15649.216666666667,
+        "cost_of_pass": 0.08033063333333333
+      },
+      "smaller_ungoverned": {
+        "runs": 60.0,
+        "pass_rate": 0.7666666666666667,
+        "tokens_per_correct_answer": 53148.782608695656,
+        "cost_of_pass": 0.19183578260869566
+      },
+      "stronger_full": {
+        "runs": 60.0,
+        "pass_rate": 1.0,
+        "tokens_per_correct_answer": 10776.433333333332,
+        "cost_of_pass": 0.10021111666666667
+      },
+      "stronger_ungoverned": {
+        "runs": 60.0,
+        "pass_rate": 0.9166666666666666,
+        "tokens_per_correct_answer": 30250.036363636365,
+        "cost_of_pass": 0.16914072727272728
+      },
+      "inference": {
+        "schema": "governancebench-substitution-v1",
+        "tasks": [
+          "T1",
+          "T2",
+          "T10",
+          "T11",
+          "T13",
+          "T28"
+        ],
+        "minimum_repetitions_per_task": 10,
+        "bootstrap_samples": 10000,
+        "noninferiority_margin": 0.05,
+        "point": {
+          "pass_rate_difference": 0.08333333333333337,
+          "pass_rate_difference_low": -0.024051395540359177,
+          "pass_rate_difference_high": 0.180689420183344,
+          "tpca_ratio": 0.5173288547011012,
+          "cost_of_pass_ratio": 0.4749337112864955
+        },
+        "fixed_suite_95_ci": {
+          "pass_rate_difference": [
+            -0.05722369234730362,
+            0.26114589069778527
+          ],
+          "tpca_ratio": [
+            0.4367127548936245,
+            0.6082116711610537
+          ],
+          "cost_of_pass_ratio": [
+            0.41736345430251404,
+            0.5334080408583279
+          ]
+        },
+        "task_cluster_95_ci": {
+          "pass_rate_difference": [
+            -0.060171852142089755,
+            0.3178180580562787
+          ],
+          "tpca_ratio": [
+            0.32796490410260265,
+            0.8702791444754258
+          ],
+          "cost_of_pass_ratio": [
+            0.33650621859688595,
+            0.655802932318297
+          ]
+        },
+        "claims": {
+          "release_ready": true,
+          "fixed_suite_substitution": false,
+          "cross_task_substitution": false
+        }
+      }
+    }
+  ]
+}

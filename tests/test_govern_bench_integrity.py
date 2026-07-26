@@ -173,6 +173,8 @@ def test_comparison_reports_smaller_governed_vs_frontier_ungoverned() -> None:
     assert len(comparisons) == 1
     assert comparisons[0]["smaller_model"] == "Qwen/Qwen3.6-35B-A3B"
     assert "Governance as model-capability substitution" in rendered
+    assert "Lower-tier governed route" in rendered
+    assert "Smaller governed model" not in rendered
     assert "Qwen/Qwen3.6-35B-A3B + FULL" in rendered
     assert "gpt-5.6-sol + UNGOVERNED" in rendered
     assert "Matches/exceeds correctness with lower TPCA" in rendered

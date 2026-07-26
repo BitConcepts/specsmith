@@ -38,6 +38,11 @@ htmlcov/
 tmp/
 temp/
 *.log
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.out
+paper/main.pdf
 
 # Secrets and local-only artifacts
 .env

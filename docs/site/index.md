@@ -60,7 +60,9 @@ The published benchmark reports task-dependent results rather than a universal
 claim. Current evidence identifies where lightweight governance helps, where it
 adds token cost, and which paths need improvement. See the
 [governance efficiency report](efficiency-benchmark.md) and
-[model comparison](model-comparison.md).
+[model comparison](model-comparison.md). The
+[preprint and public-claim guide](preprint.md) separates exact-suite evidence
+from claims that still require broader replication.
 
 ## Documentation
 

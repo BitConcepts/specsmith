@@ -15,14 +15,16 @@ Benchmark spend now follows locked, versioned profiles:
    same-commit release claim.
 
 Profile task, condition, and repetition overrides fail closed. A failed n=1
-admission is repaired or rejected instead of repeated. The weaker-governed
-versus stronger-ungoverned question requires all four matched counterfactuals,
+admission is repaired or rejected instead of repeated. The lower-tier-governed
+versus frontier-ungoverned question requires all four matched counterfactuals,
 not a comparison assembled from unrelated historical runs.
 
 Release-grade substitution requires a paired 10,000-sample bootstrap, a
 five-percentage-point correctness non-inferiority margin, and an upper 95% TPCA
 ratio below one. Fixed-suite and task-cluster intervals are reported
-separately; only the latter supports statements beyond the exact task grid.
+separately. The latter tests robustness to resampling the benchmark's named
+tasks; it is necessary but not sufficient for claims about fresh repositories
+or new task families.
 
 The FULL controller now keeps one compact five-tool schema throughout a run
 and records its hash for cache-efficiency auditing. T1 preloads its versioned
@@ -33,6 +35,40 @@ retrieval-driven because its matching preload increased token use in
 admission. T28 still receives only its active milestone. These changes target
 retrieval turns without widening model-visible context or exposing evaluator
 evidence.
+
+## July 26 preregistered model-substitution release
+
+[Workflow 30210886840](https://github.com/layer1labs/specsmith/actions/runs/30210886840)
+completed the locked `substitution-release` profile at preregistered commit
+`75a8c791`: eight tasks, four matched model/governance cells, ten repetitions,
+and 320/320 valid rows.
+
+| System | Correct | TPCA | Cost/pass |
+|---|---:|---:|---:|
+| Terra raw | 56/80 | 45,915 | $0.1642 |
+| Terra + FULL | 80/80 | 11,737 | $0.0602 |
+| Sol raw | 65/80 | 28,023 | $0.1511 |
+| Sol + FULL | 80/80 | 8,082 | $0.0752 |
+
+For the primary Terra+FULL versus Sol-raw comparison, the TPCA ratio was 0.419
+(fixed-suite 95% interval 0.358–0.485; task-cluster interval 0.212–0.708).
+Correctness-difference intervals were +3.3 to +34.1 percentage points and
+−4.4 to +54.7 points. Both preregistered mixed-suite gates passed: Terra+FULL
+used 58.1% lower TPCA and 60.1% lower estimated cost per pass.
+
+The six coding tasks are reported separately:
+
+| Coding-only system | Correct | TPCA | Cost/pass |
+|---|---:|---:|---:|
+| Terra + FULL | 60/60 | 15,649 | $0.0803 |
+| Sol raw | 55/60 | 30,250 | $0.1691 |
+
+The coding TPCA intervals favored Terra+FULL, but the fixed-suite correctness
+lower bound was −5.7 points, 0.7 points below the preregistered −5-point
+non-inferiority margin. The coding-only substitution gate therefore did not
+pass. The supported result is capability substitution on this mixed benchmark
+distribution, with robustness to resampling its eight named tasks—not general
+equivalence on fresh repositories.
 
 ## July 26 final same-commit evidence
 
