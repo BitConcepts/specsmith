@@ -666,6 +666,7 @@ def _tool_schema_hash(tools: list[dict]) -> str:
 
 
 _READ_TOOL_NAMES = frozenset({"read_file", "read_files"})
+_WRITE_TOOL_NAMES = frozenset({"write_file", "write_files"})
 
 
 def _read_paths_from_calls(tool_calls: list[NormalizedToolCall]) -> list[str]:
@@ -681,6 +682,24 @@ def _read_paths_from_calls(tool_calls: list[NormalizedToolCall]) -> list[str]:
             normalized for path in raw_paths if (normalized := _normalized_history_path(path))
         )
     return paths
+
+
+def _write_paths_from_calls(tool_calls: list[NormalizedToolCall]) -> list[str]:
+    """Return a stable path signature when a response contains only file writes."""
+    if not tool_calls or any(call.name not in _WRITE_TOOL_NAMES for call in tool_calls):
+        return []
+    paths: list[str] = []
+    for call in tool_calls:
+        parsed = _json_loads_maybe(call.arguments)
+        args = parsed if isinstance(parsed, dict) else {}
+        items = [args] if call.name == "write_file" else args.get("files") or []
+        paths.extend(
+            normalized
+            for item in items
+            if isinstance(item, dict)
+            if (normalized := _normalized_history_path(item.get("path")))
+        )
+    return sorted(set(paths))
 
 
 def _build_focused_repair_tools(
@@ -1002,7 +1021,8 @@ def _serialized_function_tool_call(
     and blank-overwrite guards.
     """
     match = re.fullmatch(
-        r"\s*<function=([a-zA-Z_][a-zA-Z0-9_]*)>\s*(\{.*\})\s*",
+        r"\s*<function=([a-zA-Z_][a-zA-Z0-9_]*)>\s*(\{.*\})\s*"
+        r"(?:</?function>|/function>)?\s*",
         content,
         flags=re.DOTALL,
     )
@@ -2640,7 +2660,7 @@ def _run_agent_loop(
     text_continuation_write_count = 0
     verification_retries = 0
     serialized_action_count = 0
-    last_single_write_target = ""
+    last_write_boundary: tuple[str, ...] = ()
     repeated_write_streak = 0
     unchanged_read_only_streak = 0
     active_repair_focus = ""
@@ -3430,23 +3450,20 @@ def _run_agent_loop(
             )
             rework_turns += 1
 
-        current_single_write = (
-            tc_targets[0]
-            if len(tc_targets) == 1 and tc_targets[0].startswith("write_file:")
-            else ""
-        )
-        if current_single_write and current_single_write == last_single_write_target:
+        current_write_boundary = tuple(_write_paths_from_calls(msg.tool_calls))
+        if current_write_boundary and current_write_boundary == last_write_boundary:
             repeated_write_streak += 1
         else:
             repeated_write_streak = 0
-        last_single_write_target = current_single_write
+        last_write_boundary = current_write_boundary
 
         if repeated_write_streak and not finished:
             remaining = [path for path in task.expected_files_changed if path not in files_written]
+            boundary_label = ", ".join(current_write_boundary)
             recovery = (
-                f"Loop guard: {current_single_write} was selected in "
-                f"{repeated_write_streak + 1} consecutive turns. Do not write that file again "
-                "until validation identifies a defect. Continue with a different incomplete "
+                f"Loop guard: the same write boundary ({boundary_label}) was selected in "
+                f"{repeated_write_streak + 1} consecutive turns. Do not rewrite that boundary "
+                "until validation identifies a new defect. Continue with a different incomplete "
                 f"boundary{': ' + ', '.join(remaining[:6]) if remaining else ''}."
             )
             messages.append({"role": "user", "content": recovery})
@@ -3455,7 +3472,7 @@ def _run_agent_loop(
                     "turn": turn + 1,
                     "role": "controller",
                     "recovery": recovery,
-                    "repeated_tool_target": current_single_write,
+                    "repeated_tool_target": boundary_label,
                 }
             )
             rework_turns += 1

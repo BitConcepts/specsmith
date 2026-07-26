@@ -39,6 +39,7 @@ from govern_bench.harness import (  # noqa: E402
     _serialized_function_tool_call,
     _updated_serialized_action_count,
     _updated_unchanged_read_only_streak,
+    _write_paths_from_calls,
 )
 from govern_bench.metrics import estimate_cost, model_tier  # noqa: E402
 from govern_bench.select_models import load_registry, select  # noqa: E402
@@ -496,6 +497,31 @@ def test_text_serialized_active_function_is_recovered_through_normal_tools() -> 
         )
         is None
     )
+    tagged = _serialized_function_tool_call(
+        '<function=write_file>{"path":"one.py","content":"VALUE = 1\\n"}/function>',
+        {"write_file"},
+        turn=6,
+    )
+    assert tagged is not None
+    assert tagged.name == "write_file"
+
+
+def test_write_boundary_signature_covers_scalar_and_composite_calls() -> None:
+    calls = [
+        NormalizedToolCall(
+            id="1",
+            name="write_file",
+            arguments='{"path":"two.py","content":"TWO = 2"}',
+        ),
+        NormalizedToolCall(
+            id="2",
+            name="write_files",
+            arguments='{"files":[{"path":"one.py","content":"ONE = 1"}]}',
+        ),
+    ]
+
+    assert _write_paths_from_calls(calls) == ["one.py", "two.py"]
+    assert _write_paths_from_calls([NormalizedToolCall(id="3", name="done", arguments="{}")]) == []
     assert (
         _serialized_function_tool_call(
             'Narration <function=write_files>{"files":[]}',

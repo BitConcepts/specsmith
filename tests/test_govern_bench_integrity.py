@@ -1461,7 +1461,7 @@ def test_agent_loop_drops_superseded_reads_after_successful_write(
     assert "Completed write_file state summary" in provider_histories[2]
 
 
-def test_agent_loop_stops_repeated_single_file_write_loop(
+def test_agent_loop_stops_repeated_write_boundary_loop(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
