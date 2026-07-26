@@ -63,8 +63,9 @@ consolidated into the next published release.
   controller regressions before repeated spend. Include T10's Todo model and
   dependency manifest in its bounded preload after trace evidence showed that
   denying those exact reads caused three avoidable repair cycles.
-- Extend bounded preload and controller admission to T11/T13 after the broad
-  audit exposed repeated first-action retrieval and repair variance.
+- Extend controller admission to T11/T13 after the broad audit. Retain T11's
+  bounded preload after it halved tokens and turns; remove T13's proposed
+  preload after admission showed a token regression.
 - Current user guidance is forward-only: version-pinned and retired-mode
   instructions are removed, while Zoo Code setup and doctor continue to back up
   and repair malformed, obsolete, or tampered Specsmith-managed assets.

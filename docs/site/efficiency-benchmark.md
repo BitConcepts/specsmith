@@ -20,10 +20,12 @@ not a comparison assembled from unrelated historical runs.
 The FULL controller now keeps one compact five-tool schema throughout a run
 and records its hash for cache-efficiency auditing. T1 preloads its versioned
 implementation/public-test boundary; T10 adds its imported Todo model and
-dependency manifest after admission proved them necessary. T11/T13 add only
-the non-evaluator files repeated in every broad-run first action. T28 still
-receives only its active milestone. These changes target retrieval turns
-without widening model-visible context or exposing evaluator evidence.
+dependency manifest after admission proved them necessary. T11 adds only the
+non-evaluator files repeated in every broad-run first action. T13 remains
+retrieval-driven because its matching preload increased token use in
+admission. T28 still receives only its active milestone. These changes target
+retrieval turns without widening model-visible context or exposing evaluator
+evidence.
 
 ## July 26 final same-commit evidence
 
@@ -59,10 +61,12 @@ T1/T10, but wins materially on T13/T28. Terra raw's lower correctness confirms
 that the result is governance lift, not Terra alone.
 
 The broad audit found no governed correctness failure. It did identify a T11
-retrieval/repair hotspot and elevated T13 variance. Their repeated first
-actions now define bounded task context, and the controller admission profile
-includes both tasks. This post-run optimization is not pooled into the
-immutable `36435f2` evidence.
+retrieval/repair hotspot and elevated T13 variance. In the post-run
+[controller admission 30209142281](https://github.com/layer1labs/specsmith/actions/runs/30209142281),
+T11's bounded context cut the cell from 23,472 tokens and six turns to 11,210
+tokens and two turns. T13's matching preload increased the cell from 14,424 to
+16,190 tokens, so it was removed. Both tasks remain in controller admission.
+These diagnostics are not pooled into the immutable `36435f2` evidence.
 
 ## July 26 locked-profile admissions
 

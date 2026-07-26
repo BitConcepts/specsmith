@@ -26,6 +26,7 @@ screen, and a release claim requires n=10 replication.
 
 | Evidence | Model/routes | Repetitions | Treatment |
 |---|---|---:|---|
+| [30209142281](https://github.com/layer1labs/specsmith/actions/runs/30209142281) | GPT-5.6 Sol | 1 per T1/T10/T11/T13/T28 FULL | Post-broad admission: T11 improved to 11.2k/2 turns; T13 preload regressed and was removed |
 | [30206398622](https://github.com/layer1labs/specsmith/actions/runs/30206398622) | GPT-5.6 Sol | 10 per eight tasks × Cursor/FULL | 160 valid; FULL 80/80 at 10.7k, Cursor 70/80 at 24.8k TPCA |
 | [30206394966](https://github.com/layer1labs/specsmith/actions/runs/30206394966) | GPT-5.6 Terra + Sol | 5 per T1/T10/T13/T28 × raw/FULL | Terra+FULL 20/20 at 19.1k; Sol raw 20/20 at 29.2k TPCA |
 | [30206263461](https://github.com/layer1labs/specsmith/actions/runs/30206263461) | GPT-5.6 Luna + Terra | 1 T28 FULL each | Both correct; Luna rejected at 43.1k, Terra promoted at 17.7k TPCA |

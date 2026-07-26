@@ -217,12 +217,7 @@ def test_accepted_aee_work_uses_one_compact_schema_and_bounded_scope() -> None:
         "app/main.py",
         "tests/test_main.py",
     ]
-    assert get_task("T13").initial_context_paths == [
-        "cli/commands/process.py",
-        "tests/test_process.py",
-        "cli/main.py",
-        "pyproject.toml",
-    ]
+    assert get_task("T13").initial_context_paths == []
     assert "tests/test_main.py" in _scope_progress(task, ["app/main.py"])
     assert "call done" in _scope_progress(task, task.expected_files_changed)
 

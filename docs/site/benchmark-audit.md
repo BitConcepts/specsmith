@@ -64,10 +64,13 @@ are narrower:
   34% above its prior release anchor.
 - Cursor-style had one T11 turn-budget exhaustion and broad scope expansion.
 
-T11 and T13 now preload the exact non-evaluator files repeated in every first
-action, and their coverage was added to controller admission. This is a
-trace-driven post-run optimization; the immutable n=10 result is not rewritten
-or pooled with it.
+T11 and T13 were added to controller admission. In
+[workflow 30209142281](https://github.com/layer1labs/specsmith/actions/runs/30209142281),
+T11's bounded non-evaluator context reduced the diagnostic from 23,472 tokens
+and six turns to 11,210 tokens and two turns. T13's proposed preload regressed
+from the broad-run 14,424-token mean to 16,190 tokens, so it was removed. This
+is a trace-driven post-run decision; the immutable n=10 result is not
+rewritten or pooled with it.
 
 ## Current broad audit and repair decision
 

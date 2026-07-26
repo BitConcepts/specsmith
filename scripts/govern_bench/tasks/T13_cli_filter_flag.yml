@@ -93,12 +93,6 @@ expected_files_changed:
   - cli/commands/process.py  # --filter option + filter logic
   - tests/test_process.py    # new filter tests (may need to create this file)
 
-initial_context_paths:
-  - cli/commands/process.py
-  - tests/test_process.py
-  - cli/main.py
-  - pyproject.toml
-
 regression_risk: low  # --filter is additive; existing --uppercase tests unaffected
 
 known_failure_modes:
