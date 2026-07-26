@@ -458,8 +458,38 @@ def test_frontier_reference_blocks_expensive_candidate_repetition(tmp_path: Path
     assert load_benchmark_reference_envelopes(stale) == {}
 
 
+def test_release_reference_blocks_same_model_controller_regression() -> None:
+    references = {
+        "T10": {
+            "condition": "SPECSMITH_FULL",
+            "model": "gpt-5.6-sol",
+            "tokens_per_correct_answer": 14_000,
+            "repetitions": 10,
+            "commit": "anchor-commit",
+            "source": "https://example.invalid/run/2",
+        }
+    }
+    candidate = audit_benchmark_rows(
+        [
+            _row(
+                task="T10",
+                condition="SPECSMITH_FULL",
+                passed=True,
+                input_tokens=60_000,
+                model="gpt-5.6-sol",
+            )
+        ],
+        reference_envelopes=references,
+    )
+
+    assert candidate.next_experiment.action == "optimize_and_rerun"
+    assert candidate.next_experiment.ready_for_repetition is False
+    assert "controller_efficiency_regression" in candidate.next_experiment.evidence_codes
+
+
 def test_shipped_frontier_reference_tracks_release_quality_sol_screen() -> None:
-    reference = load_benchmark_reference_envelopes()["T28"]
+    references = load_benchmark_reference_envelopes()
+    reference = references["T28"]
 
     assert reference["condition"] == "SPECSMITH_FULL"
     assert reference["model"] == "gpt-5.6-sol"
@@ -467,6 +497,9 @@ def test_shipped_frontier_reference_tracks_release_quality_sol_screen() -> None:
     assert reference["repetitions"] == 10
     assert reference["commit"] == "71b316fd9b4d857bf07d913cdc0fe33b5732f38e"
     assert reference["source"].endswith("/actions/runs/30199359636")
+    assert references["T1"]["tokens_per_correct_answer"] == pytest.approx(10_215.8)
+    assert references["T10"]["tokens_per_correct_answer"] == pytest.approx(13_841.7)
+    assert references["T13"]["tokens_per_correct_answer"] == pytest.approx(10_742.3)
 
 
 def test_specsmith_audit_writes_combined_project_and_benchmark_report(tmp_path: Path) -> None:

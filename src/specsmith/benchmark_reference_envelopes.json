@@ -1,6 +1,30 @@
 {
   "schema": "specsmith-benchmark-reference-v1",
   "tasks": {
+    "T1": {
+      "condition": "SPECSMITH_FULL",
+      "model": "gpt-5.6-sol",
+      "tokens_per_correct_answer": 10215.8,
+      "repetitions": 10,
+      "commit": "71b316fd9b4d857bf07d913cdc0fe33b5732f38e",
+      "source": "https://github.com/layer1labs/specsmith/actions/runs/30199359636"
+    },
+    "T10": {
+      "condition": "SPECSMITH_FULL",
+      "model": "gpt-5.6-sol",
+      "tokens_per_correct_answer": 13841.7,
+      "repetitions": 10,
+      "commit": "42bd7d8df7667fa5124c7aafe4513efaf6a758a5",
+      "source": "https://github.com/layer1labs/specsmith/actions/runs/30201998763"
+    },
+    "T13": {
+      "condition": "SPECSMITH_FULL",
+      "model": "gpt-5.6-sol",
+      "tokens_per_correct_answer": 10742.3,
+      "repetitions": 10,
+      "commit": "42bd7d8df7667fa5124c7aafe4513efaf6a758a5",
+      "source": "https://github.com/layer1labs/specsmith/actions/runs/30201998763"
+    },
     "T28": {
       "condition": "SPECSMITH_FULL",
       "model": "gpt-5.6-sol",

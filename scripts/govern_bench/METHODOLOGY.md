@@ -191,9 +191,11 @@ Do not publish comparative claims when intervals overlap substantially without c
   Controller phases may suspend a capability, but must not mutate the advertised
   schema. Record the schema hash in usage and transcript evidence so cache
   discontinuities fail the efficiency audit.
-- Preload only versioned requirement-linked files. T1 and T10 receive their
-  implementation and public-test files; T28 receives only its active milestone
-  boundary. Do not expose repository-wide context or evaluator evidence.
+- Preload only versioned requirement-linked files. T1 receives its
+  implementation/public-test boundary; T10 also receives the imported Todo
+  model and dependency manifest proven necessary by admission traces. T28
+  receives only its active milestone. Do not expose repository-wide context
+  or evaluator evidence.
 - Long-horizon milestone maps and requirement-linked change boundaries are
   versioned task metadata, not evaluator evidence. Report only the next
   incomplete boundary and replace stale progress messages.

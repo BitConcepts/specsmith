@@ -135,6 +135,7 @@ def _next_experiment_decision(
     efficiency_blockers = {
         "broad_reread_churn",
         "context_dominance",
+        "controller_efficiency_regression",
         "cursor_efficiency_regression",
         "milestone_fragmentation",
         "first_pass_regression",
@@ -1010,7 +1011,7 @@ def audit_benchmark_rows(
             for row in valid
             if str(row.get("task")) == task and str(row.get("condition")) == condition
         ]
-        for model in sorted({str(row.get("model")) for row in task_rows} - {anchor_model}):
+        for model in sorted({str(row.get("model")) for row in task_rows}):
             candidate = _condition_rollups(
                 [row for row in task_rows if str(row.get("model")) == model]
             ).get(condition)
@@ -1018,19 +1019,34 @@ def audit_benchmark_rows(
                 continue
             candidate_tpca = _as_float(candidate.get("tokens_per_correct_answer"))
             if candidate_tpca > anchor_tpca * 1.10:
+                same_model = model == anchor_model
                 weaknesses.append(
                     BenchmarkWeakness(
-                        code="frontier_efficiency_regression",
+                        code=(
+                            "controller_efficiency_regression"
+                            if same_model
+                            else "frontier_efficiency_regression"
+                        ),
                         severity="medium",
-                        title=f"{model} is correct but materially less efficient than the anchor",
+                        title=(
+                            f"{task} controller path regressed from its release anchor"
+                            if same_model
+                            else f"{model} is correct but materially less efficient than the anchor"
+                        ),
                         evidence=(
                             f"{task} {condition} TPCA {candidate_tpca:.0f} vs "
                             f"{anchor_model} {anchor_tpca:.0f} "
                             f"({candidate_tpca / anchor_tpca:.2f}x)."
                         ),
                         recommendation=(
-                            "Do not repeat this cell yet; advance to the next admitted candidate "
-                            "or optimize the measured serving/controller boundary first."
+                            "Optimize the measured controller path and rerun its admission before "
+                            "a repeated or broad experiment."
+                            if same_model
+                            else (
+                                "Do not repeat this cell yet; advance to the next admitted "
+                                "candidate or optimize the measured serving/controller "
+                                "boundary first."
+                            )
                         ),
                         tasks=[task],
                         conditions=[condition],

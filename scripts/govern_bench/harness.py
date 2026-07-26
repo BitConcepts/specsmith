@@ -795,6 +795,8 @@ def _scope_contract(task: BenchTask) -> str:
         f"- likely change boundaries: {', '.join(files)}\n"
         "- inspect each relevant existing file once; do not investigate unrelated defects\n"
         "- preserve unrelated lines and append focused tests instead of rewriting fixtures\n"
+        "- finish test setup before the request under test; assertions must not "
+        "mutate shared state\n"
         "- issue independent tool calls in one response when the provider supports batching"
     )
 

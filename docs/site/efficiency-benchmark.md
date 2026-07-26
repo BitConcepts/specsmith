@@ -18,10 +18,34 @@ versus stronger-ungoverned question requires all four matched counterfactuals,
 not a comparison assembled from unrelated historical runs.
 
 The FULL controller now keeps one compact five-tool schema throughout a run
-and records its hash for cache-efficiency auditing. T1 and T10 preload only
-their versioned implementation/public-test boundary; T28 still receives only
-its active milestone. These changes target retrieval turns without widening
-model-visible context or exposing evaluator evidence.
+and records its hash for cache-efficiency auditing. T1 preloads its versioned
+implementation/public-test boundary; T10 adds its imported Todo model and
+dependency manifest after admission proved them necessary. T28 still receives
+only its active milestone. These changes target retrieval turns without
+widening model-visible context or exposing evaluator evidence.
+
+## July 26 locked-profile admissions
+
+The first locked admissions at commit `04dbabb` correctly prevented premature
+repetition:
+
+| Workflow / model | Profile | Correct | Tokens | Turns | Decision |
+|---|---|---:|---:|---:|---|
+| [30205541608](https://github.com/layer1labs/specsmith/actions/runs/30205541608) · Qwen3.6-35B-A3B/DeepInfra | T28/FULL | 1/1 | 67,701 | 12 | reject repetition |
+| [30205537706](https://github.com/layer1labs/specsmith/actions/runs/30205537706) · GPT-5.6 Sol | T1/T10/T28 FULL | 3/3 | 20,603 / 63,128 / 17,981 | 5 / 11 / 5 | optimize and readmit |
+
+Qwen used one stable schema and improved materially over its earlier 129,905
+token correct diagnostic, but remained 3.87× the release T28 anchor and began
+with a broad scope request. It therefore does not earn an n=5 substitution
+screen.
+
+Sol's T28 control remained within 2.7% of the 17,502-token anchor. T1 was a
+repair outlier, while T10 exposed a controller defect: the preload omitted
+`app/models.py` and `pyproject.toml`, then the global read suspension denied
+the model's request for exactly those dependencies. Guessing produced three
+contract-repair cycles. The repair adds those two bounded dependency files,
+strengthens side-effect-free test guidance, and adds T1/T10/T13 release
+envelopes so same-model controller regressions fail admission automatically.
 
 ## July 26 broad n=10 replication
 

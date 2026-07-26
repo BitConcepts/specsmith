@@ -204,7 +204,14 @@ def test_accepted_aee_work_uses_one_compact_schema_and_bounded_scope() -> None:
     assert repair_names == set(initial)
     assert not {"list_files", "run_command", "ask_clarification"} & set(diagnostic)
     assert "app/main.py" in _scope_contract(task)
+    assert "assertions must not mutate shared state" in _scope_contract(task)
     assert task.initial_context_paths == ["app/main.py", "tests/test_main.py"]
+    assert get_task("T10").initial_context_paths == [
+        "app/main.py",
+        "app/models.py",
+        "tests/test_main.py",
+        "pyproject.toml",
+    ]
     assert "tests/test_main.py" in _scope_progress(task, ["app/main.py"])
     assert "call done" in _scope_progress(task, task.expected_files_changed)
 

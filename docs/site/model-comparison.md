@@ -26,6 +26,8 @@ screen, and a release claim requires n=10 replication.
 
 | Evidence | Model/routes | Repetitions | Treatment |
 |---|---|---:|---|
+| [30205541608](https://github.com/layer1labs/specsmith/actions/runs/30205541608) | Qwen3.6-35B-A3B / DeepInfra | 1 T28 FULL | Correct at 67.7k TPCA, 3.87× Sol anchor; rejected before n=5 |
+| [30205537706](https://github.com/layer1labs/specsmith/actions/runs/30205537706) | GPT-5.6 Sol | 1 each T1/T10/T28 FULL | 3/3 correct; T10 controller regression triggered repair/readmission |
 | [30199359636](https://github.com/layer1labs/specsmith/actions/runs/30199359636) | GPT-5.6 Sol | 10 per eight tasks × two conditions | Current broad diagnostic: FULL 74/80 at 10.1k TPCA; Cursor-style 70/80 at 23.9k; blocked by T10/T13 correctness |
 | [30201998763](https://github.com/layer1labs/specsmith/actions/runs/30201998763) | GPT-5.6 Sol | 10 per T10/T13 condition | Post-repair confirmation: 40/40 correct; FULL 12.3k versus Cursor-style 30.2k TPCA; no high/critical finding |
 | [30180171688](https://github.com/layer1labs/specsmith/actions/runs/30180171688) | GPT-5.6 Sol | 5 per eight tasks × two conditions | Prior broad screen: FULL 40/40 at 8.0k TPCA; Cursor-style 35/40 at 23.1k |
@@ -85,6 +87,13 @@ zero high/critical audit findings. This clears the measured correctness
 blocker for the repaired commit without pooling incompatible runs.
 
 ## Managed Qwen findings
+
+The locked July 26 admission produced Qwen3.6's best correct managed T28 result
+so far: 67,701 tokens, twelve turns, $0.0249 measured route cost, and one stable
+tool-schema hash. That is a 47.9% reduction from the prior 129,905-token correct
+diagnostic, but still 3.87× the release-quality Sol FULL anchor. The deterministic
+audit selected `advance_candidate`, so this route is not repeated and cannot be
+used in a weaker-governed versus stronger-raw claim.
 
 The July 25 selective replay promoted hidden failures into public API, schema,
 Go-tag, and accessible-UI validators, then reran only the affected candidates:

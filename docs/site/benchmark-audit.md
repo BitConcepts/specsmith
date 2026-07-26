@@ -18,6 +18,24 @@ the same tasks and repetition count. The smaller governed model must preserve
 correctness and improve tokens per correct answer or cost per pass to count as
 a viable substitute.
 
+The first use of that gate produced two useful rejections. Qwen3.6/DeepInfra
+passed T28 in
+[workflow 30205541608](https://github.com/layer1labs/specsmith/actions/runs/30205541608)
+at 67,701 tokens, but the audit selected `advance_candidate` because that is
+3.87× the release Sol anchor. The Sol controller admission in
+[workflow 30205537706](https://github.com/layer1labs/specsmith/actions/runs/30205537706)
+passed all three cells, yet T10 expanded to 63,128 tokens and eleven turns.
+Its trace showed that the controller supplied `app/main.py` and the public
+test file, suspended all reads, then rejected requested reads of the Todo model
+and dependency manifest. This is controller-caused rework, not useful
+governance.
+
+The audit now loads release-quality T1, T10, T13, and T28 anchors. A same-model
+cell more than 10% above its task anchor yields
+`controller_efficiency_regression` and `optimize_and_rerun`; a weaker candidate
+above the frontier anchor still yields `advance_candidate`. A green workflow
+therefore cannot silently promote a correct but inefficient controller.
+
 ## Current broad audit and repair decision
 
 [Workflow 30199359636](https://github.com/layer1labs/specsmith/actions/runs/30199359636)

@@ -16,6 +16,9 @@ consolidated into the next published release.
   and repetition selection.
 - Add matched weaker-governed versus stronger-ungoverned 2×2 reporting so model
   capability and governance lift are not conflated.
+- Record locked admissions `30205541608` and `30205537706`: Qwen3.6 passed T28
+  at 67,701 tokens but was rejected at 3.87× the Sol anchor; Sol passed T1,
+  T10, and T28 but exposed a 63,128-token controller-caused T10 repair loop.
 - Complete the 160-row GPT-5.6 Sol broad n=10 replication at `71b316f`.
   FULL used 10,148 tokens per correct answer versus Cursor-style rules at
   23,933, but the audit blocks publication because coding correctness was
@@ -46,6 +49,10 @@ consolidated into the next published release.
 - Keep one compact five-tool FULL schema for the entire benchmark run, record
   its stable hash, and preload only versioned T1/T10 requirement-linked files
   to remove avoidable retrieval turns without widening context.
+- Pin release-quality T1/T10/T13 efficiency envelopes and fail same-model
+  controller regressions before repeated spend. Include T10's Todo model and
+  dependency manifest in its bounded preload after trace evidence showed that
+  denying those exact reads caused three avoidable repair cycles.
 - Current user guidance is forward-only: version-pinned and retired-mode
   instructions are removed, while Zoo Code setup and doctor continue to back up
   and repair malformed, obsolete, or tampered Specsmith-managed assets.

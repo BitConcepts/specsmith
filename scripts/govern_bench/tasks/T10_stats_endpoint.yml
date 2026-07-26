@@ -76,7 +76,9 @@ expected_files_changed:
 # The bounded preload replaces repeated discovery reads with current evidence.
 initial_context_paths:
   - app/main.py
+  - app/models.py
   - tests/test_main.py
+  - pyproject.toml
 
 regression_risk: high  # placing route after /{todo_id} silently breaks it
 
