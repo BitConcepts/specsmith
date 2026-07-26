@@ -23,10 +23,20 @@ matched n=5 screen in
 also passed every cell and measured 17,688 FULL TPCA versus 36,492 under the
 versioned Cursor-style condition.
 
+The final eight-task matched screen in
+[workflow 30180171688](https://github.com/layer1labs/specsmith/actions/runs/30180171688)
+contains 80/80 valid rows. FULL passed 40/40 at 8,034 TPCA; Cursor-style rules
+passed 35/40 at 23,112 TPCA. The T28 slice passed 5/5 in both conditions at
+17,362 FULL versus 52,381 Cursor-style TPCA.
+
 The stopping decision is evidence-based: adding a micro-patch tool increased
 FULL to 55,451 TPCA, while removing it and making lint and milestone invariants
 explicit produced ten stable five-turn runs (1.1% TPCA CV). No open-model
 diagnostic exposed another controller change that improved a correct result.
+The broad audit's only FULL observation was low-severity prompt-cache
+discontinuity. Stabilizing a larger advertised tool schema could lower billed
+cache cost but would add counted input tokens and weaken the proven minimal-tool
+surface, so it does not justify another optimization screen.
 
 ## Matched five-repetition screen
 

@@ -140,7 +140,6 @@ def _next_experiment_decision(
         "first_pass_regression",
         "initial_scope_overread",
         "late_boundary_validation",
-        "provider_cache_discontinuity",
         "repeated_tool_loop",
         "scope_expansion",
         "systematic_repair_hotspot",

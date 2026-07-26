@@ -333,6 +333,28 @@ def test_audit_selects_next_experiment_from_measured_evidence() -> None:
     baseline_weakness = audit_benchmark_rows([cursor_only_scope, governed_clean])
     assert baseline_weakness.next_experiment.action == "repeat_screen"
 
+    cache_observation_rows = []
+    for rep in range(1, 6):
+        row = _row(
+            condition="SPECSMITH_FULL",
+            passed=True,
+            input_tokens=1_000,
+            output_tokens=300,
+            rep=rep,
+        )
+        row["call_usage"] = [
+            {"turn": 1, "cached_input_tokens": 100},
+            {"turn": 2, "cached_input_tokens": 0},
+            {"turn": 3, "cached_input_tokens": 0},
+        ]
+        cache_observation_rows.append(row)
+    cache_observation = audit_benchmark_rows(cache_observation_rows)
+    assert "provider_cache_discontinuity" in {
+        weakness.code for weakness in cache_observation.weaknesses
+    }
+    assert cache_observation.next_experiment.action == "expand_release_sample"
+    assert cache_observation.next_experiment.ready_for_repetition
+
     correctness_failure = audit_benchmark_rows(
         [
             _row(condition="CURSOR_RULES", passed=True, input_tokens=1_000),

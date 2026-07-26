@@ -11,6 +11,9 @@ consolidated into the next published release.
 ## [Unreleased]
 
 ### Added
+- Complete the final 80-row GPT-5.6 Sol matched screen at `efc97a9`: FULL
+  passed 40/40 at 8,033.7 tokens per correct answer versus the versioned
+  Cursor-style condition's 35/40 at 23,111.7, with 42.5% lower cost-of-pass.
 - Publish the July 25 release-quality T28 envelope: GPT-5.6 Sol plus FULL passed
   10/10 at 17,633.7 tokens per correct answer, five turns, and $0.2204 mean
   measured cost; add public API-journey, Go-tag, and accessible-UI validators
@@ -26,6 +29,10 @@ consolidated into the next published release.
   repair boundaries while preserving the independent hidden acceptance oracle.
 
 ### Changed
+- Treat low-severity provider-cache discontinuity as reported telemetry rather
+  than a material efficiency blocker: cached input still counts in TPCA, so the
+  audit no longer forces a paid optimization rerun that would enlarge the
+  proven minimal tool schema.
 - Reduce long-horizon input tokens through controller-owned active milestones,
   path-scoped validator evidence, immediate boundary validation, and focused
   repair retention. Remove the experimental micro-patch surface after it

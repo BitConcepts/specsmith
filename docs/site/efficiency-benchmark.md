@@ -34,26 +34,22 @@ full-file path then stabilized at five turns and one repair in every n=10 row.
 ## Current matched screen
 
 The current screening evidence uses `gpt-5.6-sol`, Chat Completions with
-`reasoning_effort=none`, and commit `f474bb6b772fe71fd7f1b20d585e23b15fec746a`.
+`reasoning_effort=none`, and commit `efc97a9249649b43de9d7cc9b221076d7e45c98f`.
 It compares Cursor-style rules with Specsmith FULL across eight task types and
-five repetitions per cell.
-
-- [T1, T6, T7, T13 workflow 29963772623](https://github.com/layer1labs/specsmith/actions/runs/29963772623)
-- [T2, T10, T11, T28 workflow 29963515885](https://github.com/layer1labs/specsmith/actions/runs/29963515885)
-
-The workflows are complete, non-overlapping slices of the same model, commit,
-conditions, compatibility settings, and repetition count. Together they contain
-80 valid rows and no provider-error or skipped cells.
+five repetitions per cell in
+[workflow 30180171688](https://github.com/layer1labs/specsmith/actions/runs/30180171688).
+The artifact contains 80 valid rows and no provider-error or skipped cells.
 
 | Condition | Correct | Pass rate | Total tokens | Mean tokens | Tokens/correct | Cost | Mean turns | Wall time |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Cursor rules | 34/40 | 85% | 1,148,565 | 28,714 | 33,781 | $5.1779 | 6.38 | 1,217.8s |
-| Specsmith FULL | 40/40 | 100% | 360,662 | 9,017 | 9,017 | $3.3110 | 3.40 | 1,005.7s |
+| Cursor-style rules | 35/40 | 87.5% | 808,911 | 20,223 | 23,112 | $4.9691 | 5.13 | 929.7s |
+| Specsmith FULL | 40/40 | 100% | 321,347 | 8,034 | 8,034 | $3.2670 | 3.03 | 770.7s |
 
-On this versioned suite, FULL produced six more correct answers, reduced tokens
-per correct answer by 73.3%, reduced measured provider cost by 36.1%, and
-reduced wall time by 17.4%. This is a strong matched screening result, not a
-universal claim about every model, repository, or Cursor configuration.
+On this versioned suite, FULL produced five more correct answers, reduced tokens
+per correct answer by 65.2%, total measured provider cost by 34.3%,
+cost-of-pass by 42.5%, turns by 41.0%, and wall time by 17.1%. This is a strong
+matched screening result, not a universal claim about every model, repository,
+or Cursor configuration.
 
 ## Task-level results
 
@@ -62,20 +58,20 @@ cell has no finite TPCA and is never silently excluded.
 
 | Task | Task type | Cursor correct / TPCA | FULL correct / TPCA | FULL change |
 |---|---|---:|---:|---:|
-| T1 | Feature addition | 5/5 / 24.5k | 5/5 / 11.1k | 54.6% lower |
-| T2 | Bug repair | 4/5 / 57.8k | 5/5 / 6.5k | 88.8% lower, +1 correct |
+| T1 | Feature addition | 5/5 / 15.9k | 5/5 / 8.3k | 47.9% lower |
+| T2 | Bug repair | 5/5 / 20.1k | 5/5 / 7.6k | 62.1% lower |
 | T6 | Ambiguity gate | 0/5 / undefined | 5/5 / 0 | safe deterministic stop |
-| T7 | Destructive kill switch | 5/5 / 9.4k | 5/5 / 0 | safe deterministic stop |
-| T10 | API/data-flow extension | 5/5 / 36.3k | 5/5 / 13.0k | 64.1% lower |
-| T11 | Schema propagation | 5/5 / 32.1k | 5/5 / 8.2k | 74.3% lower |
-| T13 | CLI extension | 5/5 / 22.3k | 5/5 / 12.7k | 43.1% lower |
-| T28 | Polyglot long horizon | 5/5 / 57.3k | 5/5 / 20.6k | 64.1% lower |
+| T7 | Destructive kill switch | 5/5 / 10.9k | 5/5 / 0 | safe deterministic stop |
+| T10 | API/data-flow extension | 5/5 / 19.9k | 5/5 / 14.3k | 28.2% lower |
+| T11 | Schema propagation | 5/5 / 17.9k | 5/5 / 8.2k | 54.2% lower |
+| T13 | CLI extension | 5/5 / 23.0k | 5/5 / 8.5k | 63.2% lower |
+| T28 | Polyglot long horizon | 5/5 / 52.4k | 5/5 / 17.4k | 66.9% lower |
 
-The post-run audit found no high or critical FULL weakness. One successful T28
-FULL row used 12 turns versus a six-turn median because deterministic validation
-caught a backend boundary and forced repair; its full 30.1k-token cost remains
-in the aggregate. Cursor findings included one T2 turn-budget exhaustion,
-unchanged reread churn, context dominance, and edits outside declared boundaries.
+The post-run audit found no high or critical weakness. Cursor-style findings
+were scope expansion and one T28 repair outlier. FULL had only low-severity
+provider cache telemetry; it remains visible but does not block publication or
+force a paid rerun because cached input still counts in the TPCA primary metric.
+The audit selects `expand_release_sample` as an optional next evidence level.
 
 ## Latest T28 replication
 

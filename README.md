@@ -155,21 +155,22 @@ tool regressed TPCA to 55.5k and was removed. This is evidence for the stated
 model, suite, condition, and commits—not a universal claim about the commercial
 Cursor product or every repository.
 
-The preceding matched GPT-5.6 Sol screen covers eight task types—feature, bug,
+The current matched GPT-5.6 Sol screen covers eight task types—feature, bug,
 API, schema, CLI, ambiguity, destructive safety, and the polyglot `T28`
 long-horizon product—under Cursor rules and Specsmith FULL. Each cell has five
-repetitions (80 valid rows) at commit `f474bb6`.
+repetitions (80 valid rows) at commit `efc97a9`
+([workflow 30180171688](https://github.com/layer1labs/specsmith/actions/runs/30180171688)).
 
 | Condition | Correct | Total tokens | Tokens/correct | Cost | Mean turns |
 |---|---:|---:|---:|---:|---:|
-| Cursor rules | 34/40 | 1,148,565 | 33,781 | $5.1779 | 6.38 |
-| Specsmith FULL | 40/40 | 360,662 | 9,017 | $3.3110 | 3.40 |
+| Cursor-style rules | 35/40 | 808,911 | 23,112 | $4.9691 | 5.13 |
+| Specsmith FULL | 40/40 | 321,347 | 8,034 | $3.2670 | 3.03 |
 
-On this versioned suite, FULL achieved six more correct results, 73.3% lower
-tokens per correct answer, 36.1% lower measured cost, and 17.4% lower wall time.
-Every individual task type preserved or improved correctness and token use.
-`T28` improved from the superseded 71.4k FULL result to 20.6k tokens/correct,
-versus Cursor's 57.3k, while both remained 5/5 correct.
+On this versioned suite, FULL achieved five more correct results, 65.2% lower
+tokens per correct answer, 34.3% lower total measured cost, 42.5% lower
+cost-of-pass, 41.0% fewer turns, and 17.1% lower wall time. Every FULL task cell
+passed. `T28` was 5/5 in both conditions; FULL used 17.4k tokens/correct versus
+52.4k for Cursor-style rules.
 
 A T28-only matched replication at commit `5790d41`
 ([run 30045327768](https://github.com/layer1labs/specsmith/actions/runs/30045327768))

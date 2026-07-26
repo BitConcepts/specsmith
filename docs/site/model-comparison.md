@@ -4,6 +4,7 @@
 
 | Evidence | Model/routes | Repetitions | Treatment |
 |---|---|---:|---|
+| [30180171688](https://github.com/layer1labs/specsmith/actions/runs/30180171688) | GPT-5.6 Sol | 5 per eight tasks × two conditions | Current matched screen: FULL 40/40 at 8.0k TPCA; Cursor-style 35/40 at 23.1k |
 | [30179751802](https://github.com/layer1labs/specsmith/actions/runs/30179751802) | GPT-5.6 Sol | 10 T28 FULL | Current release control: 10/10, 17.6k TPCA, five turns, no audit weakness |
 | [30179361862](https://github.com/layer1labs/specsmith/actions/runs/30179361862) | GPT-5.6 Sol | 5 per T28 condition | Current matched control: both 5/5; FULL 17.7k versus Cursor-style 36.5k TPCA |
 | [30180139456](https://github.com/layer1labs/specsmith/actions/runs/30180139456) | Qwen3.6, Qwen3-Coder-480B, GLM-5.2 | 1 T28 FULL each | Validator-repair replay: only Qwen3.6 passed, at 129.9k TPCA; no candidate promoted |
@@ -42,8 +43,8 @@ TPCA and the versioned Cursor-style condition passed 5/5 at 36.5k.
 
 | Condition | Correct | Tokens/correct | Cost | Mean turns |
 |---|---:|---:|---:|---:|
-| Cursor rules | 34/40 | 33.8k | $5.1779 | 6.38 |
-| Specsmith FULL | 40/40 | 9.0k | $3.3110 | 3.40 |
+| Cursor-style rules | 35/40 | 23.1k | $4.9691 | 5.13 |
+| Specsmith FULL | 40/40 | 8.0k | $3.2670 | 3.03 |
 
 The matched point estimate favors FULL on correctness, TPCA, measured cost,
 turns, and wall time across all eight versioned task types. The result is a
