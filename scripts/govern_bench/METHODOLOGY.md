@@ -40,7 +40,7 @@ counts cannot drift between experiments:
 | Profile | Cells per model | Purpose |
 |---|---:|---|
 | `admission` | T28/FULL × 1 | Cheap one-cell model/tool-route admission |
-| `controller-admission` | T1/T10/T28/FULL × 1 | Admit a controller or tool-schema change |
+| `controller-admission` | T1/T10/T11/T13/T28/FULL × 1 | Admit a controller or tool-schema change |
 | `release-controls` | T10/T13/T28 × Cursor/FULL × 10 | Mandatory release regression controls |
 | `broad-release` | 8 tasks × Cursor/FULL × 10 | One same-commit aggregate release claim |
 | `substitution-screen` | T1/T10/T13/T28 × raw/FULL × 5 | Fair model-capability substitution screen |
@@ -193,9 +193,10 @@ Do not publish comparative claims when intervals overlap substantially without c
   discontinuities fail the efficiency audit.
 - Preload only versioned requirement-linked files. T1 receives its
   implementation/public-test boundary; T10 also receives the imported Todo
-  model and dependency manifest proven necessary by admission traces. T28
-  receives only its active milestone. Do not expose repository-wide context
-  or evaluator evidence.
+  model and dependency manifest proven necessary by admission traces. T11 and
+  T13 receive the exact file sets repeated in every n=10 first action, excluding
+  public-validator implementation. T28 receives only its active milestone. Do
+  not expose repository-wide context or evaluator evidence.
 - Long-horizon milestone maps and requirement-linked change boundaries are
   versioned task metadata, not evaluator evidence. Report only the next
   incomplete boundary and replace stale progress messages.

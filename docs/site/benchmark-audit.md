@@ -7,7 +7,7 @@ well as in the eight-task suite so cheap governance gates cannot hide
 long-horizon cost.
 
 Controller changes must now pass the locked `controller-admission` profile on
-T1, T10, and T28 before a broad paid run. Benchmark audits also reject FULL
+T1, T10, T11, T13, and T28 before a broad paid run. Benchmark audits also reject FULL
 tool-schema discontinuity: controller phases may suspend reads, but the compact
 advertised schema and its recorded hash must remain stable. This turns provider
 cache stability into a deterministic, testable release property.
@@ -35,6 +35,39 @@ cell more than 10% above its task anchor yields
 `controller_efficiency_regression` and `optimize_and_rerun`; a weaker candidate
 above the frontier anchor still yields `advance_candidate`. A green workflow
 therefore cannot silently promote a correct but inefficient controller.
+
+The identical controller admission after repair,
+[workflow 30206236593](https://github.com/layer1labs/specsmith/actions/runs/30206236593),
+cleared the gate: T1/T10/T28 were 7,845, 9,305, and 17,818 tokens, all correct,
+with two, two, and five turns. T1 and T10 are below their release anchors and
+T28 remains within 1.8%. The only finding was n=1 undersampling.
+
+The candidate admission in
+[workflow 30206263461](https://github.com/layer1labs/specsmith/actions/runs/30206263461)
+then separated two correct weaker models by efficiency: Luna was rejected at
+43,112 tokens and eleven turns, while Terra advanced at 17,655 tokens and five
+turns. This demonstrates why correctness alone is not an admission decision.
+
+## Current broad audit
+
+[Workflow 30206398622](https://github.com/layer1labs/specsmith/actions/runs/30206398622)
+completed 160/160 valid rows at `36435f2`. FULL passed 80/80 overall and 60/60
+coding cells. Cursor-style rules passed 70/80 overall and 60/60 coding cells.
+The matched coding slice favors FULL by 47.3% TPCA with equal correctness.
+
+There is no governed correctness blocker. The remaining efficiency findings
+are narrower:
+
+- T11 FULL was 23,472 TPCA versus Cursor-style at 20,116; every row reread the
+  same files and then repaired.
+- T13 FULL remained far below Cursor-style (14,424 versus 35,532 TPCA) but was
+  34% above its prior release anchor.
+- Cursor-style had one T11 turn-budget exhaustion and broad scope expansion.
+
+T11 and T13 now preload the exact non-evaluator files repeated in every first
+action, and their coverage was added to controller admission. This is a
+trace-driven post-run optimization; the immutable n=10 result is not rewritten
+or pooled with it.
 
 ## Current broad audit and repair decision
 

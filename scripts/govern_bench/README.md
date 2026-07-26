@@ -77,7 +77,7 @@ capability and governance lift are confounded.
 The paid-run profiles are:
 
 - `admission`: T28/FULL, n=1;
-- `controller-admission`: T1/T10/T28/FULL, n=1;
+- `controller-admission`: T1/T10/T11/T13/T28/FULL, n=1;
 - `release-controls`: T10/T13/T28, Cursor/FULL, n=10;
 - `broad-release`: T1/T2/T6/T7/T10/T11/T13/T28, Cursor/FULL, n=10;
 - `substitution-screen`: T1/T10/T13/T28, raw/FULL, n=5.

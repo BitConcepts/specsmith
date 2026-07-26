@@ -84,7 +84,7 @@ def _parse_args() -> argparse.Namespace:
         default="custom",
         help=(
             "Locked benchmark profile. admission=n1 T28/FULL; "
-            "controller-admission=n1 T1/T10/T28 FULL; "
+            "controller-admission=n1 T1/T10/T11/T13/T28 FULL; "
             "release-controls=n10 T10/T13/T28; broad-release=n10 eight-task grid; "
             "substitution-screen=n5 coding/long-horizon 2x2 model-governance screen."
         ),

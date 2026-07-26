@@ -136,22 +136,15 @@ the [`examples/policies`](examples/policies) directory.
 
 ## Governance efficiency benchmark
 
-The broad GPT-5.6 Sol n=10 screen is diagnostic, not a blanket superiority
-claim. It exposed a T10/T13 correctness regression; the targeted n=10
-confirmation below verifies the repair without rewriting the earlier run.
+The same-commit GPT-5.6 Sol n=10 replication completed 160/160 valid rows.
+FULL passed 80/80 at 10.7k tokens per correct answer (TPCA); the versioned
+Cursor-style condition passed 70/80 at 24.8k. On coding-only tasks both passed
+60/60, while FULL used 14.3k versus 27.1k TPCA.
 
-| Evidence | Cursor-style rules | Specsmith FULL |
-|---|---:|---:|
-| Eight-task broad screen (n=10) | 70/80 · 23.9k TPCA | 74/80 · 10.1k TPCA |
-| Coding-only slice | **60/60 · 25.9k TPCA** | 54/60 · 13.9k TPCA |
-| Post-repair T10/T13 (n=10) | 20/20 · 30.2k TPCA | **20/20 · 12.3k TPCA** |
-| Polyglot long-horizon T28 | 10/10 · 54.1k TPCA | **10/10 · 17.5k TPCA** |
-
-The targeted repair restored all T10/T13 cells and reduced TPCA by 59.2%; its
-audit has no high/critical finding. T28 is also stable: FULL used 67.6% fewer
-tokens per correct answer across ten correct matched repetitions. Runs from
-different commits are not pooled. “Cursor-style” means this repository's
-versioned rules condition, not every feature of the commercial Cursor product.
+A separate matched n=5 model-substitution screen found that mid-tier
+GPT-5.6 Terra + FULL matched frontier Sol raw correctness (20/20) while using
+19.1k versus 29.2k TPCA and 43.3% lower cost per pass. This is an aggregate
+four-task result, not an every-task or every-Cursor-feature claim.
 
 See the
 [full benchmark report](https://specsmith.readthedocs.io/stable/efficiency-benchmark/),

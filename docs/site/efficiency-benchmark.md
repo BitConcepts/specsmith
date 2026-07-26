@@ -5,7 +5,7 @@
 Benchmark spend now follows locked, versioned profiles:
 
 1. `admission`: one T28/FULL cell for a new model or route;
-2. `controller-admission`: one T1, T10, and T28 FULL cell after controller changes;
+2. `controller-admission`: one T1, T10, T11, T13, and T28 FULL cell after controller changes;
 3. `substitution-screen`: T1/T10/T13/T28, raw and FULL, n=5 for two-model
    capability-substitution evidence;
 4. `release-controls`: T10/T13/T28, Cursor-style and FULL, n=10;
@@ -20,9 +20,49 @@ not a comparison assembled from unrelated historical runs.
 The FULL controller now keeps one compact five-tool schema throughout a run
 and records its hash for cache-efficiency auditing. T1 preloads its versioned
 implementation/public-test boundary; T10 adds its imported Todo model and
-dependency manifest after admission proved them necessary. T28 still receives
-only its active milestone. These changes target retrieval turns without
-widening model-visible context or exposing evaluator evidence.
+dependency manifest after admission proved them necessary. T11/T13 add only
+the non-evaluator files repeated in every broad-run first action. T28 still
+receives only its active milestone. These changes target retrieval turns
+without widening model-visible context or exposing evaluator evidence.
+
+## July 26 final same-commit evidence
+
+[Workflow 30206398622](https://github.com/layer1labs/specsmith/actions/runs/30206398622)
+ran the locked eight-task n=10 release profile at commit `36435f2`. All 160
+rows are valid and every coding cell passed in both conditions.
+
+| Slice / condition | Correct | TPCA | Cost/pass | Mean turns | Total wall |
+|---|---:|---:|---:|---:|---:|
+| All tasks — Cursor-style | 70/80 | 24,839 | $0.1347 | 5.43 | 1,897s |
+| All tasks — FULL | 80/80 | 10,691 | $0.0830 | 2.94 | 1,699s |
+| Coding only — Cursor-style | 60/60 | 27,062 | $0.1496 | 6.33 | 1,791s |
+| Coding only — FULL | 60/60 | 14,254 | $0.1096 | 3.92 | 1,699s |
+
+FULL reduced all-task TPCA by 57.0%, cost/pass by 38.4%, turns by 45.9%, and
+wall time by 10.4%. With equal coding correctness it reduced coding TPCA by
+47.3%, cost/pass by 26.7%, and turns by 38.1%. T28 remained 10/10 at 17,955
+versus 47,021 TPCA.
+
+[Workflow 30206394966](https://github.com/layer1labs/specsmith/actions/runs/30206394966)
+is the matched n=5 model-substitution screen:
+
+| Four-task aggregate | Correct | TPCA | Cost/pass |
+|---|---:|---:|---:|
+| Sol raw | 20/20 | 29,161 | $0.1679 |
+| Sol FULL | 20/20 | 13,502 | $0.1192 |
+| Terra raw | 16/20 | 64,759 | $0.2207 |
+| Terra FULL | 20/20 | 19,053 | $0.0952 |
+
+Terra+FULL matched Sol-raw correctness while using 34.7% lower TPCA and 43.3%
+lower cost/pass. The advantage is not uniform: Terra+FULL costs more tokens on
+T1/T10, but wins materially on T13/T28. Terra raw's lower correctness confirms
+that the result is governance lift, not Terra alone.
+
+The broad audit found no governed correctness failure. It did identify a T11
+retrieval/repair hotspot and elevated T13 variance. Their repeated first
+actions now define bounded task context, and the controller admission profile
+includes both tasks. This post-run optimization is not pooled into the
+immutable `36435f2` evidence.
 
 ## July 26 locked-profile admissions
 
@@ -46,6 +86,28 @@ the model's request for exactly those dependencies. Guessing produced three
 contract-repair cycles. The repair adds those two bounded dependency files,
 strengthens side-effect-free test guidance, and adds T1/T10/T13 release
 envelopes so same-model controller regressions fail admission automatically.
+
+The repaired controller readmission in
+[workflow 30206236593](https://github.com/layer1labs/specsmith/actions/runs/30206236593)
+passed all three cells with one stable schema per row:
+
+| Task | Before repair | After repair | Release anchor | After turns |
+|---|---:|---:|---:|---:|
+| T1 | 20,603 | 7,845 | 10,216 | 2 |
+| T10 | 63,128 | 9,305 | 13,842 | 2 |
+| T28 | 17,981 | 17,818 | 17,502 | 5 |
+
+T1 and T10 are now 23.2% and 32.8% below their release anchors; T28 is 1.8%
+above its anchor. The audit found only expected n=1 undersampling and selected
+`repeat_screen`.
+
+The parallel weaker-model admission
+[workflow 30206263461](https://github.com/layer1labs/specsmith/actions/runs/30206263461)
+also passed both T28 cells. Luna used 43,112 tokens and eleven turns, so the
+audit rejected repetition. Terra used 17,655 tokens, five turns, and $0.1157:
+within 0.9% of the Sol FULL token anchor at roughly half this admission's
+measured Sol cost. Terra therefore advances to the complete matched n=5
+raw/FULL substitution screen against Sol.
 
 ## July 26 broad n=10 replication
 

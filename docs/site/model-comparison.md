@@ -26,6 +26,10 @@ screen, and a release claim requires n=10 replication.
 
 | Evidence | Model/routes | Repetitions | Treatment |
 |---|---|---:|---|
+| [30206398622](https://github.com/layer1labs/specsmith/actions/runs/30206398622) | GPT-5.6 Sol | 10 per eight tasks × Cursor/FULL | 160 valid; FULL 80/80 at 10.7k, Cursor 70/80 at 24.8k TPCA |
+| [30206394966](https://github.com/layer1labs/specsmith/actions/runs/30206394966) | GPT-5.6 Terra + Sol | 5 per T1/T10/T13/T28 × raw/FULL | Terra+FULL 20/20 at 19.1k; Sol raw 20/20 at 29.2k TPCA |
+| [30206263461](https://github.com/layer1labs/specsmith/actions/runs/30206263461) | GPT-5.6 Luna + Terra | 1 T28 FULL each | Both correct; Luna rejected at 43.1k, Terra promoted at 17.7k TPCA |
+| [30206236593](https://github.com/layer1labs/specsmith/actions/runs/30206236593) | GPT-5.6 Sol | 1 each T1/T10/T28 FULL | Repair readmission: 7.8k / 9.3k / 17.8k, all correct; promoted |
 | [30205541608](https://github.com/layer1labs/specsmith/actions/runs/30205541608) | Qwen3.6-35B-A3B / DeepInfra | 1 T28 FULL | Correct at 67.7k TPCA, 3.87× Sol anchor; rejected before n=5 |
 | [30205537706](https://github.com/layer1labs/specsmith/actions/runs/30205537706) | GPT-5.6 Sol | 1 each T1/T10/T28 FULL | 3/3 correct; T10 controller regression triggered repair/readmission |
 | [30199359636](https://github.com/layer1labs/specsmith/actions/runs/30199359636) | GPT-5.6 Sol | 10 per eight tasks × two conditions | Current broad diagnostic: FULL 74/80 at 10.1k TPCA; Cursor-style 70/80 at 23.9k; blocked by T10/T13 correctness |
@@ -62,6 +66,12 @@ repetition sets. GPT-5.6 uses Chat Completions with `reasoning_effort=none` for
 function-tool compatibility in every condition.
 
 ## Current frontier screen
+
+At n=1, Terra is the first weaker candidate to match the governed Sol T28
+envelope: 17,655 versus Sol's 17,502-token release anchor, with five turns and
+$0.1157 measured cost. Luna was also correct but used 43,112 tokens and eleven
+turns. Terra advances to a matched n=5 raw/FULL 2×2 experiment; this diagnostic
+alone is not a substitution claim.
 
 The current long-horizon frontier is GPT-5.6 Sol plus FULL at 17.5k TPCA
 (10/10). In the same broad n=10 run, the versioned Cursor-style condition also

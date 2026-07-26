@@ -73,6 +73,13 @@ expected_files_changed:
   - app/main.py          # list_todos gets tag query param; update_todo handles tags
   - tests/test_main.py   # new tests for tags create, update, filter
 
+initial_context_paths:
+  - app/models.py
+  - app/main.py
+  - tests/test_main.py
+  - app/services.py
+  - pyproject.toml
+
 regression_risk: medium  # existing tests break if default tags=[] not added to fixture data
 
 known_failure_modes:

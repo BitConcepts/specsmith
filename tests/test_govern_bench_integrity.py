@@ -106,7 +106,7 @@ def test_locked_benchmark_profiles_preserve_admission_and_release_controls() -> 
         repetitions=None,
     )
     assert (tasks, conditions, repetitions) == (["T28"], ["SPECSMITH_FULL"], 1)
-    assert PROFILES["controller-admission"].tasks == ("T1", "T10", "T28")
+    assert PROFILES["controller-admission"].tasks == ("T1", "T10", "T11", "T13", "T28")
     assert PROFILES["controller-admission"].repetitions == 1
     assert PROFILES["release-controls"].tasks == ("T10", "T13", "T28")
     assert PROFILES["release-controls"].repetitions == 10

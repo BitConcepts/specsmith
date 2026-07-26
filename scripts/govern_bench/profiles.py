@@ -26,7 +26,7 @@ PROFILES: dict[str, BenchmarkProfile] = {
     ),
     "controller-admission": BenchmarkProfile(
         name="controller-admission",
-        tasks=("T1", "T10", "T28"),
+        tasks=("T1", "T10", "T11", "T13", "T28"),
         conditions=("SPECSMITH_FULL",),
         repetitions=1,
         purpose="One paid cell per controller path changed by an optimization.",

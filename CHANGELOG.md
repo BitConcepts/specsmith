@@ -19,6 +19,16 @@ consolidated into the next published release.
 - Record locked admissions `30205541608` and `30205537706`: Qwen3.6 passed T28
   at 67,701 tokens but was rejected at 3.87× the Sol anchor; Sol passed T1,
   T10, and T28 but exposed a 63,128-token controller-caused T10 repair loop.
+- Confirm controller readmission in `30206236593`: T1/T10/T28 all passed at
+  7,845, 9,305, and 17,818 tokens. In `30206263461`, reject correct-but-costly
+  Luna at 43,112 tokens and promote Terra at 17,655 tokens to the matched n=5
+  weaker-governed versus stronger-raw screen.
+- Complete same-commit broad run `30206398622`: FULL passed 80/80 at 10,691
+  TPCA versus Cursor-style 70/80 at 24,839; both coding slices were 60/60 and
+  FULL used 47.3% lower coding TPCA.
+- Complete matched model-substitution run `30206394966`: Terra+FULL matched
+  Sol-raw correctness at 20/20 while using 34.7% lower TPCA and 43.3% lower
+  cost/pass across T1/T10/T13/T28.
 - Complete the 160-row GPT-5.6 Sol broad n=10 replication at `71b316f`.
   FULL used 10,148 tokens per correct answer versus Cursor-style rules at
   23,933, but the audit blocks publication because coding correctness was
@@ -53,6 +63,8 @@ consolidated into the next published release.
   controller regressions before repeated spend. Include T10's Todo model and
   dependency manifest in its bounded preload after trace evidence showed that
   denying those exact reads caused three avoidable repair cycles.
+- Extend bounded preload and controller admission to T11/T13 after the broad
+  audit exposed repeated first-action retrieval and repair variance.
 - Current user guidance is forward-only: version-pinned and retired-mode
   instructions are removed, while Zoo Code setup and doctor continue to back up
   and repair malformed, obsolete, or tampered Specsmith-managed assets.
