@@ -22,6 +22,7 @@ from govern_bench.harness import (  # noqa: E402
     _exec_read_file_with_evidence,
     _exec_read_files_with_evidence,
     _exec_write_files,
+    _focused_validator_repair_boundaries,
     _focused_validator_repair_progress,
     _looks_like_nonterminal_narration,
     _milestone_contract,
@@ -298,6 +299,21 @@ def test_serialized_routes_receive_bounded_composite_file_tools(tmp_path: Path) 
     assert "ui/src/App.tsx" in focus
     assert "ui/tests/incident-console.spec.ts" in focus
     assert "do not reread validator" in focus
+
+
+def test_pytest_repair_keeps_implementation_and_test_boundaries() -> None:
+    task = get_task("T13")
+
+    boundaries = _focused_validator_repair_boundaries(
+        task,
+        [
+            "pytest FAILED:\n"
+            "tests/test_process.py:69: Error: No such option '--filter'. "
+            "Did you mean '--filters'?"
+        ],
+    )
+
+    assert ("pytest", ["cli/commands/process.py", "tests/test_process.py"]) in boundaries
 
 
 def test_full_completion_applies_one_bounded_ruff_safe_fix(

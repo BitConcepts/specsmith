@@ -542,13 +542,9 @@ def _focused_validator_repair_boundaries(
         paths = _validator_boundaries_for_task(task, command)
         if paths:
             boundaries.append((command, paths))
-    core_failures = [
-        failure
-        for failure in failures
-        if failure.startswith(("ruff check . FAILED:", "pytest FAILED:"))
-    ]
-    if core_failures:
-        normalized_failures = "\n".join(core_failures).replace("\\", "/").casefold()
+    lint_failures = [failure for failure in failures if failure.startswith("ruff check . FAILED:")]
+    if lint_failures:
+        normalized_failures = "\n".join(lint_failures).replace("\\", "/").casefold()
         linked_paths = [
             str(path)
             for path in task.expected_files_changed
@@ -557,7 +553,15 @@ def _focused_validator_repair_boundaries(
         if not linked_paths:
             linked_paths = [str(path) for path in task.expected_files_changed]
         if linked_paths:
-            boundaries.append(("deterministic project checks", linked_paths))
+            boundaries.append(("ruff check .", linked_paths))
+
+    if any(failure.startswith("pytest FAILED:") for failure in failures):
+        # A traceback names the asserting test file even when the defect is in
+        # production code. Preserve the complete declared change boundary so a
+        # focused repair cannot become trapped in model-authored tests.
+        linked_paths = [str(path) for path in task.expected_files_changed]
+        if linked_paths:
+            boundaries.append(("pytest", linked_paths))
     return boundaries
 
 

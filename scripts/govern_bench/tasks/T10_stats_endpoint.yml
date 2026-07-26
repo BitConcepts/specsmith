@@ -33,6 +33,7 @@ difficulty: medium
 project: agentic-todo-api
 estimated_tokens_ungoverned: 4000
 estimated_tokens_specsmith_full: 5500
+enforce_completion_validators: true
 
 task_prompt: |
   Add a summary statistics endpoint to the todo API.
@@ -89,6 +90,19 @@ governance_signals:
     - "GET /todos/stats returning 422 (route registered after /{todo_id})"
     - "by_priority using integer keys instead of string keys"
     - "missing empty-store test"
+
+allowed_validator_commands:
+  - "python tools/validate_stats_contract.py"
+
+validator:
+  shell: auto
+  commands:
+    - "python tools/validate_stats_contract.py"
+  allowed_patterns:
+    - "^python tools/validate_stats_contract\\.py$"
+  boundaries:
+    "python tools/validate_stats_contract.py":
+      - app/main.py
 
 # Scope discipline: the correct solution modifies only main.py and tests.
 # Ungoverned agents sometimes also modify models.py (unnecessary).

@@ -902,6 +902,38 @@ def test_t28_visible_contract_validator_rejects_incomplete_starter(tmp_path: Pat
     assert "acknowledged_at" in output
 
 
+@pytest.mark.parametrize(
+    ("task_id", "command", "expected_output"),
+    [
+        (
+            "T10",
+            "python tools/validate_stats_contract.py",
+            "GET /todos/stats",
+        ),
+        (
+            "T13",
+            "python tools/validate_cli_filter_contract.py",
+            "--filter",
+        ),
+    ],
+)
+def test_standard_task_contract_validators_reject_incomplete_starters(
+    tmp_path: Path,
+    task_id: str,
+    command: str,
+    expected_output: str,
+) -> None:
+    task = get_task(task_id)
+    project = tmp_path / task_id
+    _copy_project_fixture(_get_project_dir(task.project), project)
+
+    passed, output = _exec_run_validator(project, task, command)
+
+    assert task.enforce_completion_validators
+    assert not passed
+    assert expected_output in output
+
+
 def test_t28_visible_api_validator_rejects_incomplete_starter(tmp_path: Path) -> None:
     task = get_task("T28")
     project = tmp_path / "project"

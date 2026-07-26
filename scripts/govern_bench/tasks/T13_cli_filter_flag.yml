@@ -41,6 +41,7 @@ difficulty: medium
 project: agentic-cli-tool
 estimated_tokens_ungoverned: 3800
 estimated_tokens_specsmith_full: 5200
+enforce_completion_validators: true
 
 task_prompt: |
   Add a `--filter KEY=VALUE` option to the `process` command.
@@ -112,6 +113,19 @@ governance_signals:
     - "stdout contains non-JSON content (status messages mixed with output)"
     - "exit code 1 on empty filter match"
     - "crash on non-array JSON input"
+
+allowed_validator_commands:
+  - "python tools/validate_cli_filter_contract.py"
+
+validator:
+  shell: auto
+  commands:
+    - "python tools/validate_cli_filter_contract.py"
+  allowed_patterns:
+    - "^python tools/validate_cli_filter_contract\\.py$"
+  boundaries:
+    "python tools/validate_cli_filter_contract.py":
+      - cli/commands/process.py
 
 # Exit-code discipline: exit 0 even on empty results is a common source of pipeline
 # breakage that ungoverned agents miss. This flag makes the score sensitive to it.
