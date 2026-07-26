@@ -86,7 +86,8 @@ def _parse_args() -> argparse.Namespace:
             "Locked benchmark profile. admission=n1 T28/FULL; "
             "controller-admission=n1 T1/T10/T11/T13/T28 FULL; "
             "release-controls=n10 T10/T13/T28; broad-release=n10 eight-task grid; "
-            "substitution-screen=n5 coding/long-horizon 2x2 model-governance screen."
+            "substitution-screen=n5 coding/long-horizon 2x2 model-governance screen; "
+            "substitution-release=n10 eight-task 2x2 release comparison."
         ),
     )
     parser.add_argument(

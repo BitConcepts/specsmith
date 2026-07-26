@@ -22,6 +22,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from govern_bench.metrics import model_tier, strip_provider_route
+from govern_bench.substitution import substitution_inference
 
 # ---------------------------------------------------------------------------
 # Data loading
@@ -314,9 +315,11 @@ def _aggregate_condition(
 def governance_substitution_comparisons(
     models: list[tuple[str, dict[str, dict[str, dict]]]],
     tasks: list[str],
+    raw_models: list[tuple[str, list[dict]]] | None = None,
 ) -> list[dict[str, object]]:
     """Return valid 2×2 smaller-governed/frontier-ungoverned comparisons."""
     comparisons: list[dict[str, object]] = []
+    raw_by_name = dict(raw_models or [])
     for smaller_name, smaller_data in models:
         smaller_rank = _TIER_RANK.get(model_tier(smaller_name))
         if smaller_rank is None:
@@ -335,16 +338,21 @@ def governance_substitution_comparisons(
             assert smaller_raw is not None
             assert stronger_full is not None
             assert stronger_raw is not None
-            comparisons.append(
-                {
-                    "smaller_model": smaller_name,
-                    "stronger_model": stronger_name,
-                    "smaller_full": smaller_full,
-                    "smaller_ungoverned": smaller_raw,
-                    "stronger_full": stronger_full,
-                    "stronger_ungoverned": stronger_raw,
-                }
-            )
+            comparison: dict[str, object] = {
+                "smaller_model": smaller_name,
+                "stronger_model": stronger_name,
+                "smaller_full": smaller_full,
+                "smaller_ungoverned": smaller_raw,
+                "stronger_full": stronger_full,
+                "stronger_ungoverned": stronger_raw,
+            }
+            if smaller_name in raw_by_name and stronger_name in raw_by_name:
+                comparison["inference"] = substitution_inference(
+                    raw_by_name[smaller_name],
+                    raw_by_name[stronger_name],
+                    tasks,
+                )
+            comparisons.append(comparison)
     return comparisons
 
 
@@ -356,6 +364,7 @@ def governance_substitution_comparisons(
 def render_comparison(
     models: list[tuple[str, dict[str, dict[str, dict]]]],
     tasks: list[str] | None = None,
+    raw_models: list[tuple[str, list[dict]]] | None = None,
 ) -> str:
     lines: list[str] = []
     all_tasks = tasks or sorted({t for _, d in models for t in d})
@@ -466,7 +475,7 @@ def render_comparison(
         lines.append("|".join(row))
     lines.append("")
 
-    substitutions = governance_substitution_comparisons(models, all_tasks)
+    substitutions = governance_substitution_comparisons(models, all_tasks, raw_models)
     if substitutions:
         lines += [
             "## Governance as model-capability substitution",
@@ -497,7 +506,13 @@ def render_comparison(
             stronger_pass = float(stronger["pass_rate"])
             smaller_tpca = float(smaller["tokens_per_correct_answer"])
             stronger_tpca = float(stronger["tokens_per_correct_answer"])
-            if smaller_pass < stronger_pass:
+            inference = item.get("inference")
+            release_claim = isinstance(inference, dict) and bool(
+                inference["claims"]["fixed_suite_substitution"]
+            )
+            if release_claim:
+                outcome = "Release-grade fixed-suite substitution"
+            elif smaller_pass < stronger_pass:
                 outcome = "Does not match stronger-model correctness"
             elif smaller_tpca <= stronger_tpca:
                 outcome = "Matches/exceeds correctness with lower TPCA"
@@ -513,6 +528,30 @@ def render_comparison(
                 f"{_tok(stronger_tpca)} | {_cop(float(stronger['cost_of_pass']))} | "
                 f"{outcome} |"
             )
+            if isinstance(inference, dict):
+                fixed = inference["fixed_suite_95_ci"]
+                clustered = inference["task_cluster_95_ci"]
+                claims = inference["claims"]
+                lines += [
+                    "",
+                    f"**Paired inference — {item['smaller_model']} + FULL vs "
+                    f"{item['stronger_model']} + UNGOVERNED:**",
+                    "",
+                    f"- Fixed-suite 95% CI: correctness difference "
+                    f"{fixed['pass_rate_difference'][0] * 100:+.1f} to "
+                    f"{fixed['pass_rate_difference'][1] * 100:+.1f} percentage points; "
+                    f"TPCA ratio {fixed['tpca_ratio'][0]:.3f}–"
+                    f"{fixed['tpca_ratio'][1]:.3f}.",
+                    f"- Task-cluster 95% CI: correctness difference "
+                    f"{clustered['pass_rate_difference'][0] * 100:+.1f} to "
+                    f"{clustered['pass_rate_difference'][1] * 100:+.1f} percentage points; "
+                    f"TPCA ratio {clustered['tpca_ratio'][0]:.3f}–"
+                    f"{clustered['tpca_ratio'][1]:.3f}.",
+                    f"- Claim gates: release-ready={claims['release_ready']}; "
+                    f"fixed-suite substitution={claims['fixed_suite_substitution']}; "
+                    f"cross-task substitution={claims['cross_task_substitution']}.",
+                    "",
+                ]
         lines += [
             "",
             "A positive substitution result means governance compensated for measured "
@@ -636,9 +675,14 @@ def main() -> int:
         nargs="*",
         help="Restrict to specific task IDs (default: all)",
     )
+    parser.add_argument(
+        "--summary-output",
+        help="Optional machine-readable JSON substitution summary path",
+    )
     args = parser.parse_args()
 
     models: list[tuple[str, dict]] = []
+    raw_models: list[tuple[str, list[dict]]] = []
     cell_sets: list[tuple[str, set[tuple[str, str, int]]]] = []
     try:
         for spec in args.inputs:
@@ -651,6 +695,7 @@ def main() -> int:
             cells = validate_results(rows, path)
             data = rollup(rows)
             models.append((label, data))
+            raw_models.append((label, rows))
             cell_sets.append((label, cells))
             print(f"Loaded {len(rows)} runs for {label!r} from {path}")
         validate_comparable(cell_sets)
@@ -658,11 +703,28 @@ def main() -> int:
         print(f"[FATAL] Invalid benchmark comparison input: {exc}", file=sys.stderr)
         return 1
 
-    md = render_comparison(models, tasks=args.tasks)
+    selected_tasks = args.tasks or sorted({task for _label, data in models for task in data})
+    substitutions = governance_substitution_comparisons(models, selected_tasks, raw_models)
+    md = render_comparison(models, tasks=args.tasks, raw_models=raw_models)
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(md, encoding="utf-8")
     print(f"Report written to {out}")
+    if args.summary_output:
+        summary_out = Path(args.summary_output)
+        summary_out.parent.mkdir(parents=True, exist_ok=True)
+        summary_out.write_text(
+            json.dumps(
+                {
+                    "schema": "governancebench-model-comparison-v1",
+                    "tasks": selected_tasks,
+                    "comparisons": substitutions,
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        print(f"Substitution summary written to {summary_out}")
     return 0
 
 

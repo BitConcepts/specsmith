@@ -55,6 +55,16 @@ PROFILES: dict[str, BenchmarkProfile] = {
             "from governance lift."
         ),
     ),
+    "substitution-release": BenchmarkProfile(
+        name="substitution-release",
+        tasks=("T1", "T2", "T6", "T7", "T10", "T11", "T13", "T28"),
+        conditions=("UNGOVERNED", "SPECSMITH_FULL"),
+        repetitions=10,
+        purpose=(
+            "Release-grade two-by-two lower-tier/frontier model comparison across "
+            "the complete versioned task grid."
+        ),
+    ),
 }
 
 

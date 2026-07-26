@@ -56,6 +56,10 @@ consolidated into the next published release.
   repair boundaries while preserving the independent hidden acceptance oracle.
 
 ### Changed
+- Add an immutable eight-task n=10 model-substitution release profile and
+  machine-readable paired inference. Claims now require correctness
+  non-inferiority plus token superiority under fixed-suite and task-cluster
+  95% intervals instead of relying on aggregate point estimates.
 - Keep one compact five-tool FULL schema for the entire benchmark run, record
   its stable hash, and preload only versioned T1/T10 requirement-linked files
   to remove avoidable retrieval turns without widening context.

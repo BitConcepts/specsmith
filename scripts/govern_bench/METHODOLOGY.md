@@ -44,11 +44,20 @@ counts cannot drift between experiments:
 | `release-controls` | T10/T13/T28 × Cursor/FULL × 10 | Mandatory release regression controls |
 | `broad-release` | 8 tasks × Cursor/FULL × 10 | One same-commit aggregate release claim |
 | `substitution-screen` | T1/T10/T13/T28 × raw/FULL × 5 | Fair model-capability substitution screen |
+| `substitution-release` | 8 tasks × raw/FULL × 10 | Release-grade lower-tier/frontier 2×2 claim |
 
 The promotion funnel is `n=1 admission → n=5 screening → n=10 release
 replication`. A failed admission is repaired or rejected; it is not made
 publishable by spending on more repetitions. Locked-profile task, condition,
 or repetition overrides fail closed.
+
+Model-substitution release claims use a paired hierarchical bootstrap with
+10,000 deterministic resamples. The fixed-suite interval resamples repetitions
+within each task. The task-cluster interval also resamples task IDs and is the
+required basis for claims that extend beyond the exact suite. Correctness uses
+Wilson-based difference bounds and a predeclared five-percentage-point
+non-inferiority margin. Token superiority requires the upper 95% TPCA-ratio
+bound to remain below one.
 
 ## 3) Core Metrics
 

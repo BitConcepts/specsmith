@@ -74,6 +74,12 @@ raw/FULL 2×2 grid on identical tasks at n=5. Never compare a smaller FULL slice
 with an unrelated frontier baseline: without both counterfactual cells, model
 capability and governance lift are confounded.
 
+Promote a positive screen through `substitution-release`. It expands the same
+2×2 design to all eight versioned tasks at n=10. The comparison report emits
+paired fixed-suite and task-cluster bootstrap intervals, applies a five-point
+correctness non-inferiority margin, and withholds release claims unless the
+upper 95% TPCA-ratio bound is below one.
+
 The paid-run profiles are:
 
 - `admission`: T28/FULL, n=1;
@@ -81,6 +87,7 @@ The paid-run profiles are:
 - `release-controls`: T10/T13/T28, Cursor/FULL, n=10;
 - `broad-release`: T1/T2/T6/T7/T10/T11/T13/T28, Cursor/FULL, n=10;
 - `substitution-screen`: T1/T10/T13/T28, raw/FULL, n=5.
+- `substitution-release`: T1/T2/T6/T7/T10/T11/T13/T28, raw/FULL, n=10.
 
 Profile task, condition, and repetition counts are locked. Use `custom` only
 for explicitly diagnostic work.

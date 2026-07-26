@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       profile:
-        description: "Locked run profile: custom, admission, controller-admission, release-controls, broad-release, substitution-screen."
+        description: "Locked run profile: custom, admission, controller-admission, release-controls, broad-release, substitution-screen, substitution-release."
         required: false
         type: choice
         options:
@@ -22,6 +22,7 @@ on:
           - release-controls
           - broad-release
           - substitution-screen
+          - substitution-release
         default: custom
       groups:
         description: "Model groups to run (comma-separated: open,open-qwen,open-frontier,open-direct,openai,anthropic,google). Default: open."
@@ -156,6 +157,11 @@ jobs:
             --provider openai --model gpt-4o-mini \
             --output /tmp/bench-smoke-substitution.md \
             --json-output /tmp/bench-smoke-substitution.json
+          python scripts/govern_bench/run_bench.py \
+            --profile substitution-release \
+            --provider openai --model gpt-4o-mini \
+            --output /tmp/bench-smoke-substitution-release.md \
+            --json-output /tmp/bench-smoke-substitution-release.json
 
       - name: Upload smoke report
         uses: actions/upload-artifact@v7
@@ -174,6 +180,9 @@ jobs:
             /tmp/bench-smoke-substitution.md
             /tmp/bench-smoke-substitution.json
             /tmp/bench-smoke-substitution.audit.json
+            /tmp/bench-smoke-substitution-release.md
+            /tmp/bench-smoke-substitution-release.json
+            /tmp/bench-smoke-substitution-release.audit.json
           retention-days: 7
 
   # ──────────────────────────────────────────────────────────────────────────
@@ -405,14 +414,17 @@ jobs:
           echo "Comparing ${#FILES[@]} result file(s): ${FILES[*]}"
           python scripts/govern_bench/compare_runs.py \
             "${FILES[@]}" \
-            --output docs/site/model-comparison.md
+            --output docs/site/model-comparison.md \
+            --summary-output docs/site/model-substitution.json
           cat docs/site/model-comparison.md
 
       - name: Upload comparison report
         uses: actions/upload-artifact@v7
         with:
           name: bench-comparison-${{ github.run_id }}
-          path: docs/site/model-comparison.md
+          path: |
+            docs/site/model-comparison.md
+            docs/site/model-substitution.json
           retention-days: 30
           if-no-files-found: ignore
 

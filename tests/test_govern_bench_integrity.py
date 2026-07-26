@@ -68,6 +68,7 @@ from govern_bench.probe_models import (  # noqa: E402
 from govern_bench.profiles import PROFILES, resolve_profile  # noqa: E402
 from govern_bench.report import _task_list_label  # noqa: E402
 from govern_bench.run_bench import _configure_console_output, incomplete_real_run  # noqa: E402
+from govern_bench.substitution import substitution_inference  # noqa: E402
 from govern_bench.tasks import get_task  # noqa: E402
 
 
@@ -121,6 +122,12 @@ def test_locked_benchmark_profiles_preserve_admission_and_release_controls() -> 
         "T28",
     )
     assert PROFILES["broad-release"].repetitions == 10
+    assert PROFILES["substitution-release"].tasks == PROFILES["broad-release"].tasks
+    assert PROFILES["substitution-release"].conditions == (
+        "UNGOVERNED",
+        "SPECSMITH_FULL",
+    )
+    assert PROFILES["substitution-release"].repetitions == 10
     with pytest.raises(ValueError, match="locked benchmark profile"):
         resolve_profile(
             "release-controls",
@@ -169,6 +176,51 @@ def test_comparison_reports_smaller_governed_vs_frontier_ungoverned() -> None:
     assert "Qwen/Qwen3.6-35B-A3B + FULL" in rendered
     assert "gpt-5.6-sol + UNGOVERNED" in rendered
     assert "Matches/exceeds correctness with lower TPCA" in rendered
+
+
+def test_release_substitution_requires_n10_and_reports_paired_uncertainty() -> None:
+    def cells(
+        model: str,
+        condition: str,
+        tokens: int,
+        repetitions: int,
+        tasks: tuple[str, ...],
+    ) -> list[dict]:
+        result: list[dict] = []
+        for task in tasks:
+            for rep in range(1, repetitions + 1):
+                row = _row(task=task, condition=condition, rep=rep, model=model)
+                row["tokens"] = tokens
+                row["cost_usd"] = tokens / 1_000_000
+                result.append(row)
+        return result
+
+    tasks = tuple(f"T{task}" for task in range(1, 9))
+    smaller = cells("gpt-5.6-terra", "SPECSMITH_FULL", 10_000, 10, tasks)
+    stronger = cells("gpt-5.6-sol", "UNGOVERNED", 20_000, 10, tasks)
+    inference = substitution_inference(
+        smaller,
+        stronger,
+        list(tasks),
+        bootstrap_samples=500,
+    )
+
+    assert inference["point"]["tpca_ratio"] == pytest.approx(0.5)
+    assert inference["fixed_suite_95_ci"]["pass_rate_difference"][0] > -0.05
+    assert inference["claims"] == {
+        "release_ready": True,
+        "fixed_suite_substitution": True,
+        "cross_task_substitution": True,
+    }
+
+    screened = substitution_inference(
+        cells("gpt-5.6-terra", "SPECSMITH_FULL", 10_000, 5, ("T1", "T28")),
+        cells("gpt-5.6-sol", "UNGOVERNED", 20_000, 5, ("T1", "T28")),
+        ["T1", "T28"],
+        bootstrap_samples=100,
+    )
+    assert screened["claims"]["release_ready"] is False
+    assert screened["claims"]["fixed_suite_substitution"] is False
 
 
 def test_file_bodies_are_just_in_time_by_default(

@@ -8,14 +8,21 @@ Benchmark spend now follows locked, versioned profiles:
 2. `controller-admission`: one T1, T10, T11, T13, and T28 FULL cell after controller changes;
 3. `substitution-screen`: T1/T10/T13/T28, raw and FULL, n=5 for two-model
    capability-substitution evidence;
-4. `release-controls`: T10/T13/T28, Cursor-style and FULL, n=10;
-5. `broad-release`: the eight-task Cursor/FULL matrix at n=10 for one aggregate
+4. `substitution-release`: the complete eight-task raw/FULL 2×2 matrix at n=10
+   for a lower-tier versus frontier release claim;
+5. `release-controls`: T10/T13/T28, Cursor-style and FULL, n=10;
+6. `broad-release`: the eight-task Cursor/FULL matrix at n=10 for one aggregate
    same-commit release claim.
 
 Profile task, condition, and repetition overrides fail closed. A failed n=1
 admission is repaired or rejected instead of repeated. The weaker-governed
 versus stronger-ungoverned question requires all four matched counterfactuals,
 not a comparison assembled from unrelated historical runs.
+
+Release-grade substitution requires a paired 10,000-sample bootstrap, a
+five-percentage-point correctness non-inferiority margin, and an upper 95% TPCA
+ratio below one. Fixed-suite and task-cluster intervals are reported
+separately; only the latter supports statements beyond the exact task grid.
 
 The FULL controller now keeps one compact five-tool schema throughout a run
 and records its hash for cache-efficiency auditing. T1 preloads its versioned
