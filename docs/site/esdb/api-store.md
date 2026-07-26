@@ -167,11 +167,12 @@ Return all active records as plain dicts (suitable for JSON export).
 
 ---
 
-## Migration
+## Current cache import
 
 ### `migrate_from_json(specsmith_dir: Path) → dict[str, int]`
 
-Import `requirements.json` and `testcases.json` from a `.specsmith/` directory into the WAL.
+Import the current `requirements.json` and `testcases.json` cache from a
+`.specsmith/` directory into the WAL.
 
 - Tags all records with `source_type="observed"` (H19).
 - Idempotent: records whose `id`, `label`, and `status` match existing records are skipped.

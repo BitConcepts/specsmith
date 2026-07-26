@@ -60,6 +60,7 @@ nav:
     - Skills Index: skills-index.md
     - Tool Registry: tool-registry.md
   - Reference:
+    - Supported Environments: compatibility.md
     - Importing: importing.md
     - Configuration: configuration.md
     - Doctor: doctor.md

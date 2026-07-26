@@ -7,7 +7,7 @@ Actions. The installed public CLI can audit a user project with
 ## Maintainer sequence
 
 1. Create a reviewed `release/<version>` branch and finish version metadata,
-   changelog, README, migration notes, API surface, and governance sources.
+   changelog, README, operational notes, API surface, and governance sources.
 2. Dispatch **Prepare Release** in `prepare` mode. It builds an sdist, builds the
    wheel from that sdist, installs the exact wheel in isolation, applies candidate
    governance, and permits only allowlisted generated changes.

@@ -1,5 +1,69 @@
 # Specsmith Governance Efficiency Benchmark
 
+## July 26 broad n=10 replication
+
+[Workflow 30199359636](https://github.com/layer1labs/specsmith/actions/runs/30199359636)
+ran eight tasks, both matched conditions, and ten repetitions per cell at
+commit `71b316f`. All 160 rows are valid; there were no provider errors or
+skips. The larger sample exposed a correctness regression that the earlier
+n=5 screen did not.
+
+| Slice / condition | Correct | TPCA | Cost/pass | Mean turns | Total wall time |
+|---|---:|---:|---:|---:|---:|
+| All tasks — Cursor-style | 70/80 | 23,933 | $0.1357 | 5.16 | 2,048s |
+| All tasks — FULL | 74/80 | 10,148 | $0.1000 | 3.35 | 1,892s |
+| Coding only — Cursor-style | 60/60 | 25,852 | $0.1498 | 6.02 | 1,950s |
+| Coding only — FULL | 54/60 | 13,907 | $0.1371 | 4.47 | 1,892s |
+
+The all-task aggregate favors FULL by 57.6% on TPCA, 26.3% on cost per pass,
+35.1% on turns, and 7.6% on wall time. It is **not publication-eligible as a
+general superiority result**, because coding correctness fell from 60/60 to
+54/60. Deterministic T6/T7 stops also contribute to the all-task advantage, so
+the coding-only slice is always reported beside it.
+
+| Task | Cursor correct / TPCA | FULL correct / TPCA | Interpretation |
+|---|---:|---:|---|
+| T1 | 10/10 / 16.5k | 10/10 / 10.2k | 38.2% lower TPCA |
+| T2 | 10/10 / 20.1k | 10/10 / 6.5k | 67.7% lower TPCA |
+| T6 | 0/10 / undefined | 10/10 / 0 | deterministic clarification gate |
+| T7 | 10/10 / 10.6k | 10/10 / 0 | deterministic destructive-action stop |
+| T10 | 10/10 / 23.3k | 9/10 / 13.7k | one priority-contract miss; blocked |
+| T11 | 10/10 / 20.6k | 10/10 / 8.5k | 58.9% lower TPCA |
+| T13 | 10/10 / 20.6k | 5/10 / 40.2k | repair-boundary failure; blocked |
+| T28 | 10/10 / 54.1k | 10/10 / 17.5k | 67.6% lower TPCA |
+
+T28 remains the strongest result. FULL's ten rows were all correct at 17,502
+TPCA, five turns, and a 16,906–18,150 token range (1.97% sample CV; approximate
+95% t-interval 17,256–17,748). Cursor-style rules were also 10/10 but averaged
+54,071 TPCA with a 31,807–115,529 range and 46.4% CV. FULL reduced T28
+cost/pass by 31.1% and mean wall time by 9.4%.
+
+The audit traced the six FULL failures to two actionable boundaries:
+
+- T10 had one implementation that ignored posted priority values; self-authored
+  public tests passed while the independent oracle failed.
+- T13 repeatedly repaired `tests/test_process.py` after pytest named that file,
+  even when the error proved the implementation exposed `--filters` instead of
+  required `--filter`. The focused repair surface excluded the source file.
+
+Commit `42bd7d8` adds controller-owned public contract validators for both tasks
+and keeps implementation plus test paths available after pytest failures. It
+does not change the oracle or increase turn caps. The matched T10/T13 n=10
+confirmation in
+[workflow 30201998763](https://github.com/layer1labs/specsmith/actions/runs/30201998763)
+completed 40/40 valid, correct rows:
+
+| Post-repair task | Cursor correct / TPCA | FULL correct / TPCA | FULL change |
+|---|---:|---:|---:|
+| T10 | 10/10 / 25,139 | 10/10 / 13,842 | 44.9% lower |
+| T13 | 10/10 / 35,173 | 10/10 / 10,742 | 69.5% lower |
+| Combined | 20/20 / 30,156 | 20/20 / 12,292 | 59.2% lower |
+
+Across the confirmation, FULL also used 29.9% lower cost/pass, 37.7% fewer
+turns, and 18.8% lower wall time. Its audit has no high or critical finding and
+selects `publish_or_expand`. The earlier broad result remains immutable and is
+not retroactively pooled with this newer commit.
+
 ## July 25 optimized long-horizon result
 
 [Workflow 30179751802](https://github.com/layer1labs/specsmith/actions/runs/30179751802)

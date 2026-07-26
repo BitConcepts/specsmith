@@ -93,9 +93,7 @@ grace> /specsmith preflight "Fix config repair. Scope: REQ-001"
 ```
 
 Grace reports its active provider, model, requirement/test context, token
-pressure, and evidence state. Older `.specsmith/nexus.yml` files and the
-`l1-nexus` served-model identifier are read only as compatibility inputs; the
-user-facing REPL is Grace.
+pressure, and evidence state. Grace is the supported user-facing REPL.
 
 Use `/why` to inspect the evidence behind the current decision.
 
@@ -138,20 +136,22 @@ the [`examples/policies`](examples/policies) directory.
 
 ## Governance efficiency benchmark
 
-On the current matched GPT-5.6 Sol screen, Specsmith FULL completed all 40
-tasks at 8,034 tokens per correct answer. The repository's versioned
-Cursor-style rules condition completed 35/40 at 23,112 tokens per correct
-answer.
+The broad GPT-5.6 Sol n=10 screen is diagnostic, not a blanket superiority
+claim. It exposed a T10/T13 correctness regression; the targeted n=10
+confirmation below verifies the repair without rewriting the earlier run.
 
 | Evidence | Cursor-style rules | Specsmith FULL |
 |---|---:|---:|
-| Eight-task matched screen (n=5) | 35/40 · 23.1k TPCA | **40/40 · 8.0k TPCA** |
-| Long-horizon T28 (n=10 FULL) | — | **10/10 · 17.6k TPCA** |
+| Eight-task broad screen (n=10) | 70/80 · 23.9k TPCA | 74/80 · 10.1k TPCA |
+| Coding-only slice | **60/60 · 25.9k TPCA** | 54/60 · 13.9k TPCA |
+| Post-repair T10/T13 (n=10) | 20/20 · 30.2k TPCA | **20/20 · 12.3k TPCA** |
+| Polyglot long-horizon T28 | 10/10 · 54.1k TPCA | **10/10 · 17.5k TPCA** |
 
-FULL used 65.2% fewer tokens per correct answer and 42.5% lower cost-of-pass
-across the matched screen. These are versioned benchmark results for the stated
-model, tasks, prompts, and commits—not a universal claim about every repository
-or the commercial Cursor product.
+The targeted repair restored all T10/T13 cells and reduced TPCA by 59.2%; its
+audit has no high/critical finding. T28 is also stable: FULL used 67.6% fewer
+tokens per correct answer across ten correct matched repetitions. Runs from
+different commits are not pooled. “Cursor-style” means this repository's
+versioned rules condition, not every feature of the commercial Cursor product.
 
 See the
 [full benchmark report](https://specsmith.readthedocs.io/stable/efficiency-benchmark/),
@@ -170,7 +170,7 @@ epistemic rollback.
 specsmith esdb status
 ```
 
-See the [ESDB guide](https://specsmith.readthedocs.io/stable/esdb/) for migration,
+See the [ESDB guide](https://specsmith.readthedocs.io/stable/esdb/) for repair,
 licensing, and the Python API. Commercial inquiries:
 [licensing@layer1labs.ai](mailto:licensing@layer1labs.ai).
 

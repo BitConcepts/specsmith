@@ -266,18 +266,17 @@ selected on every subsequent invocation (if chronomemory is installed).
 specsmith esdb enable --key-file ~/Downloads/acme-corp.esdb.key
 ```
 
-### `specsmith esdb migrate`
+### Repair or import the current governance cache
 
 Validates `.specsmith/requirements.json` and `.specsmith/testcases.json` and
-migrates them into the active ESDB backend (SQLite or ChronoStore).  Run this
-once when first setting up ESDB in an existing project.
+imports them into the active ESDB backend (SQLite or ChronoStore).
 
 ```bash
 specsmith esdb migrate
 ```
 
-When an active ChronoStore WAL has a recoverable invalid legacy hash chain,
-`esdb migrate` creates a backup, compacts the WAL to rebuild its chain, verifies
+When an active ChronoStore WAL has a recoverable invalid hash chain, the command
+creates a backup, compacts the WAL to rebuild its chain, verifies
 the result, and records the backup path and repair outcome in
 `.specsmith/esdb_migration_manifest.json`. A repair failure leaves the manifest
 unsuccessful with an explicit remediation error.
@@ -348,29 +347,9 @@ with ChronoStore("/path/to/project") as store:
     assert store.chain_valid()               # tamper detection
 ```
 
----
-
-## Migration from legacy JSON
-
-If your project previously used the flat `.specsmith/requirements.json` format
-(before ESDB was introduced), migrate with:
-
-```bash
-specsmith esdb migrate
-```
-
-This imports all requirements and test cases into the active backend (SQLite or
-ChronoStore) and writes a migration manifest at
-`.specsmith/esdb_migration_manifest.json`.
-
-The migration is idempotent — running it multiple times updates existing records
-without creating duplicates.
-
----
-
 ## chronomemory availability and distribution
 
-chronomemory v0.1.2+ is available on [PyPI](https://pypi.org/project/chronomemory/).
+chronomemory is available on [PyPI](https://pypi.org/project/chronomemory/).
 `pip install specsmith[esdb]` resolves it cleanly with no git dependency:
 
 ```bash

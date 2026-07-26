@@ -1,6 +1,6 @@
 # Warp Terminal Integration
 
-specsmith v0.12.0 ships native integration with [Warp](https://www.warp.dev) terminal at two levels:
+Specsmith integrates with the [Warp](https://www.warp.dev) terminal at two levels:
 
 1. **MCP governance server** — Warp/Oz (and any MCP client) can call governance commands as structured tool calls without shell roundtrips.
 2. **Repository workflows** — seven `Ctrl+Shift+R`-searchable workflows appear automatically when you open this repo in Warp.
@@ -146,7 +146,7 @@ Seal types: `decision`, `milestone`, `audit-gate`, `logic-knot`, `stress-test`, 
   "sealed": true,
   "seal_id": "SEAL-0001",
   "seal_type": "milestone",
-  "description": "v0.12.0 released — native MCP governance server",
+  "description": "Native MCP governance server verified",
   "timestamp": "2026-06-01T20:00:00+00:00",
   "entry_hash": "a3f9b2c1..."
 }

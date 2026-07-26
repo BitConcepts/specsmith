@@ -1,13 +1,10 @@
 # YAML Governance Reference
 
-As of v0.12, specsmith uses **YAML-first governance**: requirements and test cases live in canonical YAML files; Markdown files are generated artifacts.
+Specsmith uses **YAML-first governance**: requirements and test cases live in canonical YAML files; Markdown files are generated artifacts.
 
 ## Quick start
 
 ```bash
-# Check current mode
-cat .specsmith/governance-mode   # "yaml" = YAML-first, absent = legacy MD
-
 # Full sync: YAML → JSON cache → Markdown
 specsmith sync
 
@@ -26,13 +23,8 @@ specsmith validate --strict
 | **JSON cache** | `.specsmith/requirements.json`, `.specsmith/testcases.json` | Auto-generated |
 | **Markdown artifacts** | `docs/REQUIREMENTS.md`, `docs/TESTS.md` | Auto-generated — do NOT hand-edit |
 
-The `.specsmith/governance-mode` flag controls which direction is authoritative:
-
-```
-governance-mode = yaml      → YAML-first (v0.12+ default after migration)
-governance-mode = markdown  → Legacy Markdown-primary (backward compat)
-(absent)                    → Legacy Markdown-primary
-```
+The current governance mode is YAML-first. The domain YAML files are the only
+sources to edit by hand.
 
 ---
 
@@ -140,27 +132,6 @@ specsmith validate --strict --json   # structured output
 }
 ```
 
----
-
-## Migration from Markdown-primary
-
-If your project has `docs/REQUIREMENTS.md` as the hand-edited source, migrate once:
-
-```bash
-python scripts/migrate_governance_to_yaml.py
-```
-
-This script is **idempotent** — re-running it on an already-migrated project produces no changes. It performs 4 steps in order:
-
-1. Remove duplicate REQs from `docs/REQUIREMENTS.md`
-2. Re-sync `.specsmith/` JSON from the cleaned Markdown
-3. Export JSON to grouped YAML domain files under `docs/requirements/` and `docs/tests/`
-4. Write `.specsmith/governance-mode = yaml`
-
-After migration, `specsmith sync --check` exits 0 and `specsmith validate --strict` reports no errors.
-
----
-
 ## CI integration
 
 The `validate-strict` and `sync-check` steps in `.github/workflows/ci.yml` enforce YAML governance on every push and PR:
@@ -253,14 +224,7 @@ Your JSON cache is out of sync with the YAML files. Run `specsmith sync` to rege
 
 A test case references a `requirement_id` that doesn't exist. Either add the missing REQ or fix the `requirement_id` in the test YAML file.
 
-**`specsmith sync` says "not in YAML mode"**
+**`specsmith sync` reports that YAML governance is not active**
 
-The `.specsmith/governance-mode` file is missing or contains `markdown`. Run the migration script, or create the file manually:
-
-```bash
-echo "yaml" > .specsmith/governance-mode
-```
-
-**After migration, REQUIREMENTS.md looks different**
-
-The migration regenerates `REQUIREMENTS.md` from the YAML sources. The content is the same, but formatting is normalised. This is expected — the Markdown file is now a generated artifact.
+Run `specsmith doctor --project-dir .` and follow its repair guidance. Do not
+edit the generated Markdown artifacts to work around the problem.

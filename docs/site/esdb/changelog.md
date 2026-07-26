@@ -7,9 +7,8 @@ Available on [PyPI](https://pypi.org/project/chronomemory/#history).
 
 ### Changed
 
-- **PyPI-only distribution** — chronomemory is now fully published to PyPI with all required
-  wheels. The git-URL dependency is removed; `pip install specsmith[esdb]` installs cleanly
-  from PyPI with no extra index. Required by specsmith ≥ 0.17.0.
+- **PyPI-only distribution** — chronomemory is published to PyPI with all required
+  wheels; `pip install specsmith[esdb]` installs from PyPI with no extra index.
 
 ---
 
@@ -17,10 +16,10 @@ Available on [PyPI](https://pypi.org/project/chronomemory/#history).
 
 ### Fixed
 
-- **O(1) WAL append** (`_append_wal`): replaced the O(n²) full-rewrite strategy with a
-  direct `open("a")` append. WAL format is unchanged; all existing WAL files are fully compatible.
-- **Stale `.wal.tmp` cleanup on `open()`**: any `.wal.tmp` left by a crashed ≤ v0.2.x
-  process is silently removed before acquiring the write lock.
+- **O(1) WAL append** (`_append_wal`): uses a direct `open("a")` append with the
+  current WAL schema.
+- **Stale `.wal.tmp` cleanup on `open()`**: interrupted-write temporary files are
+  removed before acquiring the write lock.
 
 ### Added
 
@@ -52,7 +51,6 @@ Available on [PyPI](https://pypi.org/project/chronomemory/#history).
 ### Changed
 
 - **`EsdbId` unified to `String`-typed ID** — full bidirectional Python↔Rust WAL replay.
-  All existing WAL files remain compatible.
 
 ---
 
@@ -86,14 +84,14 @@ Available on [PyPI](https://pypi.org/project/chronomemory/#history).
 
 ### Fixed
 
-- **Hash compatibility**: compact JSON separators in WAL hash computation — aligns Python
+- **Hash alignment**: compact JSON separators in WAL hash computation — aligns Python
   `json.dumps` with Rust `serde_json`; fixes cross-language SHA-256 chain verification.
 
 ---
 
 ## [0.1.2] — 2026-06-11
 
-- First public PyPI release. CI cross-compat round-trip (Python↔Rust WAL).
+- First public PyPI release. CI Python↔Rust round-trip.
 
 ---
 

@@ -12,7 +12,7 @@ surface is unavailable.
 | CI, script, or headless host | direct CLI | none required | No resident server or interactive shell |
 | Zoo Code governed session | MCP for decisions; generated assets for setup | direct CLI doctor/checkpoint | Zoo applies the exact Specsmith directive and packet |
 
-## Compatibility
+## Supported surfaces
 
 | Surface | Windows | Linux | macOS | IDE | Headless |
 |---|---:|---:|---:|---:|---:|

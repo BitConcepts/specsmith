@@ -111,7 +111,7 @@ reports the coverage gaps directly. CI may retain that output as evidence.
 
 ## Hard Rules (H11 and H12)
 
-Two rules were added in v0.2.3 specifically for long-running agentic workflows:
+Two rules apply specifically to long-running agentic workflows:
 
 **H11 — No unbounded loops or blocking I/O without a deadline**
 
@@ -129,7 +129,7 @@ See `docs/governance/RULES.md` in any governed project for the full set of H1–
 
 ## Anti-Hallucination Rules (H15–H22) — OEA Framework
 
-Specsmith v0.11.3+ ships eight additional governance rules derived from empirical research
+Specsmith ships eight additional governance rules derived from empirical research
 on AI hallucination and semantic drift in production LLM systems.
 
 ### Research Background
@@ -182,9 +182,9 @@ constitute cross-platform coverage.
 
 ---
 
-## YAML-First Governance (v0.12+)
+## YAML-First Governance
 
-As of specsmith v0.12 the governance authority has flipped from Markdown-primary to **YAML-primary**. If your project has a `.specsmith/governance-mode` file containing `yaml`, then:
+The governance authority is **YAML-primary**:
 
 - `docs/requirements/*.yml` and `docs/tests/*.yml` are the **canonical sources** — edit these, not the Markdown files.
 - `docs/REQUIREMENTS.md` and `docs/TESTS.md` are **generated artifacts** — they are overwritten on every sync.
@@ -225,14 +225,6 @@ Requirements are split into domain files, each covering a logical range of REQ I
 | `docs/requirements/yaml_governance.yml` | REQ-300..399 | YAML governance layer |
 
 To add a new requirement, edit the appropriate domain YAML file and run `specsmith sync`.
-
-### Migrating from Markdown-primary
-
-```bash
-python scripts/migrate_governance_to_yaml.py
-```
-
-This idempotent script: removes duplicate REQs from REQUIREMENTS.md, re-syncs JSON, exports JSON to grouped YAML files, and writes `.specsmith/governance-mode = yaml`. Safe to re-run.
 
 ### CI enforcement
 

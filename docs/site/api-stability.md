@@ -1,12 +1,13 @@
-# API stability (pre-1.0)
+# Current API contract
 
-Specsmith is a pre-1.0 project. Intentional breaking changes use a minor release
-and are called out in the changelog; compatible fixes use a patch release.
+This page defines the current public contract. Current documentation, fixtures,
+and release evidence are authoritative; Specsmith does not promise operation
+against superseded public surfaces.
 
 ## Stable contracts
 
-The following contracts are stable in spirit and require explicit migration
-notes when changed:
+The following contracts require synchronized documentation, fixtures, and
+release evidence when changed:
 
 - `preflight` JSON fields and decision exit codes;
 - `verify` JSON fields, equilibrium result, and retry/stop exit codes;
@@ -36,9 +37,8 @@ surface used by CI. The canonical fixture is
 `tests/fixtures/api_surface.json`. Any intentional change must update the fixture,
 focused CLI tests, documentation, and changelog in the same reviewed change.
 
-Removing or renaming a root command is breaking. Adding a supporting command or
-an additive event field is normally compatible, provided existing consumers can
-ignore it.
+Root-command and event-field changes must update the API-surface fixture,
+focused tests, documentation, and changelog together.
 
 ## Internal interfaces
 
@@ -46,10 +46,9 @@ Modules under `src/specsmith/agent/`, local cache layout, provider adapters, and
 prompt wording may evolve before 1.0. They must not weaken deterministic
 preflight, verification, provenance, or user-configuration preservation.
 
-## Versioning policy
+## Release policy
 
-- `0.MINOR.0` may contain clearly documented intentional breaking changes.
-- `0.MINOR.PATCH` contains compatible fixes and maintenance.
 - Published tags and package versions are immutable.
 - Release candidates must pass the fixed-point repository workflow before a tag
   is created.
+- Consumers should target the current documented surface.

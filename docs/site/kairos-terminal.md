@@ -1,7 +1,6 @@
 # Grace REPL
 
-Kairos was retired with the legacy CLI. The supported local experience is
-**Grace**, started with:
+Start the supported local experience, **Grace**, with:
 
 ```bash
 specsmith run

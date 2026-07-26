@@ -6,34 +6,101 @@ tests, and architecture documentation. Its result is reported separately as
 well as in the eight-task suite so cheap governance gates cannot hide
 long-horizon cost.
 
-## Current release envelope and stopping decision
+## Current broad audit and repair decision
+
+[Workflow 30199359636](https://github.com/layer1labs/specsmith/actions/runs/30199359636)
+completed 160/160 valid GPT-5.6 Sol rows: eight tasks, Cursor-style rules and
+FULL, and ten repetitions per cell. The deterministic audit found five
+high-severity weakness classes and selected `repair_and_rerun`, not publication.
+
+| Coding slice | Correct | TPCA | Cost/pass | Mean turns |
+|---|---:|---:|---:|---:|
+| Cursor-style rules | 60/60 | 25,852 | $0.1498 | 6.02 |
+| Specsmith FULL | 54/60 | 13,907 | $0.1371 | 4.47 |
+
+FULL remains more token-efficient per correct result, but a lower pass rate is
+a hard blocker. Six failures were concentrated in T10 and T13:
+
+- **T10, 1/10 failed:** the implementation did not preserve submitted priority,
+  so `by_priority` returned three low-priority items instead of one low and two
+  high. Model-authored project tests passed; the evaluator-isolated oracle
+  rejected the result.
+- **T13, 5/10 failed:** seven rows needed first-pass repair. Pytest tracebacks
+  named `tests/test_process.py`, causing the focused boundary to permit only
+  that file even when Click reported that the implementation exposed
+  `--filters` rather than `--filter`. One row exhausted 12 turns, one stopped
+  on an explicit blocked narration, and three stopped with an oracle failure.
+
+This is useful evidence against relying on n=5 point estimates: the preceding
+screen passed every FULL cell, while the independent n=10 sample exposed a
+systematic 30% T13 first-pass rate and about 15,901 extra tokens per repaired
+row. The audit also retained medium Cursor-only scope expansion, one repeated
+FULL tool loop, three repair outliers, and low-severity FULL cache
+discontinuity.
+
+The data-driven repair in commit `42bd7d8`:
+
+1. adds controller-owned T10 and T13 contract validators derived from the
+   already-public requirements;
+2. maps each validator directly to its implementation file;
+3. keeps every declared implementation/test path available after a generic
+   pytest failure, because an asserting test filename does not locate the
+   defect; and
+4. preserves the hidden oracle and existing turn ceilings.
+
+The identical T10/T13 matched n=10 confirmation,
+[workflow 30201998763](https://github.com/layer1labs/specsmith/actions/runs/30201998763),
+completed 40/40 valid and correct rows:
+
+| Task / condition | Correct | TPCA | Cost/pass | Mean turns | Mean wall |
+|---|---:|---:|---:|---:|---:|
+| T10 Cursor-style | 10/10 | 25,139 | $0.1441 | 5.6 | 32.9s |
+| T10 FULL | 10/10 | 13,842 | $0.1094 | 4.6 | 23.0s |
+| T13 Cursor-style | 10/10 | 35,173 | $0.1290 | 9.5 | 29.1s |
+| T13 FULL | 10/10 | 10,742 | $0.0820 | 4.8 | 27.3s |
+
+FULL's T13 distribution stabilized at 9,021–12,068 tokens with 9.4% CV,
+versus the pre-repair 8,848–47,040 range, five failures, and 67.9% CV. All ten
+FULL rows passed the new contract on their first completion attempt. The audit
+found no high or critical weakness and selected `publish_or_expand`. Remaining
+findings are medium Cursor-only scope/context observations and low FULL cache
+telemetry.
+
+The targeted evidence proves the measured blocker is repaired. It is not
+pooled into the earlier broad aggregate because task grids and commits differ.
+A same-commit broad rerun is optional only if a single aggregate release claim
+is required; it is not needed to justify another controller change.
+
+## Current long-horizon release envelope
 
 [Workflow 30179751802](https://github.com/layer1labs/specsmith/actions/runs/30179751802)
-ran GPT-5.6 Sol plus Specsmith FULL ten times on commit `390e037`. All ten rows
-passed public checks and the evaluator-isolated oracle.
+was the prior standalone T28 release screen. The newer T28 slice in
+[workflow 30199359636](https://github.com/layer1labs/specsmith/actions/runs/30199359636)
+also passed all ten public and evaluator-isolated cells.
 
-| FULL release screen | Correct | TPCA | Mean input | Mean output | Mean turns | Mean cost |
-|---|---:|---:|---:|---:|---:|---:|
-| Superseded | 10/10 | 30,316.8 | 23,634 | 6,683 | 10.3 | $0.2767 |
-| Current | 10/10 | 17,633.7 | 11,348 | 6,286 | 5.0 | $0.2204 |
+| T28 screen | Correct | TPCA | Mean turns | Mean cost | Mean wall time |
+|---|---:|---:|---:|---:|---:|
+| Prior standalone FULL | 10/10 | 17,633.7 | 5.0 | $0.2204 | 57.5s |
+| Current broad Cursor slice | 10/10 | 54,071.1 | 8.3 | $0.3143 | 78.0s |
+| Current broad FULL slice | 10/10 | 17,501.7 | 5.0 | $0.2167 | 70.6s |
 
-The audit found no current weakness and selected `publish_or_expand`. The
-matched n=5 screen in
-[workflow 30179361862](https://github.com/layer1labs/specsmith/actions/runs/30179361862)
-also passed every cell and measured 17,688 FULL TPCA versus 36,492 under the
-versioned Cursor-style condition.
+The new FULL T28 mean is 0.8% below the prior standalone n=10 result and its 1.97% CV remains
+low. FULL reduced TPCA by 67.6%, cost/pass by 31.1%, turns by 39.8%, and wall
+time by 9.4% versus the matched Cursor-style slice. This task-level envelope is
+release-quality; it does not retroactively make the earlier broad aggregate
+publication-eligible.
 
-The final eight-task matched screen in
+The preceding eight-task n=5 screen in
 [workflow 30180171688](https://github.com/layer1labs/specsmith/actions/runs/30180171688)
 contains 80/80 valid rows. FULL passed 40/40 at 8,034 TPCA; Cursor-style rules
 passed 35/40 at 23,112 TPCA. The T28 slice passed 5/5 in both conditions at
 17,362 FULL versus 52,381 Cursor-style TPCA.
 
-The stopping decision is evidence-based: adding a micro-patch tool increased
+At that commit, the optimization stopping decision was evidence-based: adding a micro-patch tool increased
 FULL to 55,451 TPCA, while removing it and making lint and milestone invariants
 explicit produced ten stable five-turn runs (1.1% TPCA CV). No open-model
 diagnostic exposed another controller change that improved a correct result.
-The broad audit's only FULL observation was low-severity prompt-cache
+That n=5 audit's only FULL observation was low-severity prompt-cache
 discontinuity. Stabilizing a larger advertised tool schema could lower billed
 cache cost but would add counted input tokens and weaken the proven minimal-tool
 surface, so it does not justify another optimization screen.

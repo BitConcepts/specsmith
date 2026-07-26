@@ -11,6 +11,15 @@ consolidated into the next published release.
 ## [Unreleased]
 
 ### Added
+- Complete the 160-row GPT-5.6 Sol broad n=10 replication at `71b316f`.
+  FULL used 10,148 tokens per correct answer versus Cursor-style rules at
+  23,933, but the audit blocks publication because coding correctness was
+  54/60 versus 60/60; T28 remained 10/10 at 17,502 versus 54,071 TPCA.
+- Add controller-owned public T10 priority-statistics and T13 CLI-filter
+  contract validators without changing the evaluator-isolated oracle.
+- Confirm the data-driven repair at n=10 in workflow `30201998763`: all 40
+  T10/T13 cells passed; FULL used 12,292 TPCA versus Cursor-style rules at
+  30,156, and the audit reported no high or critical finding.
 - Complete the final 80-row GPT-5.6 Sol matched screen at `efc97a9`: FULL
   passed 40/40 at 8,033.7 tokens per correct answer versus the versioned
   Cursor-style condition's 35/40 at 23,111.7, with 42.5% lower cost-of-pass.
@@ -29,6 +38,9 @@ consolidated into the next published release.
   repair boundaries while preserving the independent hidden acceptance oracle.
 
 ### Changed
+- Current user guidance is forward-only: version-pinned and retired-mode
+  instructions are removed, while Zoo Code setup and doctor continue to back up
+  and repair malformed, obsolete, or tampered Specsmith-managed assets.
 - Treat low-severity provider-cache discontinuity as reported telemetry rather
   than a material efficiency blocker: cached input still counts in TPCA, so the
   audit no longer forces a paid optimization rerun that would enlarge the
@@ -67,6 +79,10 @@ consolidated into the next published release.
   history so obsolete source versions do not dominate later input tokens.
 
 ### Fixed
+- Keep implementation and test files available after pytest failures instead
+  of treating an asserting test filename as the defect location. This prevents
+  focused repair from trapping T13 in model-authored tests when the Click
+  implementation exposes the wrong option.
 - Run public task validators before final evaluator injection, keep equilibrium
   decisions on public evidence only, and execute the hidden oracle exactly once
   after the agent stops. FULL may apply one recorded default-safe Ruff repair

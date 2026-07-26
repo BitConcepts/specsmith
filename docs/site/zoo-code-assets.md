@@ -61,7 +61,7 @@ from Specsmith's requirements, validation, ledger, and audit controls.
 Review this setting before using agents in an untrusted repository. You can
 replace the wildcard in Zoo Code Settings with a narrower list of command
 prefixes. On a later `specsmith zoo-code litellm setup`, Specsmith preserves a
-non-default command list. It migrates its older no-policy asset to the wildcard
+non-default command list. It repairs its obsolete no-policy asset to the wildcard
 only when the asset manifest proves it was never edited.
 
 ```bash
@@ -82,4 +82,4 @@ specsmith zoo-code uninstall --project-dir .
 
 ## Repository ownership boundary
 
-Specsmith owns reusable global rules, commands, skills, lifecycle manifests, migration, doctor, uninstall, and the standard MCP merge. Individual repositories own project-specific rules, commands, skills, custom modes, provider configuration, and local model routing.
+Specsmith owns reusable global rules, commands, skills, lifecycle manifests, repair, doctor, uninstall, and the standard MCP merge. Individual repositories own project-specific rules, commands, skills, custom modes, provider configuration, and local model routing.

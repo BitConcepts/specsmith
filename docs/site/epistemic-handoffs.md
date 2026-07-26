@@ -19,10 +19,3 @@ specsmith zoo-code export-handoff --project-dir . --output handoff.json
 It is deterministic text, supports review and branch reconciliation, and is
 replayed on session load. `.specsmith/esdb.sqlite3` and its WAL sidecars are
 local derived indexes; do not commit or manually merge them.
-
-## Development-Version Recovery
-
-When a project is newer than the installed stable tool, Specsmith refuses a
-backward migration and prints the exact `pipx install --force
-specsmith==<project-version>` command if the project requires a development or
-prerelease build. Stable projects continue to use `pipx upgrade specsmith`.

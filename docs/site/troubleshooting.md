@@ -32,10 +32,10 @@ pipx inject specsmith anthropic      # + Claude
 Then remove any duplicate installs (e.g. `pip uninstall specsmith` in any
 other Python environment that has it).
 
-### `specsmith --version` shows an old version even after upgrading
+### `specsmith --version` shows an unexpected version
 
 Your shell `PYTHONPATH` may include a dev source directory
-(`...specsmith/src`) that leaks an `egg-info` with an older version into
+(`...specsmith/src`) that leaks development `egg-info` metadata into
 every Python process. Check:
 ```powershell
 $env:PYTHONPATH          # Windows

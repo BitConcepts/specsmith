@@ -1,7 +1,7 @@
 # ESDB — Quick Start
 
-This guide walks through the core chronomemory workflow: writing beliefs, querying
-them, verifying integrity, and migrating from legacy JSON.
+This guide walks through the core chronomemory workflow: writing beliefs,
+querying them, verifying integrity, and importing the current governance cache.
 In this context, **ChronoMemory** is the package and **ChronoStore** is the backend class
 it provides; together they form the commercial ESDB backend option alongside specsmith's
 free SQLite backend.
@@ -131,9 +131,9 @@ rec.evidence.append("bench-B-seed42: nll_gap=0.031")
 store.upsert(rec)
 ```
 
-## 9. Migrate from .specsmith/ JSON
+## 9. Import the current governance cache
 
-If your project has existing `requirements.json` / `testcases.json`:
+To import the current `requirements.json` / `testcases.json` cache:
 
 ```python
 from pathlib import Path
@@ -143,12 +143,12 @@ with ChronoStore("/path/to/project") as store:
     print(counts)  # {'requirements': 12, 'testcases': 10, 'skipped': 0}
 ```
 
-Or via CLI: `specsmith esdb migrate` (requires specsmith ≥ 0.13.0).
+Or via CLI: `specsmith esdb migrate`.
 
 ## 10. Use the bridge adapter
 
-`EsdbBridge` delegates to `ChronoStore` when a WAL exists, and falls back to
-reading `.specsmith/*.json` when it doesn't:
+`EsdbBridge` delegates to `ChronoStore` when a WAL exists and reads the current
+`.specsmith/*.json` cache when it does not:
 
 ```python
 from chronomemory import EsdbBridge
@@ -158,7 +158,7 @@ bridge = EsdbBridge(project_dir="/path/to/project")
 # Status check
 print(bridge.status().to_dict())
 
-# Read requirements (from ESDB or JSON fallback)
+# Read requirements through the active backend
 reqs = bridge.requirements()
 tests = bridge.testcases()
 ```

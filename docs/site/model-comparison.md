@@ -4,9 +4,11 @@
 
 | Evidence | Model/routes | Repetitions | Treatment |
 |---|---|---:|---|
-| [30180171688](https://github.com/layer1labs/specsmith/actions/runs/30180171688) | GPT-5.6 Sol | 5 per eight tasks × two conditions | Current matched screen: FULL 40/40 at 8.0k TPCA; Cursor-style 35/40 at 23.1k |
-| [30179751802](https://github.com/layer1labs/specsmith/actions/runs/30179751802) | GPT-5.6 Sol | 10 T28 FULL | Current release control: 10/10, 17.6k TPCA, five turns, no audit weakness |
-| [30179361862](https://github.com/layer1labs/specsmith/actions/runs/30179361862) | GPT-5.6 Sol | 5 per T28 condition | Current matched control: both 5/5; FULL 17.7k versus Cursor-style 36.5k TPCA |
+| [30199359636](https://github.com/layer1labs/specsmith/actions/runs/30199359636) | GPT-5.6 Sol | 10 per eight tasks × two conditions | Current broad diagnostic: FULL 74/80 at 10.1k TPCA; Cursor-style 70/80 at 23.9k; blocked by T10/T13 correctness |
+| [30201998763](https://github.com/layer1labs/specsmith/actions/runs/30201998763) | GPT-5.6 Sol | 10 per T10/T13 condition | Post-repair confirmation: 40/40 correct; FULL 12.3k versus Cursor-style 30.2k TPCA; no high/critical finding |
+| [30180171688](https://github.com/layer1labs/specsmith/actions/runs/30180171688) | GPT-5.6 Sol | 5 per eight tasks × two conditions | Prior broad screen: FULL 40/40 at 8.0k TPCA; Cursor-style 35/40 at 23.1k |
+| [30179751802](https://github.com/layer1labs/specsmith/actions/runs/30179751802) | GPT-5.6 Sol | 10 T28 FULL | Prior standalone control: 10/10, 17.6k TPCA, five turns, no audit weakness |
+| [30179361862](https://github.com/layer1labs/specsmith/actions/runs/30179361862) | GPT-5.6 Sol | 5 per T28 condition | Prior matched control: both 5/5; FULL 17.7k versus Cursor-style 36.5k TPCA |
 | [30180139456](https://github.com/layer1labs/specsmith/actions/runs/30180139456) | Qwen3.6, Qwen3-Coder-480B, GLM-5.2 | 1 T28 FULL each | Validator-repair replay: only Qwen3.6 passed, at 129.9k TPCA; no candidate promoted |
 | [30099279843](https://github.com/layer1labs/specsmith/actions/runs/30099279843) | GPT-5.6 Sol | 10 T28 FULL | Release-quality control: 10/10, 30.3k TPCA, no audit weakness |
 | [30093712102](https://github.com/layer1labs/specsmith/actions/runs/30093712102) | GPT-5.6 Sol | 5 T28 FULL | Final learning commit: 5/5, 26.5k TPCA, no audit weakness |
@@ -16,7 +18,7 @@
 | [30096516180](https://github.com/layer1labs/specsmith/actions/runs/30096516180) | Kimi K2.7 Code / Together | live probe | Account-level HTTP 403; no benchmark cell |
 | [30096796977](https://github.com/layer1labs/specsmith/actions/runs/30096796977) | Kimi K2.7 Code / Novita | 1 per T28 condition | Cursor failed at 108.1k; FULL passed at 43.0k |
 | [30077217017](https://github.com/layer1labs/specsmith/actions/runs/30077217017) | GPT-5.6 Sol | 5 T28 FULL | Superseded optimized envelope: 5/5, 28.3k TPCA |
-| [30045327768](https://github.com/layer1labs/specsmith/actions/runs/30045327768) | GPT-5.6 Sol | 5 per T28 condition | Current matched Cursor/FULL comparator |
+| [30045327768](https://github.com/layer1labs/specsmith/actions/runs/30045327768) | GPT-5.6 Sol | 5 per T28 condition | Historical matched Cursor/FULL comparator |
 | [30076208564](https://github.com/layer1labs/specsmith/actions/runs/30076208564) | DeepSeek-V4 Pro / Novita | 1 FULL | Correct diagnostic; 47.9k TPCA, not promoted |
 | [30074528288](https://github.com/layer1labs/specsmith/actions/runs/30074528288) | Kimi K2.7 Code / DeepInfra | 1 FULL | Correct diagnostic; 101.7k TPCA, not promoted |
 | [30045980234](https://github.com/layer1labs/specsmith/actions/runs/30045980234) | GLM-5.2 / DeepInfra | 1 FULL | Correct diagnostic; 72.2k TPCA, not promoted |
@@ -37,20 +39,28 @@ function-tool compatibility in every condition.
 
 ## Current frontier screen
 
-The current long-horizon frontier is GPT-5.6 Sol plus FULL at 17.6k TPCA
-(10/10). In the matched five-repetition comparison, FULL passed 5/5 at 17.7k
-TPCA and the versioned Cursor-style condition passed 5/5 at 36.5k.
+The current long-horizon frontier is GPT-5.6 Sol plus FULL at 17.5k TPCA
+(10/10). In the same broad n=10 run, the versioned Cursor-style condition also
+passed 10/10 at 54.1k TPCA.
 
 | Condition | Correct | Tokens/correct | Cost | Mean turns |
 |---|---:|---:|---:|---:|
-| Cursor-style rules | 35/40 | 23.1k | $4.9691 | 5.13 |
-| Specsmith FULL | 40/40 | 8.0k | $3.2670 | 3.03 |
+| Cursor-style rules, all tasks | 70/80 | 23.9k | $9.4978 | 5.16 |
+| Specsmith FULL, all tasks | 74/80 | 10.1k | $7.4014 | 3.35 |
+| Cursor-style rules, coding only | 60/60 | 25.9k | $8.9857 | 6.02 |
+| Specsmith FULL, coding only | 54/60 | 13.9k | $7.4014 | 4.47 |
 
-The matched point estimate favors FULL on correctness, TPCA, measured cost,
-turns, and wall time across all eight versioned task types. The result is a
-comparison with the repository's Cursor-style rules condition; it is not a
-claim about every interactive feature or future version of the commercial
-Cursor product.
+The all-task aggregate favors FULL, but the coding-only pass-rate regression
+blocks a superiority claim. T10 passed 9/10 and T13 5/10 under FULL versus
+10/10 for Cursor-style rules in both tasks. T28, T1, T2, and T11 still favor
+FULL materially. The result compares with this repository's versioned
+Cursor-style rules condition; it is not a claim about every interactive
+feature or future version of the commercial Cursor product.
+
+The data-driven T10/T13 repair then passed all 40 targeted n=10 cells. FULL used
+12.3k TPCA versus Cursor-style rules at 30.2k, with 29.9% lower cost/pass and
+zero high/critical audit findings. This clears the measured correctness
+blocker for the repaired commit without pooling incompatible runs.
 
 ## Managed Qwen findings
 

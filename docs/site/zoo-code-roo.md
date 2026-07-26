@@ -19,9 +19,14 @@ Use `--global-roo PATH` or `ROO_GLOBAL_DIR` to override the global directory. `-
 
 ## Ownership boundary
 
-Specsmith owns reusable global governance assets and their setup, migration, doctor, and uninstall lifecycle. Repositories should contain only project-specific rules, commands, skills, custom modes, and provider/model settings.
+Specsmith owns reusable global governance assets and their setup, repair,
+doctor, and uninstall lifecycle. Repositories should contain only
+project-specific rules, commands, skills, custom modes, and provider/model
+settings.
 
-Existing generic Specsmith rules duplicated inside a project are removed only when they match a recognized legacy asset or carry a Specsmith managed marker. Customized project files are preserved and reported.
+Generic Specsmith rules duplicated inside a project are removed only when they
+match a recognized managed asset or carry a Specsmith managed marker.
+Customized project files are preserved and reported.
 
 ## MCP setup
 
@@ -124,7 +129,7 @@ The model that writes a patch must not be the only model that approves it.
 ### Local-LLM import profile
 
 Use the dedicated lifecycle command rather than editing Zoo Code Secret Storage
-or legacy `cline_settings.json` files:
+or provider settings files:
 
 ```bash
 specsmith zoo-code litellm setup --project-dir .
@@ -147,7 +152,7 @@ For startup import, add the asset through Zoo Code Settings or run setup with
 the file at every startup; disable it after initial provisioning if you later
 customize the `Local-LLM` profile or a mapping. Specsmith safely repairs only
 its provenance-marked assets, preserving user-created files and backing up a
-broken managed or legacy asset before replacement.
+broken or obsolete managed asset before replacement.
 
 Setup and doctor use a versioned ownership registry. Automatable managed drift
 is repaired only after a fresh-read digest check; concurrent edits fail and are

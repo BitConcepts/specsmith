@@ -1,6 +1,6 @@
-# Compatibility
+# Supported Environments
 
-Specsmith is designed to work across multiple platforms and environments. This document outlines compatibility considerations for different systems and tools.
+Specsmith is designed for current development platforms and agent integrations.
 
 ## Supported Platforms
 
@@ -8,14 +8,14 @@ Specsmith is designed to work across multiple platforms and environments. This d
 - **Linux**: Full support with shell integration
 - **macOS**: Full support with Darwin integration
 
-## Browser Support
+## Browsers
 
 - Chrome (latest version)
 - Firefox (latest version)
 - Safari (latest version)
 - Edge (latest version)
 
-## Tool Compatibility
+## Development tools
 
 Specsmith integrates with various development tools and environments:
 
@@ -24,15 +24,6 @@ Specsmith integrates with various development tools and environments:
 - Command-line environments
 - CI/CD systems
 
-## Version Compatibility
-
-Specsmith maintains backward compatibility for:
-- CLI interface
-- API endpoints
-- Configuration formats
-- Governance models
-
 ## Known Issues
 
-- Some older versions of Windows may require additional configuration
 - Certain proxy configurations may affect network connectivity

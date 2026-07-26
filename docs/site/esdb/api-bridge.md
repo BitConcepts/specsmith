@@ -1,6 +1,6 @@
 # ESDB API — EsdbBridge
 
-Unified read/write adapter with automatic backend detection and `.specsmith/` JSON fallback.
+Unified read/write adapter with automatic backend detection.
 
 ```python
 from chronomemory import EsdbBridge
@@ -8,13 +8,13 @@ from chronomemory import EsdbBridge
 
 ## Purpose
 
-`EsdbBridge` provides a single interface for projects that may be in one of two states:
+`EsdbBridge` provides a single interface over the two current storage states:
 
 1. **ESDB active** — `.chronomemory/events.wal` exists → delegates to `ChronoStore`
 2. **JSON fallback** — no WAL yet → reads `.specsmith/requirements.json` and `testcases.json`
 
-This allows Specsmith CLI commands, integrations, and CI scripts to work with both migrated
-and non-migrated projects without branching.
+This allows Specsmith CLI commands, integrations, and CI scripts to use one
+interface regardless of the active storage representation.
 
 ## Constructor
 
@@ -31,7 +31,7 @@ Return the ESDB status for this project.
 ```python
 bridge = EsdbBridge(project_dir="/path/to/project")
 s = bridge.status()
-print(s.backend)       # "ChronoStore WAL" or ".specsmith/ JSON (run esdb migrate...)"
+print(s.backend)       # "ChronoStore WAL" or ".specsmith/ JSON"
 print(s.record_count)
 print(s.chain_valid)
 print(s.wal_seq)
