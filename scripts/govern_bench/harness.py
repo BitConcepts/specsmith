@@ -957,6 +957,8 @@ def _looks_like_nonterminal_narration(content: str) -> bool:
         "next i'll ",
         "next i will ",
         "i need to ",
+        "i'll implement ",
+        "i will implement ",
         "i'll write ",
         "i will write ",
         "i'll now ",
