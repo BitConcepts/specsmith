@@ -1086,6 +1086,7 @@ def _looks_like_nonterminal_narration(content: str) -> bool:
         "i will write ",
         "i'll now ",
         "i will now ",
+        "implementing milestone",
         "writing milestone",
         "calling done",
         "call done now",

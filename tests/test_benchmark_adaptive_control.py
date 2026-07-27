@@ -502,6 +502,7 @@ def test_open_model_sampling_uses_official_model_specific_defaults(
         ("Let me update the tests next.", True),
         ("Now I'll run the validator.", True),
         ("Now implementing Milestone 2: Go worker boundary.", True),
+        ("Implementing Milestone 3 across all four files in one batch.", True),
         ("I'll implement Milestone 2: the Go worker boundary.", True),
         ("I will implement the next requirement boundary.", True),
         ("I'll write the UI boundary files for milestone 3.", True),
