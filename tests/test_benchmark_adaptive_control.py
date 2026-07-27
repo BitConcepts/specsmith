@@ -667,6 +667,28 @@ def test_audit_identifies_suppressed_read_loop() -> None:
     assert report.next_experiment.action == "repair_and_rerun"
 
 
+def test_audit_identifies_finish_reason_and_composite_payload_failures() -> None:
+    row = _audit_row(condition="SPECSMITH_FULL", passed=True)
+    row.update(
+        {
+            "call_usage": [{"turn": 1, "finish_reason": "length"}],
+            "agent_transcript": [
+                {
+                    "turn": 1,
+                    "role": "controller",
+                    "composite_write_payload_failure": 1,
+                }
+            ],
+        }
+    )
+
+    report = audit_benchmark_rows([row])
+    weaknesses = {item.code: item for item in report.weaknesses}
+
+    assert {"completion_truncation", "composite_write_payload_failure"} <= set(weaknesses)
+    assert "do not infer truncation" in weaknesses["completion_truncation"].recommendation
+
+
 def test_qwen_agentic_coding_candidates_have_hf_routes_pricing_and_tiers() -> None:
     registry = load_registry(_SCRIPTS_DIR / "govern_bench" / "models.yml")
     candidates = select(registry, groups={"open-qwen"})

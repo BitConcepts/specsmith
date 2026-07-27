@@ -146,9 +146,10 @@ FULL passed 80/80 mixed-suite cells at 11.7k TPCA, while frontier Sol raw
 passed 65/80 at 28.0k. Both mixed-suite confidence gates passed. The
 prespecified coding-only slice favored Terra + FULL (60/60 at 15.6k versus
 55/60 at 30.3k), but its correctness interval missed the non-inferiority
-margin by 0.7 percentage points. Published 8B and mini-model routes failed
-admission, so Specsmith does not claim that small models generally replace
-frontier models.
+margin by 0.7 percentage points. A governed Qwen3.6-27B cell has now passed
+the full long-horizon admission, but used 72.3k tokens—4.13× the 17.5k
+GPT-5.6 Sol envelope. Other tested 20B–32B routes failed admission. Specsmith
+therefore does not claim that small models generally replace frontier models.
 
 See the
 [full benchmark report](https://specsmith.readthedocs.io/stable/efficiency-benchmark/),

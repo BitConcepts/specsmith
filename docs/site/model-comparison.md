@@ -278,6 +278,33 @@ correct FULL cell costs 1.62× the 26,499-token n=5 point estimate and 1.42× th
 release-sized 30,317-token Sol envelope. The audit therefore blocks n=5 rather
 than treating provider fallback as a reason to waive the efficiency gate.
 
+## Current 20B–32B open-model result
+
+The July 27 admission used exact managed routes and a single T28/FULL
+diagnostic before any repeated spend:
+
+| Model / route | Initial admission | Trace-backed follow-up | Decision |
+|---|---|---|---|
+| Qwen3.6-27B / DeepInfra | fail, 11,208 tokens, 3 turns | pass, 72,255 tokens, 14 turns | capability admitted; 4.13× Sol TPCA, so no repetition |
+| GPT-OSS-20B / Nscale | fail, 85,438 tokens, 12 turns | none | route ignored supplied evidence and ended empty |
+| Qwen3-Coder-30B-A3B / Scaleway | fail, 122,892 tokens, 20 turns | none | serialized tool calls and turn exhaustion |
+| GLM-4.7-Flash / DeepInfra | fail, 54,309 tokens, 8 turns | none | malformed repair sequence and empty stop |
+| Qwen3-32B / DeepInfra | — | fail, 63,636 tokens, 6 turns | repeated narration and incomplete scope |
+
+The successful Qwen3.6 result is
+[workflow 30265818081](https://github.com/layer1labs/specsmith/actions/runs/30265818081);
+the Qwen3-32B follow-up is
+[workflow 30265830535](https://github.com/layer1labs/specsmith/actions/runs/30265830535).
+Both are pinned to commit `4bb1bf1`. The original four-model cohort is
+[workflow 30264387650](https://github.com/layer1labs/specsmith/actions/runs/30264387650).
+
+Qwen3.6-27B proves that the 20B–32B search band should not be dismissed as
+incapable. It does not prove substitution: the cell is n=1 and uses 4.13× the
+release-quality governed Sol token envelope. The strongest next experiment is
+not another managed-route repetition. It is the same one-cell gate behind a
+native Qwen tool parser or a patch-oriented editing surface, followed by n=5
+only if correctness remains intact and TPCA enters the frontier envelope.
+
 ## Historical open-frontier admissions
 
 Four current checkpoints were admitted through live route probes and one T28

@@ -119,6 +119,7 @@ class NormalizedLLMResponse:
 
     message: NormalizedAssistantMessage
     usage: NormalizedUsage
+    finish_reason: str = ""
 
 
 def _safe_int(value: Any) -> int:
@@ -2058,6 +2059,7 @@ def _call_openai_provider(
                 )
             ),
         ),
+        finish_reason=str(getattr(response.choices[0], "finish_reason", "") or ""),
     )
 
 
@@ -2108,6 +2110,7 @@ def _call_anthropic_provider(
     return NormalizedLLMResponse(
         message=NormalizedAssistantMessage(content="\n".join(text_chunks), tool_calls=tool_calls),
         usage=NormalizedUsage(prompt_tokens=prompt_tokens, completion_tokens=completion_tokens),
+        finish_reason=str(getattr(response, "stop_reason", "") or ""),
     )
 
 
@@ -2181,6 +2184,7 @@ def _call_google_provider(
     return NormalizedLLMResponse(
         message=NormalizedAssistantMessage(content="\n".join(text_chunks), tool_calls=tool_calls),
         usage=NormalizedUsage(prompt_tokens=prompt_tokens, completion_tokens=completion_tokens),
+        finish_reason=str(first_candidate.get("finishReason") or ""),
     )
 
 
@@ -2667,6 +2671,7 @@ def _run_agent_loop(
     repeated_write_streak = 0
     unchanged_read_only_streak = 0
     active_repair_focus = ""
+    invalid_composite_write_count = 0
     stop_reason = "max_turns"
 
     for turn in range(max_turns):
@@ -2713,6 +2718,7 @@ def _run_agent_loop(
                 "output_tokens": response.usage.completion_tokens,
                 "cached_input_tokens": response.usage.cached_tokens,
                 "cache_write_tokens": response.usage.cache_write_tokens,
+                "finish_reason": response.finish_reason,
                 "tool_schema_hash": _tool_schema_hash(tools),
             }
         )
@@ -2855,6 +2861,7 @@ def _run_agent_loop(
         tool_results: list[dict] = []
         successful_write_paths: list[str] = []
         suppressed_unchanged_reads: list[str] = []
+        invalid_composite_this_turn = False
         finished = False
         validation_failed = False
         repair_context_provided = False
@@ -2939,6 +2946,9 @@ def _run_agent_loop(
                             validator_verified,
                         )
                     )
+                elif out.startswith("ERROR: files must be a non-empty array"):
+                    invalid_composite_write_count += 1
+                    invalid_composite_this_turn = True
 
             elif fn_name == "list_files":
                 out = _exec_list_files(project_root, args.get("directory", "."))
@@ -3189,6 +3199,23 @@ def _run_agent_loop(
             }
         )
 
+        if condition.id == "SPECSMITH_FULL" and invalid_composite_this_turn:
+            recovery = (
+                "The composite write payload arrived without a usable files array. "
+                "Do not retry write_files for this boundary. Use write_file for one "
+                "requirement-linked file at a time."
+            )
+            messages = _replace_adaptive_progress_message(messages, recovery)
+            agent_transcript.append(
+                {
+                    "turn": turn + 1,
+                    "role": "controller",
+                    "composite_write_payload_failure": invalid_composite_write_count,
+                    "recovery": recovery,
+                }
+            )
+            rework_turns += 1
+
         if condition.id == "SPECSMITH_FULL" and (
             successful_write_paths or suppressed_unchanged_reads
         ):
@@ -3246,6 +3273,11 @@ def _run_agent_loop(
 
         if condition.id == "SPECSMITH_FULL" and active_repair_focus:
             focus = active_repair_focus
+            if invalid_composite_write_count:
+                focus += (
+                    " This route already emitted an invalid composite write payload; "
+                    "use scalar write_file for the focused repair."
+                )
             if suppressed_unchanged_reads:
                 focus += (
                     f" Suppressed {len(suppressed_unchanged_reads)} unchanged reread(s); "

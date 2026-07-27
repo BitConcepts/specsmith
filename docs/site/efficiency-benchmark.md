@@ -503,6 +503,82 @@ Inference Provider during these probes. FP8 or a base model therefore belongs
 in a separately labelled self-hosted lane; combining it with managed routes
 would confound model quality, quantization, parser, and serving hardware.
 
+## Reasoning-capable 20B–32B admission
+
+[Workflow 30264387650](https://github.com/layer1labs/specsmith/actions/runs/30264387650)
+screened four exact Hugging Face routes on one T28/FULL cell at commit
+`0e6ca75a`. A green workflow means the artifact was produced, not that the
+task passed:
+
+| Exact model route | Correct | Tokens | Turns | Stop |
+|---|---:|---:|---:|---|
+| `Qwen/Qwen3.6-27B:deepinfra` | no | 11,208 | 3 | narrated the next milestone without a tool |
+| `openai/gpt-oss-20b:nscale` | no | 85,438 | 12 | empty response after repeated suppressed reads |
+| `Qwen/Qwen3-Coder-30B-A3B-Instruct:scaleway` | no | 122,892 | 20 | serialized actions and exhausted the cap |
+| `zai-org/GLM-4.7-Flash:deepinfra` | no | 54,309 | 8 | empty response after partial API repair |
+
+The Qwen3.6 trace had already completed and validated the first milestone.
+Its exact narration, “Now implementing Milestone 2,” was missing from the
+bounded continuation detector. The controller now recognizes that phrase,
+gives one forceful recovery after a model requests already-supplied evidence,
+and stops after three ignored suppressed reads. The audit reports the latter
+as `suppressed_read_loop`.
+
+The identical Qwen3.6 admission then passed in
+[workflow 30265818081](https://github.com/layer1labs/specsmith/actions/runs/30265818081)
+at commit `4bb1bf1`: all ten declared files, public checks, and the independent
+oracle passed in 14 model turns, 72,255 tokens, and $0.0812 on the pinned
+route. This is a capability result for a published 27B model, but it is 4.13×
+the 17,501.7-token governed Sol T28 envelope. The deterministic audit returned
+`advance_candidate`, not repetition.
+
+The nearest additional managed tool-capable checkpoint,
+`Qwen/Qwen3-32B:deepinfra`, failed
+[workflow 30265830535](https://github.com/layer1labs/specsmith/actions/runs/30265830535)
+after 63,636 tokens and six turns. Phi-4 Reasoning Plus, Devstral Small 2 24B,
+and current 14B Mistral candidates did not have a managed Hugging Face router
+mapping for this credential path; DeepSeek-R1-Distill-Qwen-14B did not
+advertise tool support. They were rejected at route selection rather than
+misreported as benchmark failures.
+
+The result narrows the claim precisely: Specsmith can help a 27B model finish
+this controlled long-horizon task, but the current serving/controller pair
+does not replace frontier Sol on token efficiency. No n=5 spend is justified
+until a native parser, patch-oriented edit interface, or other measured
+serving boundary materially reduces the 72.3k-token cell.
+
+### Research-aligned next improvements
+
+The traces agree with several independent systems results:
+
+- [Agentless](https://arxiv.org/abs/2407.01489) found that deterministic
+  localization, repair, and patch validation can outperform a more elaborate
+  autonomous loop at low cost. Specsmith should keep milestone selection and
+  validation controller-owned rather than add more general-purpose skills or
+  agents.
+- [SWE-agent](https://arxiv.org/abs/2405.15793) shows that the editing
+  interface materially changes coding performance. The next A/B test should
+  compare full-file replacement with a bounded patch tool on the identical
+  T28 route and oracle.
+- [Less Context, Better Agents](https://arxiv.org/abs/2606.10209) reports that
+  retaining a short recent tool window plus compact summaries can improve both
+  correctness and token use. Specsmith already replaces stale reads with
+  receipts; the next measurement should retain finish reason, truncation, and
+  only the latest active repair evidence.
+- The [LLM-Tool Compiler](https://arxiv.org/abs/2405.17438) reports lower token
+  cost from fused parallel calls. Specsmith's composite tools pursue the same
+  goal, but the Qwen traces show that a generic JSON array is not reliable
+  across serving routes. Native parser compatibility must be an admission
+  dimension, not a model footnote.
+- [FrugalGPT](https://arxiv.org/abs/2305.05176) supports cascaded routing.
+  Specsmith's safe version is evidence-based escalation: deterministic gates
+  first, then a lower-cost model only inside a proven task envelope, with a
+  frontier fallback when correctness or loop guards fail.
+
+These are preregistered experiment candidates, not claims of improvement.
+Each must beat the current exact-route cell without weakening tests, hidden
+oracles, or stop bounds.
+
 ## Benchmark-driven optimization loop
 
 1. Run one matched diagnostic and fail closed on provider errors or missing

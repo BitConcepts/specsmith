@@ -13,6 +13,8 @@ fields.
 | `admission-30210897895` | 30210897895 | Initial GPT-4o mini and Llama 3.1 8B negative admissions |
 | `admission-30211566178` | 30211566178 | Same admissions after bounded controller repairs |
 | `admission-30211920507` | 30211920507 | Final Llama 3.1 8B closing-tag route diagnostic |
+| `admission-30265818081` | 30265818081 | Qwen3.6-27B correct n=1 T28/FULL admission; above frontier efficiency envelope |
+| `admission-30265830535` | 30265830535 | Qwen3-32B failed n=1 T28/FULL follow-up |
 
 Full raw rows, traces, diffs, and validator output remain in the cited GitHub
 Actions artifacts for the configured retention period. They are not copied

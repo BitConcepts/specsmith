@@ -330,6 +330,39 @@ turn cap or hidden oracle. The remaining finding is route/model reliability:
 managed Qwen3.6 is not promoted, and the next Qwen test must change the native
 tool-serving protocol.
 
+## 20B–32B audit outcome
+
+The initial
+[four-route admission](https://github.com/layer1labs/specsmith/actions/runs/30264387650)
+produced four failed T28/FULL rows. The audit correctly blocked repetition,
+but the traces exposed two controller blind spots: “Now implementing” was not
+classified as nonterminal narration, and repeated reads could continue even
+after the controller had suppressed every requested path.
+
+Commit `4bb1bf1` closes both gaps. Narration receives the same bounded
+continuation policy as other future-action phrases. A first suppressed reread
+gets an explicit write-now recovery; a third consecutive ignored recovery
+stops as `repeated_tool_loop` and adds `suppressed_read_loop` evidence. This
+saved future routes from paying indefinitely for evidence already present in
+context.
+
+The repaired
+[Qwen3.6-27B admission](https://github.com/layer1labs/specsmith/actions/runs/30265818081)
+passed public tests and the independent oracle at 72,255 tokens. Its audit
+still blocked repetition because the cell is undersampled and 4.13× the
+17,501.7-token Sol envelope. The
+[Qwen3-32B follow-up](https://github.com/layer1labs/specsmith/actions/runs/30265830535)
+failed at 63,636 tokens with only five of ten declared files written.
+
+The Qwen3.6 trace also identifies the next efficiency boundary. Two composite
+file calls arrived with an empty `files` array. The first used exactly the
+4,096-token completion allowance; the second did not, and the artifact does
+not yet retain provider finish reason, so truncation is a hypothesis rather
+than a diagnosis. Later scalar retries and focused repairs accounted for most
+of the 14 turns. A future experiment should change the native tool parser or
+edit interface and record finish-reason/truncation evidence. Raising the turn
+cap or repeating the same route would not test a causal improvement.
+
 The final scorer now reruns public task validators before installing the hidden
 oracle, applies at most one FULL default-safe Ruff repair, and executes the
 oracle exactly once after the model loop. Agent-loop equilibrium uses public
@@ -400,6 +433,9 @@ to judge its own work.
 | `milestone_fragmentation` | Several components changed without a completed boundary. | Stage the active milestone and batch independent files. |
 | `premature_text_stop` | Narration stopped before a terminal action. | Permit one continuation; a second requires new write progress, then fail closed. |
 | `tool_continuation_failure` | A route calls a tool, then emits two empty continuations. | Verify the native protocol, change only the serving route, and rerun once. |
+| `suppressed_read_loop` | A route repeatedly asks for evidence the controller already supplied. | Recover once, stop after the bounded loop threshold, and change the serving scaffold before rerun. |
+| `completion_truncation` | The provider reports that generation reached its output allowance. | Reduce the boundary or test one bounded allowance change; never infer this from token count alone. |
+| `composite_write_payload_failure` | A composite call lacks a usable file array. | Fall back to scalar writes and test a native parser or patch interface before repetition. |
 | `acceptance_gap` | Public checks pass but the hidden oracle fails. | Add an immutable independent boundary test. |
 | `governed_failure` | A Specsmith cell failed, even without a baseline row. | Repair the measured stop reason before repetition. |
 | `scope_expansion` | Writes exceed declared requirement boundaries. | Verify necessity or constrain retrieval/edits. |

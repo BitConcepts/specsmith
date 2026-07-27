@@ -135,6 +135,8 @@ def _next_experiment_decision(
     efficiency_blockers = {
         "broad_reread_churn",
         "context_dominance",
+        "completion_truncation",
+        "composite_write_payload_failure",
         "controller_efficiency_regression",
         "cursor_efficiency_regression",
         "milestone_fragmentation",
@@ -581,6 +583,35 @@ def audit_benchmark_rows(
             )
         )
 
+    completion_truncations = [
+        row
+        for row in valid
+        if any(
+            str(item.get("finish_reason") or "").casefold()
+            in {"length", "max_tokens", "max_output_tokens"}
+            for item in row.get("call_usage") or []
+            if isinstance(item, dict)
+        )
+    ]
+    if completion_truncations:
+        weaknesses.append(
+            BenchmarkWeakness(
+                code="completion_truncation",
+                severity="high",
+                title="Provider stopped a completion at its token allowance",
+                evidence=(
+                    f"{len(completion_truncations)} row(s) contain a provider finish reason "
+                    "that identifies output-length truncation."
+                ),
+                recommendation=(
+                    "Reduce the active write boundary or test a bounded completion allowance "
+                    "change; do not infer truncation from token count alone."
+                ),
+                tasks=sorted({str(row.get("task")) for row in completion_truncations}),
+                conditions=sorted({str(row.get("condition")) for row in completion_truncations}),
+            )
+        )
+
     premature_text_stops = [
         row for row in valid if not row.get("passed") and row.get("stop_reason") == "text_response"
     ]
@@ -746,6 +777,33 @@ def audit_benchmark_rows(
                 ),
                 tasks=sorted({str(row.get("task")) for row in suppressed_read_loops}),
                 conditions=sorted({str(row.get("condition")) for row in suppressed_read_loops}),
+            )
+        )
+
+    invalid_composite_writes = [
+        row
+        for row in valid
+        if any(
+            isinstance(event, dict) and bool(event.get("composite_write_payload_failure"))
+            for event in row.get("agent_transcript") or []
+        )
+    ]
+    if invalid_composite_writes:
+        weaknesses.append(
+            BenchmarkWeakness(
+                code="composite_write_payload_failure",
+                severity="medium",
+                title="Composite write arrived without a usable file array",
+                evidence=(
+                    f"{len(invalid_composite_writes)} row(s) required scalar-write recovery "
+                    "after an invalid composite payload."
+                ),
+                recommendation=(
+                    "Keep the bounded scalar fallback for this run and test a native tool "
+                    "parser or patch-oriented edit interface before repeating the route."
+                ),
+                tasks=sorted({str(row.get("task")) for row in invalid_composite_writes}),
+                conditions=sorted({str(row.get("condition")) for row in invalid_composite_writes}),
             )
         )
 

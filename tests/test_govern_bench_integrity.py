@@ -1547,6 +1547,81 @@ def test_full_agent_loop_stops_repeated_suppressed_reads(
     assert any(event.get("suppressed_read_loop") for event in result.agent_transcript)
 
 
+def test_full_agent_loop_steers_invalid_composite_repair_to_scalar_write(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task = get_task("T1")
+    project = tmp_path / "project"
+    _copy_project_fixture(_get_project_dir(task.project), project)
+    responses = iter(
+        [
+            NormalizedLLMResponse(
+                message=NormalizedAssistantMessage(
+                    tool_calls=[
+                        NormalizedToolCall(
+                            id="bad-batch",
+                            name="write_files",
+                            arguments="{}",
+                        )
+                    ]
+                ),
+                usage=NormalizedUsage(prompt_tokens=10, completion_tokens=1),
+                finish_reason="tool_calls",
+            ),
+            NormalizedLLMResponse(
+                message=NormalizedAssistantMessage(
+                    tool_calls=[
+                        NormalizedToolCall(
+                            id="scalar",
+                            name="write_file",
+                            arguments='{"path":"notes.txt","content":"fixed\\n"}',
+                        )
+                    ]
+                ),
+                usage=NormalizedUsage(prompt_tokens=10, completion_tokens=1),
+                finish_reason="tool_calls",
+            ),
+            NormalizedLLMResponse(
+                message=NormalizedAssistantMessage(
+                    tool_calls=[NormalizedToolCall(id="done", name="done", arguments="{}")]
+                ),
+                usage=NormalizedUsage(prompt_tokens=10, completion_tokens=1),
+                finish_reason="tool_calls",
+            ),
+        ]
+    )
+    provider_histories: list[str] = []
+
+    def fake_call(**kwargs: object) -> NormalizedLLMResponse:
+        provider_histories.append(repr(kwargs["messages"]))  # type: ignore[index]
+        return next(responses)
+
+    monkeypatch.setattr(harness_module, "_call_llm", fake_call)
+    monkeypatch.setattr(
+        harness_module,
+        "_run_standard_validation",
+        lambda *_args: (True, "", True, "", True, ""),
+    )
+    monkeypatch.setattr(harness_module, "_completion_gate", lambda *_args: (True, "done"))
+
+    result = _run_agent_loop(
+        provider="openai",
+        client=object(),
+        model="test-model",
+        task=task,
+        condition=get_condition("SPECSMITH_FULL"),
+        project_root=project,
+        specsmith_dir=tmp_path,
+        max_turns=4,
+    )
+
+    assert result.stop_reason == "done"
+    assert result.call_usage[0]["finish_reason"] == "tool_calls"
+    assert "Do not retry write_files" in provider_histories[1]
+    assert any(event.get("composite_write_payload_failure") for event in result.agent_transcript)
+
+
 def test_full_agent_loop_uses_public_equilibrium_and_runs_hidden_oracle_once(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

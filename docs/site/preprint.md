@@ -31,6 +31,8 @@ favorable point estimate.
 | A lower-tier governed system substitutes on coding-only work | Prespecified coding slice clears the same correctness and TPCA gates | Not confirmed: observed results favor Terra FULL, but the correctness lower bound missed the margin by 0.7 pp |
 | The result generalizes to new repositories and task families | Independent replication across fresh real repositories, languages, providers, and task distributions | Not established |
 | Published 8B or mini models replace frontier models | A small-model admission, matched n=5 screen, and n=10 release gate all pass | Rejected for current routes: Llama 3.1 8B and GPT-4o mini T28 admissions failed |
+| A reasoning-capable 20B–32B model can complete governed T28 | Correct public checks and independent oracle in admission | Supported at n=1 for Qwen3.6-27B/DeepInfra: 72,255 tokens and 14 turns |
+| A 20B–32B governed model replaces frontier Sol efficiently | Correct admission inside the versioned Sol envelope, then matched n=5 and n=10 gates | Not supported: the one correct 27B cell used 4.13× the Sol token envelope; four other routes failed |
 | Small models universally replace frontier models | Broad external replication across fresh repositories, languages, providers, and task distributions | Not claimed |
 
 The decisive
@@ -76,6 +78,15 @@ actions in 20 turns, triggered the repeated-boundary guard, and exhausted the
 cap. The earlier GPT-4o mini admission also failed at 107,896 tokens. Both
 routes are rejected before repetition; adding spend cannot repair a failed
 admission.
+
+A later reasoning-capable cohort tested GPT-OSS-20B, Qwen3.6-27B,
+Qwen3-Coder-30B-A3B, GLM-4.7-Flash, and Qwen3-32B. After one trace-backed
+controller repair, Qwen3.6-27B passed T28 in
+[workflow 30265818081](https://github.com/layer1labs/specsmith/actions/runs/30265818081)
+at 72,255 tokens. That is useful evidence that a published 27B model can
+complete the governed task, but it is an n=1 capability result and 4.13× the
+governed Sol token envelope. It strengthens the case for native-parser and
+edit-interface research, not a current frontier-replacement claim.
 
 ## Reproduction
 
