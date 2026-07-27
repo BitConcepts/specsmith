@@ -770,6 +770,8 @@ def test_comparison_workflow_excludes_audit_json_objects() -> None:
     )
     assert '[[ "$file" == *.audit.json ]] || FILES+=("$file")' in workflow
     assert "scalar-parallel-compact" in workflow
+    assert "scalar-parallel-compact-auto" in workflow
+    assert "scalar-parallel-write-only" in workflow
     assert "BENCH_CONTROLLER_EXPERIMENT:" in workflow
     assert "Controller experiment:" in workflow
 

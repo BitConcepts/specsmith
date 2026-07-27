@@ -204,6 +204,8 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
         ("scalar-parallel", ["read_file", "write_file", "done"], "auto"),
         ("scalar-parallel-required", ["read_file", "write_file", "done"], "required"),
         ("scalar-parallel-compact", ["read_file", "write_file", "done"], "required"),
+        ("scalar-parallel-compact-auto", ["read_file", "write_file", "done"], "auto"),
+        ("scalar-parallel-write-only", ["write_file", "done"], "auto"),
     ],
 )
 def test_controller_experiments_are_versioned_and_isolate_tool_protocol(

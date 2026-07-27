@@ -34,6 +34,8 @@ on:
           - scalar-parallel
           - scalar-parallel-required
           - scalar-parallel-compact
+          - scalar-parallel-compact-auto
+          - scalar-parallel-write-only
         default: control
       groups:
         description: "Model groups to run (comma-separated: open,open-qwen,open-mid-admission,open-mid-followup,open-frontier,open-direct,openai,anthropic,google). Default: open."
@@ -175,7 +177,7 @@ jobs:
             --provider openai --model gpt-4o-mini \
             --output /tmp/bench-smoke-substitution-release.md \
             --json-output /tmp/bench-smoke-substitution-release.json
-          BENCH_CONTROLLER_EXPERIMENT=scalar-parallel-compact \
+          BENCH_CONTROLLER_EXPERIMENT=scalar-parallel-write-only \
           python scripts/govern_bench/run_bench.py \
             --profile admission \
             --provider huggingface --model Qwen/Qwen3.6-27B:deepinfra \

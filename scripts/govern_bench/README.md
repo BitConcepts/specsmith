@@ -98,7 +98,12 @@ Controller experiments are versioned separately from the task profile through
   `write_file` calls;
 - `scalar-parallel-required`: combine the prior two changes;
 - `scalar-parallel-compact`: also evict completed boundary bodies and
-  consolidate write receipts.
+  consolidate write receipts while retaining required tool choice;
+- `scalar-parallel-compact-auto`: isolate the same context compaction with
+  automatic tool choice;
+- `scalar-parallel-write-only`: remove reads during governed implementation
+  because the controller already supplies each active boundary's current
+  content.
 
 Run each causal variant as one `admission` cell on the same commit. Advance a
 variant only when the independent oracle passes and correct-answer token cost

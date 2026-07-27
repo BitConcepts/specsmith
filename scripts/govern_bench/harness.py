@@ -77,6 +77,8 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-parallel",
         "scalar-parallel-required",
         "scalar-parallel-compact",
+        "scalar-parallel-compact-auto",
+        "scalar-parallel-write-only",
     }
 )
 
@@ -282,6 +284,8 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-parallel",
         "scalar-parallel-required",
         "scalar-parallel-compact",
+        "scalar-parallel-compact-auto",
+        "scalar-parallel-write-only",
     }
 
 
@@ -294,7 +298,14 @@ def _required_tools_experiment(experiment: str) -> bool:
 
 
 def _compact_context_experiment(experiment: str) -> bool:
-    return experiment == "scalar-parallel-compact"
+    return experiment in {
+        "scalar-parallel-compact",
+        "scalar-parallel-compact-auto",
+    }
+
+
+def _write_only_experiment(experiment: str) -> bool:
+    return experiment == "scalar-parallel-write-only"
 
 
 def _controller_tool_choice(condition_id: str, experiment: str) -> str:
@@ -700,6 +711,10 @@ def _build_active_tools(
     stable_names = {"read_file", "write_file", "done"}
     scalar_tools = [tool for tool in tools if tool["function"]["name"] in stable_names]
     if _scalar_parallel_experiment(_controller_experiment()):
+        if _write_only_experiment(_controller_experiment()):
+            return [
+                tool for tool in scalar_tools if tool["function"]["name"] in {"write_file", "done"}
+            ]
         return scalar_tools
     return [*_COMPOSITE_FILE_TOOLS, *scalar_tools]
 
