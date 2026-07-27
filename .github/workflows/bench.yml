@@ -36,6 +36,7 @@ on:
           - scalar-parallel-compact
           - scalar-parallel-compact-auto
           - scalar-parallel-edit
+          - scalar-native-patch
           - scalar-parallel-write-only
           - scalar-parallel-validator-authority
           - scalar-milestone-bundle

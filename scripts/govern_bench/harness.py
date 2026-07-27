@@ -79,6 +79,7 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-parallel-compact",
         "scalar-parallel-compact-auto",
         "scalar-parallel-edit",
+        "scalar-native-patch",
         "scalar-parallel-write-only",
         "scalar-parallel-validator-authority",
         "scalar-milestone-bundle",
@@ -289,6 +290,7 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-parallel-compact",
         "scalar-parallel-compact-auto",
         "scalar-parallel-edit",
+        "scalar-native-patch",
         "scalar-parallel-write-only",
         "scalar-parallel-validator-authority",
         "scalar-milestone-bundle",
@@ -315,7 +317,19 @@ def _write_only_experiment(experiment: str) -> bool:
 
 
 def _native_edit_experiment(experiment: str) -> bool:
-    return experiment == "scalar-parallel-edit"
+    return experiment in {"scalar-parallel-edit", "scalar-native-patch"}
+
+
+def _native_patch_experiment(experiment: str) -> bool:
+    return experiment == "scalar-native-patch"
+
+
+def _repair_tool_label(experiment: str) -> str:
+    if _native_patch_experiment(experiment):
+        return "patch_file or write_file"
+    if _native_edit_experiment(experiment):
+        return "edit_file or write_file"
+    return "write_file"
 
 
 def _milestone_bundle_experiment(experiment: str) -> bool:
@@ -487,6 +501,48 @@ _EDIT_FILE_TOOL: dict[str, Any] = {
                 },
             },
             "required": ["path", "old_text", "new_text"],
+        },
+    },
+}
+
+_PATCH_FILE_TOOL: dict[str, Any] = {
+    "type": "function",
+    "function": {
+        "name": "patch_file",
+        "description": (
+            "Atomically edit one existing project file with up to three exact, "
+            "non-overlapping replacements. Use one old_text_N/new_text_N pair per "
+            "coherent hunk. Nothing is written unless every supplied old_text is "
+            "non-empty, unique in the current file, and non-overlapping."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "File path relative to project root"},
+                **{
+                    key: specification
+                    for index in range(1, 4)
+                    for key, specification in (
+                        (
+                            f"old_text_{index}",
+                            {
+                                "type": "string",
+                                "description": (
+                                    f"Exact non-empty current text for replacement {index}"
+                                ),
+                            },
+                        ),
+                        (
+                            f"new_text_{index}",
+                            {
+                                "type": "string",
+                                "description": f"Replacement text for hunk {index}; may be empty",
+                            },
+                        ),
+                    )
+                },
+            },
+            "required": ["path", "old_text_1", "new_text_1"],
         },
     },
 }
@@ -829,9 +885,14 @@ def _build_active_tools(
                 *[tool for tool in scalar_tools if tool["function"]["name"] == "done"],
             ]
         if _native_edit_experiment(_controller_experiment()):
+            edit_tool = (
+                _PATCH_FILE_TOOL
+                if _native_patch_experiment(_controller_experiment())
+                else _EDIT_FILE_TOOL
+            )
             scalar_tools = [
                 *[tool for tool in scalar_tools if tool["function"]["name"] != "done"],
-                _EDIT_FILE_TOOL,
+                edit_tool,
                 *[tool for tool in scalar_tools if tool["function"]["name"] == "done"],
             ]
         if _write_only_experiment(_controller_experiment()):
@@ -858,7 +919,9 @@ def _tool_schema_hash(tools: list[dict]) -> str:
 
 
 _READ_TOOL_NAMES = frozenset({"read_file", "read_files"})
-_WRITE_TOOL_NAMES = frozenset({"write_file", "write_files", "edit_file", "write_milestone"})
+_WRITE_TOOL_NAMES = frozenset(
+    {"write_file", "write_files", "edit_file", "patch_file", "write_milestone"}
+)
 
 
 def _milestone_file_items(args: dict[str, Any]) -> list[dict[str, Any]]:
@@ -897,7 +960,7 @@ def _write_paths_from_calls(tool_calls: list[NormalizedToolCall]) -> list[str]:
     for call in tool_calls:
         parsed = _json_loads_maybe(call.arguments)
         args = parsed if isinstance(parsed, dict) else {}
-        if call.name in {"write_file", "edit_file"}:
+        if call.name in {"write_file", "edit_file", "patch_file"}:
             items = [args]
         elif call.name == "write_milestone":
             items = _milestone_file_items(args)
@@ -1064,10 +1127,17 @@ def _milestone_contract(task: BenchTask) -> str:
         "paths. Prefer existing dependencies and standard libraries."
     )
     if _native_edit_experiment(_controller_experiment()):
-        lines.append(
-            "For focused repairs to an existing file, prefer edit_file with the smallest "
-            "exact unique old_text block; use write_file for new files."
-        )
+        if _native_patch_experiment(_controller_experiment()):
+            lines.append(
+                "For focused repairs to an existing file, prefer one atomic patch_file call "
+                "with every coherent exact hunk needed for the repair; use write_file for "
+                "new files."
+            )
+        else:
+            lines.append(
+                "For focused repairs to an existing file, prefer edit_file with the smallest "
+                "exact unique old_text block; use write_file for new files."
+            )
     return "\n".join(lines)
 
 
@@ -1745,10 +1815,16 @@ def _single_repair_context(
     if not chunks:
         return ""
     if _native_edit_experiment(_controller_experiment()):
-        instruction = (
-            "Apply the smallest exact repair with edit_file; use write_file only when a "
-            "complete replacement is necessary"
-        )
+        if _native_patch_experiment(_controller_experiment()):
+            instruction = (
+                "Apply all coherent exact hunks atomically with patch_file; use write_file "
+                "only when a complete replacement is necessary"
+            )
+        else:
+            instruction = (
+                "Apply the smallest exact repair with edit_file; use write_file only when a "
+                "complete replacement is necessary"
+            )
     else:
         instruction = "Send corrected complete replacement bodies with write_file or write_files"
     return (
@@ -1830,6 +1906,75 @@ def _exec_edit_file(
         f"OK: edited {path} (replaced {len(old_text)} chars with {len(new_text)}; "
         f"{len(updated)} bytes total)"
     )
+
+
+def _exec_patch_file(
+    project_root: Path,
+    path: str,
+    args: dict[str, Any],
+    files_written: list[str],
+) -> str:
+    """Apply up to three exact, non-overlapping replacements atomically."""
+    p, error = _resolve_project_path(project_root, path)
+    if p is None:
+        return error
+    if _model_hidden_path(project_root, p):
+        return "ERROR: controller governance state cannot be changed by model file tools"
+    if not p.exists():
+        return f"ERROR: file not found: {path}; use write_file to create it"
+    if not p.is_file():
+        return f"ERROR: path is not a file: {path}"
+
+    hunks: list[tuple[int, str, str]] = []
+    for index in range(1, 4):
+        old_text = args.get(f"old_text_{index}")
+        new_text = args.get(f"new_text_{index}")
+        if old_text is None and new_text is None:
+            continue
+        if not isinstance(old_text, str) or not old_text:
+            return f"ERROR: old_text_{index} must be non-empty text"
+        if not isinstance(new_text, str):
+            return f"ERROR: new_text_{index} must be text"
+        hunks.append((index, old_text, new_text))
+    if not hunks:
+        return "ERROR: at least one exact replacement is required"
+
+    try:
+        existing = p.read_text(encoding="utf-8", errors="replace")
+        spans: list[tuple[int, int, int, str]] = []
+        for index, old_text, new_text in hunks:
+            occurrences = existing.count(old_text)
+            if occurrences == 0:
+                return f"ERROR: old_text_{index} not found in {path}; use current context"
+            if occurrences > 1:
+                return (
+                    f"ERROR: old_text_{index} is ambiguous in {path} "
+                    f"({occurrences} occurrences); include a larger unique block"
+                )
+            start = existing.index(old_text)
+            spans.append((start, start + len(old_text), index, new_text))
+
+        ordered = sorted(spans)
+        for previous, current in zip(ordered, ordered[1:], strict=False):
+            if current[0] < previous[1]:
+                return (
+                    f"ERROR: old_text_{previous[2]} and old_text_{current[2]} overlap in "
+                    f"{path}; send non-overlapping exact blocks"
+                )
+
+        updated = existing
+        for start, end, _index, new_text in reversed(ordered):
+            updated = f"{updated[:start]}{new_text}{updated[end:]}"
+        if updated == existing:
+            return f"NO-OP: {path} already contains the requested patch"
+        if existing and not updated.strip():
+            return f"ERROR: refusing to replace all non-empty content in {path} with blank text"
+        p.write_text(updated, encoding="utf-8")
+    except OSError as exc:
+        return f"ERROR: unable to patch file ({type(exc).__name__})"
+    if path not in files_written:
+        files_written.append(path)
+    return f"OK: patched {path} atomically ({len(hunks)} hunks; {len(updated)} bytes total)"
 
 
 def _exec_read_files_with_evidence(
@@ -3329,11 +3474,7 @@ def _run_agent_loop(
             ):
                 text_continuation_retries += 1
                 rework_turns += 1
-                repair_tool = (
-                    "edit_file or write_file"
-                    if _native_edit_experiment(controller_experiment)
-                    else "write_file"
-                )
+                repair_tool = _repair_tool_label(controller_experiment)
                 recovery = (
                     "The controller already supplied authoritative focused-repair evidence "
                     "in the preceding tool result and adaptive progress. Apply that repair "
@@ -3435,6 +3576,26 @@ def _run_agent_loop(
                 )
                 if out.startswith("OK:"):
                     path = str(args.get("path") or "")
+                    successful_write_paths.append(path)
+                    lint_verified, tests_verified, validator_verified = (
+                        _invalidate_validation_evidence(
+                            task,
+                            [path],
+                            lint_verified,
+                            tests_verified,
+                            validator_verified,
+                        )
+                    )
+
+            elif fn_name == "patch_file":
+                path = str(args.get("path") or "")
+                out = _exec_patch_file(
+                    project_root,
+                    path,
+                    args,
+                    files_written,
+                )
+                if out.startswith("OK:"):
                     successful_write_paths.append(path)
                     lint_verified, tests_verified, validator_verified = (
                         _invalidate_validation_evidence(
@@ -3825,11 +3986,7 @@ def _run_agent_loop(
         if condition.id == "SPECSMITH_FULL" and active_repair_focus:
             focus = active_repair_focus
             if invalid_composite_write_count:
-                repair_tool = (
-                    "edit_file or write_file"
-                    if _native_edit_experiment(controller_experiment)
-                    else "write_file"
-                )
+                repair_tool = _repair_tool_label(controller_experiment)
                 focus += (
                     " This route already emitted an invalid composite write payload; "
                     f"use scalar {repair_tool} for the focused repair."

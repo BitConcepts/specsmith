@@ -25,6 +25,7 @@ from govern_bench.harness import (  # noqa: E402
     _controller_experiment,
     _controller_tool_choice,
     _exec_edit_file,
+    _exec_patch_file,
     _exec_read_file_with_evidence,
     _exec_read_files_with_evidence,
     _exec_write_files,
@@ -247,6 +248,11 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
             ["read_file", "write_file", "edit_file", "done"],
             "auto",
         ),
+        (
+            "scalar-native-patch",
+            ["read_file", "write_file", "patch_file", "done"],
+            "auto",
+        ),
         ("scalar-parallel-write-only", ["write_file", "done"], "auto"),
         ("scalar-parallel-validator-authority", ["read_file", "write_file", "done"], "auto"),
         (
@@ -282,11 +288,20 @@ def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
         )
         properties = milestone_tool["function"]["parameters"]["properties"]
         assert not any(spec.get("type") == "array" for spec in properties.values())
-    elif experiment.startswith("scalar-parallel"):
+    elif experiment.startswith("scalar-parallel") or experiment == "scalar-native-patch":
         assert "Issue independent write_file calls together" in contract
         assert "use write_files" not in contract
         if experiment == "scalar-parallel-edit":
             assert "prefer edit_file" in contract
+        elif experiment == "scalar-native-patch":
+            assert "prefer one atomic patch_file call" in contract
+            patch_tool = next(
+                tool
+                for tool in _build_active_tools("SPECSMITH_FULL", task)
+                if tool["function"]["name"] == "patch_file"
+            )
+            properties = patch_tool["function"]["parameters"]["properties"]
+            assert not any(spec.get("type") == "array" for spec in properties.values())
     else:
         assert "use write_files" in contract
 
@@ -395,6 +410,44 @@ def test_native_edit_interface_is_exact_bounded_and_tracks_changes(tmp_path: Pat
         written,
     ).startswith("ERROR: controller governance state")
     assert hidden.read_text(encoding="utf-8") == '{"trusted": true}\n'
+
+
+def test_native_patch_interface_is_atomic_bounded_and_tracks_changes(tmp_path: Path) -> None:
+    path = tmp_path / "component.py"
+    original = "from typing import Optional\n\nVALUE: str = 'one'\nKEEP = True\n"
+    path.write_text(original, encoding="utf-8")
+    written: list[str] = []
+    args = {
+        "path": "component.py",
+        "old_text_1": "from typing import Optional",
+        "new_text_1": "from typing import Literal, Optional",
+        "old_text_2": "VALUE: str = 'one'",
+        "new_text_2": "VALUE: Literal['one', 'two'] = 'one'",
+    }
+
+    assert _exec_patch_file(tmp_path, "component.py", args, written).startswith("OK:")
+    assert path.read_text(encoding="utf-8") == (
+        "from typing import Literal, Optional\n\n"
+        "VALUE: Literal['one', 'two'] = 'one'\nKEEP = True\n"
+    )
+    assert written == ["component.py"]
+
+    path.write_text(original, encoding="utf-8")
+    invalid = {**args, "old_text_2": "MISSING"}
+    assert _exec_patch_file(tmp_path, "component.py", invalid, written).startswith(
+        "ERROR: old_text_2 not found"
+    )
+    assert path.read_text(encoding="utf-8") == original
+
+    overlapping = {
+        "path": "component.py",
+        "old_text_1": "VALUE: str = 'one'",
+        "new_text_1": "VALUE = 'two'",
+        "old_text_2": "str = 'one'",
+        "new_text_2": "str = 'two'",
+    }
+    assert "overlap" in _exec_patch_file(tmp_path, "component.py", overlapping, written)
+    assert path.read_text(encoding="utf-8") == original
 
 
 def test_scalar_milestone_bundle_validates_pairs_before_writing(tmp_path: Path) -> None:
