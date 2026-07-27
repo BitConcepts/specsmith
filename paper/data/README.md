@@ -16,6 +16,12 @@ fields.
 | `admission-30265818081` | 30265818081 | Qwen3.6-27B correct n=1 T28/FULL admission; above frontier efficiency envelope |
 | `admission-30265830535` | 30265830535 | Qwen3-32B failed n=1 T28/FULL follow-up |
 | `admission-30269000016` | 30269000016 | Qwen3.6-27B correct final T28/FULL confirmation; no TPCA gain |
+| `controller-30274870047` | 30274870047 | Required-tool control; correct at 42,697 tokens |
+| `controller-30274872374` | 30274872374 | Scalar-parallel winner; correct at 26,850 tokens |
+| `controller-30277090373` | 30277090373 | Compact-auto negative diagnostic; premature text stop |
+| `controller-30277092347` | 30277092347 | Write-only diagnostic; correct at 37,058 tokens |
+| `controller-30278261221` | 30278261221 | Repaired compact-auto negative diagnostic; turn exhaustion |
+| `controller-30280275590` | 30280275590 | Independent-validator authority diagnostic; correct at 43,622 tokens |
 
 Full raw rows, traces, diffs, and validator output remain in the cited GitHub
 Actions artifacts for the configured retention period. They are not copied

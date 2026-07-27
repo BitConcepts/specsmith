@@ -316,6 +316,17 @@ prior pass and 4.44× the Sol envelope. The next candidate must therefore
 change the native parser or editing interface; repeating the same managed
 route is stopped.
 
+Subsequent controller-protocol isolation changed that managed-route
+recommendation. Plain scalar parallel calls with automatic tool choice passed
+T28 in
+[workflow 30274872374](https://github.com/layer1labs/specsmith/actions/runs/30274872374)
+at 26,850 tokens and six turns. That is a 62.8% reduction from 72,255 tokens,
+but still 1.53× the governed Sol envelope. Required-tool mode used 42,697
+tokens, write-only mode used 37,058, and validator-authority mode used 43,622;
+context compaction failed. These remain separate n=1 diagnostics: scalar
+parallelism is the preferred Qwen controller, but it does not pass the
+small-model substitution screen.
+
 ## Historical open-frontier admissions
 
 Four current checkpoints were admitted through live route probes and one T28

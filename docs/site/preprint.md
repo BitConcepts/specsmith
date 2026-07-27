@@ -31,8 +31,8 @@ favorable point estimate.
 | A lower-tier governed system substitutes on coding-only work | Prespecified coding slice clears the same correctness and TPCA gates | Not confirmed: observed results favor Terra FULL, but the correctness lower bound missed the margin by 0.7 pp |
 | The result generalizes to new repositories and task families | Independent replication across fresh real repositories, languages, providers, and task distributions | Not established |
 | Published 8B or mini models replace frontier models | A small-model admission, matched n=5 screen, and n=10 release gate all pass | Rejected for current routes: Llama 3.1 8B and GPT-4o mini T28 admissions failed |
-| A reasoning-capable 20B–32B model can complete governed T28 | Correct public checks and independent oracle in admission | Supported at n=1 for Qwen3.6-27B/DeepInfra: 72,255 tokens and 14 turns |
-| A 20B–32B governed model replaces frontier Sol efficiently | Correct admission inside the versioned Sol envelope, then matched n=5 and n=10 gates | Not supported: the one correct 27B cell used 4.13× the Sol token envelope; four other routes failed |
+| A reasoning-capable 20B–32B model can complete governed T28 | Correct public checks and independent oracle in admission | Supported at n=1 for Qwen3.6-27B/DeepInfra; the best controller diagnostic used 26,850 tokens and 6 turns |
+| A 20B–32B governed model replaces frontier Sol efficiently | Correct admission inside the versioned Sol envelope, then matched n=5 and n=10 gates | Not supported: the best correct 27B cell still used 1.53× the Sol token envelope and has no matched n=5 confirmation |
 | Small models universally replace frontier models | Broad external replication across fresh repositories, languages, providers, and task distributions | Not claimed |
 
 The decisive
@@ -94,6 +94,16 @@ at 77,776 tokens and 14 turns. It is not pooled with the first cell because
 the controller commit changed between runs. The result shows that 27B
 capability can recur, but the 4.44× frontier-envelope ratio and lack of TPCA
 gain preserve the negative efficiency conclusion.
+
+A later controller-protocol isolation found a material within-route gain.
+[Workflow 30274872374](https://github.com/layer1labs/specsmith/actions/runs/30274872374)
+used automatic scalar-parallel file calls and passed the same T28 public and
+hidden gates in six turns and 26,850 tokens. This is 62.8% below the original
+correct admission, but it is a separate n=1 controller diagnostic and remains
+1.53× the 17,501.7-token governed Sol envelope. Required-tool, write-only,
+context-compaction, and validator-authority variants did not beat it.
+Accordingly the result supports interface optimization, not frontier
+replacement or a broad small-model claim.
 
 ## Reproduction
 

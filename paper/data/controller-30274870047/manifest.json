@@ -1,0 +1,54 @@
+{
+  "cell_fields": [
+    "workflow_id",
+    "commit_sha",
+    "task",
+    "category",
+    "horizon",
+    "condition",
+    "rep",
+    "model",
+    "provider",
+    "model_tier",
+    "benchmark_profile",
+    "passed",
+    "acceptance_oracle_passed",
+    "project_tests_passed",
+    "input_tokens",
+    "output_tokens",
+    "cached_input_tokens",
+    "cache_write_tokens",
+    "tokens",
+    "cost_usd",
+    "rework_turns",
+    "governance_turns",
+    "llm_turns",
+    "wall_clock_s",
+    "stop_reason",
+    "expected_file_count",
+    "written_file_count",
+    "language_count",
+    "tool_schema_hashes"
+  ],
+  "cells_canonical_sha256": "c51cafb2014150dc8f3bc1608cbdf73c75a128fbbebbe613d67767d98eefc391",
+  "cells_csv_sha256": "9a47059db72941c21fe12788053ea9ed06b5bd2d94ae9e23e397ca32c48f1afc",
+  "commit_sha": "83cddd26a40b893c50ecb6b6aaa6f85f02314e67",
+  "excluded_fields": [
+    "agent_transcript",
+    "final_diff",
+    "governance_decision",
+    "lint_output",
+    "test_output",
+    "verify_result"
+  ],
+  "row_count": 1,
+  "schema": "governancebench-evidence-v1",
+  "source_artifacts": [
+    {
+      "name": "bench-results-qwen3.6-27b.json",
+      "rows": 1,
+      "sha256": "3825bfe478a811aee9e8f3d54af08d90a8a19e10b1a66e96905e834e974b7fb4"
+    }
+  ],
+  "workflow_id": "30274870047"
+}

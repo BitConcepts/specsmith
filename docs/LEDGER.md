@@ -180,3 +180,51 @@
 - **Type**: wi_close
 - **Status**: complete
 - **Chain hash**: `94ec0ff0bffd1ca9...`
+
+## 2026-07-27T11:53 — wi_close WI-6050421899B8: Verified controller-isolation implementation and bounded benchmark results complete under existing REQ-490.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `946168d0534ac05b...`
+
+## 2026-07-27T11:53 — wi_close WI-6D974F939240: Verified narration-recovery experiment and unchanged-oracle rerun complete under existing REQ-490.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `0f23753ca15440fb...`
+
+## 2026-07-27T11:53 — wi_close WI-E9B49C27057B: Verified validator-authority experiment and unchanged-oracle result complete under existing REQ-490.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `20a9621f59655caf...`
+
+## 2026-07-27T11:54 — wi_close WI-2F4B03E69AA7: Verified README, RTD, preprint, and compact evidence publication complete under existing REQ-490.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `ab45dab8b814f6de...`
+
+## 2026-07-27T11:54 — wi_archive WI-EB7C9A6B0C36: Superseded by the accepted change work item WI-2F4B03E69AA7 for the same documentation scope.
+- **Author**: specsmith
+- **Type**: wi_archive
+- **Status**: complete
+- **Chain hash**: `fccc1de5868686de...`
+
+## 2026-07-27T11:55 — wi_close WI-AFDB57866B2B: Verified compact evidence and guarded documentation publication completed in f7abd41 under existing REQ-484/REQ-490.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `c73da781f8782053...`
+
+## 2026-07-27T11:55 — wi_close WI-FE7EEC6AC686: Verified trace-backed controller failure handling and bounded rerun completed in 4bb1bf1 under existing REQ-484/REQ-490.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `d9b42dbf0d8d2056...`
+
+## 2026-07-27T11:55 — wi_close WI-944FD021F328: Verified explicit implementation narration recovery and bounded follow-up completed in 0ffcb65 under existing REQ-484/REQ-490.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `828cd1f9e6c357af...`

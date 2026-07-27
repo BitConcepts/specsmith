@@ -561,6 +561,36 @@ truncation for that run. The confirmation is 7.6% more expensive than the
 TPCA gain, so the audit returned `advance_candidate` and managed DeepInfra
 repetition stops here.
 
+### July 27 controller protocol isolation
+
+The next same-task diagnostics isolated tool schema, tool choice, context
+replacement, and evidence authority without changing T28 or its hidden oracle.
+Each row is an independent n=1 cell and is not pooled across commits.
+
+| Workflow · controller variant | Correct | Tokens | Turns | Finding |
+|---|---:|---:|---:|---|
+| [30274870047](https://github.com/layer1labs/specsmith/actions/runs/30274870047) · required tools | yes | 42,697 | 9 | forcing any tool remained correct but increased serial repair |
+| [30274872374](https://github.com/layer1labs/specsmith/actions/runs/30274872374) · scalar parallel | yes | **26,850** | **6** | parallel scalar writes avoided the route's unreliable nested arrays |
+| [30274875030](https://github.com/layer1labs/specsmith/actions/runs/30274875030) · scalar + required | censored | 19,463 | 5 | Hugging Face 504 after six files |
+| [30274877475](https://github.com/layer1labs/specsmith/actions/runs/30274877475) · scalar + required + compact | censored | 44,977 | 9 | Hugging Face 504 after repair churn |
+| [30277090373](https://github.com/layer1labs/specsmith/actions/runs/30277090373) · compact auto | no | 11,726 | 3 | promised the UI batch without emitting tools |
+| [30277092347](https://github.com/layer1labs/specsmith/actions/runs/30277092347) · write only | yes | 37,058 | 8 | removed the initial read but implementation repairs erased the saving |
+| [30278261221](https://github.com/layer1labs/specsmith/actions/runs/30278261221) · repaired compact auto | no | 126,495 | 20 | lost useful continuity and oscillated between API contracts |
+| [30280275590](https://github.com/layer1labs/specsmith/actions/runs/30280275590) · validator authority | yes | 43,622 | 10 | independent evidence converged, but did not improve TPCA |
+
+The 26,850-token scalar-parallel result is 62.8% below the earlier
+72,255-token correct admission and 65.5% below its 77,776-token confirmation.
+It is still 1.53× the 17,501.7-token governed Sol envelope and remains an n=1
+diagnostic. Therefore it supports a concrete controller improvement, not a
+small-model substitution claim or n=5 promotion.
+
+The experiment also identifies the stable design: keep automatic tool choice,
+use simple scalar file schemas, ask for independent calls in one response,
+validate milestone boundaries deterministically, and give independent
+validators authority over tests authored by the same model run. Aggressive
+history replacement, global required-tool forcing, and removing reads did not
+improve the correct-answer cost.
+
 ### Research-aligned next improvements
 
 The traces agree with several independent systems results:

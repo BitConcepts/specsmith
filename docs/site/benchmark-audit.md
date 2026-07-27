@@ -375,6 +375,25 @@ expensive than the first, the experiment falsified truncation handling and
 scalar fallback as sufficient efficiency fixes. The audit returned
 `advance_candidate`, ending managed-route repetition.
 
+The July 27 controller isolation then found one material improvement:
+[workflow 30274872374](https://github.com/layer1labs/specsmith/actions/runs/30274872374)
+passed T28 with scalar parallel calls and automatic tool choice at 26,850
+tokens in six turns, 62.8% below the 72,255-token managed-route pass. The audit
+rejected required-tool mode (42,697 tokens), write-only mode (37,058 tokens),
+aggressive context compaction (an early 11,726-token failure and a repaired
+126,495-token/20-turn failure), and validator-authority mode as an efficiency
+change (43,622 tokens). Two provider HTTP 504 runs were classified as censored
+rather than model failures.
+
+The validator-authority experiment nevertheless established a useful
+robustness hierarchy: independent task-scoped validation outranks a
+model-authored same-run test when they conflict. That rule is retained, while
+scalar schemas, parallel same-response calls, automatic tool choice, and
+milestone validation define the efficient controller. Because the best result
+is still n=1 and 1.53× the governed Sol envelope, neither a broad small-model
+replacement claim nor more paid repetition of the rejected variants is
+warranted.
+
 The final scorer now reruns public task validators before installing the hidden
 oracle, applies at most one FULL default-safe Ruff repair, and executes the
 oracle exactly once after the model loop. Agent-loop equilibrium uses public
