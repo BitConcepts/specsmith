@@ -105,6 +105,18 @@ context-compaction, and validator-authority variants did not beat it.
 Accordingly the result supports interface optimization, not frontier
 replacement or a broad small-model claim.
 
+A subsequent native-interface series provides a controlled mechanism result.
+Changing only the managed Qwen route did not help: Coder-Next and Coder-480B
+failed. A fixed-scalar milestone bundle made Qwen3.6-27B correct at 71,090
+tokens, demonstrating that provider-visible tool structure can recover
+long-horizon correctness, but not frontier efficiency. Exact-edit diagnostics
+remained near 27k tokens but could not express coupled multi-hunk repairs. The
+resulting atomic patch control passed local safety and routing tests; its two
+live attempts were provider-censored by a 504 and a failed availability probe.
+They are excluded from performance inference. The evidence therefore preserves
+the 26,850-token scalar cell as the best Qwen diagnostic and does not strengthen
+the substitution claim.
+
 ## Reproduction
 
 The cited workflow retains full traces for the repository's configured

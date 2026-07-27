@@ -244,3 +244,39 @@
 - **Status**: complete
 - **Epistemic status**: high
 - **Chain hash**: `72a91618f70782e0...`
+
+## 2026-07-27T14:07 — wi_archive WI-381C03AB0601: Bounded route diagnostic completed: both Novita Qwen coder routes failed admission and the DeepInfra 35B row was provider-censored; no implementation gate applies to this read-only experiment.
+- **Author**: specsmith
+- **Type**: wi_archive
+- **Status**: complete
+- **Chain hash**: `4e6fa79ba7eaeaee...`
+
+## 2026-07-27T14:07 — wi_close WI-9A3DC36B0907: Implemented and verified under REQ-484 and REQ-490; exact-edit control retained with negative live evidence.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `5a5fa2d56b63c967...`
+
+## 2026-07-27T14:07 — wi_close WI-BAC2328D8365: Implemented and verified under REQ-484 and REQ-490; fixed-scalar milestone bundle retained with live evidence.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `40a2ecfe757c4181...`
+
+## 2026-07-27T14:07 — wi_close WI-CC0C0D38655A: Evidence-aware write-loop guard implemented, verified, and benchmarked under existing requirements.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `d8a69ffd311e281a...`
+
+## 2026-07-27T14:07 — wi_close WI-6BB7B2C086C9: Atomic multi-hunk patch control implemented and verified; live route attempts were correctly censored.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `5d30f490a07f5857...`
+
+## 2026-07-27T14:07 — wi_close WI-84BA7E025E77: Compact evidence, README, RTD, and preprint documentation updated and strictly built under existing requirements.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `8244a2f87e450db8...`

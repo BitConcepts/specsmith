@@ -394,6 +394,30 @@ is still n=1 and 1.53× the governed Sol envelope, neither a broad small-model
 replacement claim nor more paid repetition of the rejected variants is
 warranted.
 
+The next interface isolation added exact single-hunk edits and a fixed-scalar
+milestone bundle. The first edit run failed at 26,234 tokens because rejected
+payloads and legitimate repairs were both counted as repeated writes. The guard
+was corrected to count successful disk changes only and to require an unchanged
+normalized validator signature before declaring a same-boundary loop. The
+focused and full local suites passed after the change.
+
+The corrected
+[bundle workflow 30289266484](https://github.com/layer1labs/specsmith/actions/runs/30289266484)
+then produced a correct Qwen3.6-27B T28 cell: 71,090 tokens, 13 turns, ten
+declared files, passing public checks, and a passing independent oracle. Its
+audit returned `advance_candidate` because TPCA remained 4.06× the Sol anchor.
+The same interface did not rescue Coder-480B, which exhausted 20 turns at
+122,567 tokens and triggered `turn_budget_exhausted`, `tool_call_serialization`,
+`milestone_fragmentation`, and `context_dominance`.
+
+An atomic three-hunk `patch_file` control now validates every exact,
+non-overlapping replacement before one write. Its live outcome remains unknown:
+[workflow 30290375485](https://github.com/layer1labs/specsmith/actions/runs/30290375485)
+was rejected after a Hugging Face HTML 504, and
+[workflow 30291702747](https://github.com/layer1labs/specsmith/actions/runs/30291702747)
+failed the route probe. The audit's fail-closed handling prevented either
+censored attempt from entering the denominator.
+
 The final scorer now reruns public task validators before installing the hidden
 oracle, applies at most one FULL default-safe Ruff repair, and executes the
 oracle exactly once after the model loop. Agent-loop equilibrium uses public

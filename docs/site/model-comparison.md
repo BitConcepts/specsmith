@@ -327,6 +327,25 @@ context compaction failed. These remain separate n=1 diagnostics: scalar
 parallelism is the preferred Qwen controller, but it does not pass the
 small-model substitution screen.
 
+Later route and native-interface isolation did not displace that winner.
+Qwen3-Coder-Next and Qwen3-Coder-480B on Novita failed at 78,742 and 57,251
+tokens respectively in
+[workflow 30286692090](https://github.com/layer1labs/specsmith/actions/runs/30286692090).
+An exact single-file edit surface stayed near the winner's token level but
+failed after coupled import/annotation repairs were split across turns. A
+fixed-scalar milestone bundle then made Qwen3.6-27B fully correct in
+[workflow 30289266484](https://github.com/layer1labs/specsmith/actions/runs/30289266484),
+but used 71,090 tokens and 13 turns; Qwen3-Coder-480B failed the same control at
+122,567 tokens.
+
+The resulting atomic multi-hunk patch surface is locally verified, but its live
+[run 30290375485](https://github.com/layer1labs/specsmith/actions/runs/30290375485)
+received an HTML 504 and its
+[single retry 30291702747](https://github.com/layer1labs/specsmith/actions/runs/30291702747)
+failed the availability probe. Those attempts are provider-censored, not model
+failures. The best measured managed Qwen result therefore remains the 26,850
+token scalar-parallel cell, still 1.53× the Sol envelope.
+
 ## Historical open-frontier admissions
 
 Four current checkpoints were admitted through live route probes and one T28
@@ -382,8 +401,8 @@ rejected.
 The next managed admissions should remain one-cell diagnostics:
 
 1. **Qwen3-Coder-Next with its native `qwen3_coder` parser** — provision a
-   multi-GPU or hosted OpenAI-compatible endpoint and begin with one T28 FULL
-   cell; do not substitute the managed Novita route.
+   multi-GPU or hosted endpoint with bounded request timeouts and begin with one
+   T28 FULL atomic-patch cell; do not substitute the measured Novita route.
 Kimi, GPT-OSS, GLM, DeepSeek, MiniMax, Flash, and Nemotron receive no further
 managed-route repetitions on the measured configurations. A new attempt must
 change a demonstrated serving or controller boundary and starts again at n=1.

@@ -149,9 +149,11 @@ prespecified coding-only slice favored Terra + FULL (60/60 at 15.6k versus
 margin by 0.7 percentage points. A governed Qwen3.6-27B cell has now passed
 the full long-horizon admission. A later n=1 controller diagnostic reduced
 that correct cell from 72.3k to 26.9k tokens, but it remains 1.53× the 17.5k
-GPT-5.6 Sol envelope and has not passed repeated promotion gates. Other tested
-20B–32B routes failed admission. Specsmith therefore does not claim that small
-models generally replace frontier models.
+GPT-5.6 Sol envelope and has not passed repeated promotion gates. A fixed-scalar
+milestone bundle independently restored correctness at 71.1k tokens; exact-edit
+and alternate managed Qwen routes failed, while the atomic-patch run was
+provider-censored. Specsmith therefore does not claim that small models
+generally replace frontier models.
 
 See the
 [full benchmark report](https://specsmith.readthedocs.io/stable/efficiency-benchmark/),

@@ -591,6 +591,39 @@ validators authority over tests authored by the same model run. Aggressive
 history replacement, global required-tool forcing, and removing reads did not
 improve the correct-answer cost.
 
+### Native editing, fixed-scalar bundles, and managed route isolation
+
+The next n=1 diagnostics changed only the model route or provider-visible file
+operation. They retain the same T28 task, public validators, hidden oracle, and
+bounded controller:
+
+| Workflow · route/interface | Correct | Tokens | Turns | Files | Finding |
+|---|---:|---:|---:|---:|---|
+| [30286692090](https://github.com/layer1labs/specsmith/actions/runs/30286692090) · Coder-Next/Novita scalar | no | 78,742 | 15 | 4/10 | serialized writes and repeated loop |
+| [30286692090](https://github.com/layer1labs/specsmith/actions/runs/30286692090) · Coder-480B/Novita scalar | no | 57,251 | 12 | 4/10 | text stop; model swap alone did not help |
+| [30287970034](https://github.com/layer1labs/specsmith/actions/runs/30287970034) · Qwen3.6 exact edit | no | 26,234 | 7 | 3/10 | one-hunk repair could not keep coupled import and annotation changes |
+| [30287972114](https://github.com/layer1labs/specsmith/actions/runs/30287972114) · Qwen3.6 milestone bundle | no | 43,491 | 8 | 3/10 | rejected payloads exposed a loop-accounting defect |
+| [30287972114](https://github.com/layer1labs/specsmith/actions/runs/30287972114) · Coder-480B milestone bundle | no | 82,049 | 15 | 8/10 | throughput improved, correctness did not |
+| [30289264577](https://github.com/layer1labs/specsmith/actions/runs/30289264577) · evidence-aware exact edit | no | 27,815 | 6 | 3/10 | unchanged validator evidence correctly stopped repeated ineffective patches |
+| [30289266484](https://github.com/layer1labs/specsmith/actions/runs/30289266484) · evidence-aware Qwen3.6 bundle | **yes** | 71,090 | 13 | 10/10 | fixed scalar bundle restored public and oracle correctness |
+| [30289266484](https://github.com/layer1labs/specsmith/actions/runs/30289266484) · evidence-aware Coder-480B bundle | no | 122,567 | 20 | 7/10 | turn cap and 10.7:1 input/output ratio |
+
+The loop guard now counts only successful writes and treats a same-file repair
+as repeated only when normalized authoritative validator evidence is unchanged.
+The native `patch_file` control applies up to three exact non-overlapping hunks
+atomically, with no write unless every hunk validates. Its first live run,
+[30290375485](https://github.com/layer1labs/specsmith/actions/runs/30290375485),
+was censored by an HTML 504 after 15,128 tokens; the one prescribed retry,
+[30291702747](https://github.com/layer1labs/specsmith/actions/runs/30291702747),
+failed at the route-availability probe. Neither row is correctness or efficiency
+evidence.
+
+This closes the managed-route decision. The bundle proves that provider-visible
+tool structure can restore correctness, but its 71,090 TPCA is 4.06× the
+17,501.7-token Sol envelope and 2.65× the 26,850-token scalar winner. The atomic
+patch remains a tested controller capability awaiting a different healthy
+serving route; no further DeepInfra repetition is justified.
+
 ### Research-aligned next improvements
 
 The traces agree with several independent systems results:

@@ -22,6 +22,11 @@ fields.
 | `controller-30277092347` | 30277092347 | Write-only diagnostic; correct at 37,058 tokens |
 | `controller-30278261221` | 30278261221 | Repaired compact-auto negative diagnostic; turn exhaustion |
 | `controller-30280275590` | 30280275590 | Independent-validator authority diagnostic; correct at 43,622 tokens |
+| `controller-30286692090` | 30286692090 | Managed Qwen route isolation; Coder-Next and Coder-480B failed |
+| `controller-30287970034` | 30287970034 | Exact single-hunk edit diagnostic before evidence-aware loop accounting |
+| `controller-30287972114` | 30287972114 | Initial fixed-scalar milestone-bundle diagnostics |
+| `controller-30289264577` | 30289264577 | Evidence-aware exact-edit diagnostic; unchanged repair failure |
+| `controller-30289266484` | 30289266484 | Qwen3.6 bundle correct at 71,090 tokens; Coder-480B failed |
 
 Full raw rows, traces, diffs, and validator output remain in the cited GitHub
 Actions artifacts for the configured retention period. They are not copied
