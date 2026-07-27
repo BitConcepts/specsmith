@@ -72,6 +72,40 @@ models:
     group: open-qwen
     tier: open-mid
 
+  # ── Reasoning-capable 20B–31B admission cohort ───────────────────────
+  # These routes passed the HF router's live metadata/tool-capability check
+  # on 2026-07-27. Run the locked one-cell gate first with:
+  # groups=open-mid-admission, profile=admission.
+  - label: qwen3.6-27b
+    provider: huggingface
+    # Current dense Qwen coding/reasoning model; DeepInfra advertises managed
+    # tool support and a 262k context window for this exact repository.
+    model: Qwen/Qwen3.6-27B:deepinfra
+    group: open-mid-admission
+    tier: open-mid
+  - label: gpt-oss-20b
+    provider: huggingface
+    # Use Groq rather than the DeepInfra route that previously emitted empty
+    # post-tool continuations for GPT-OSS-120B. This isolates model capacity
+    # from that known serving-stack failure.
+    model: openai/gpt-oss-20b:groq
+    group: open-mid-admission
+    tier: open-mid
+  - label: qwen3-coder-30b
+    provider: huggingface
+    # Scaleway is the current managed route that advertises native tools for
+    # this 30.5B-total / 3.3B-active agentic coding model.
+    model: Qwen/Qwen3-Coder-30B-A3B-Instruct:scaleway
+    group: open-mid-admission
+    tier: open-mid
+  - label: glm-4.7-flash
+    provider: huggingface
+    # 30B-total / 3B-active reasoning model; DeepInfra advertises managed tool
+    # support and a 202k context window for this exact repository.
+    model: zai-org/GLM-4.7-Flash:deepinfra
+    group: open-mid-admission
+    tier: open-mid
+
   # ── Current open frontier coding/agent candidates ─────────────────────
   # Probe all routes first with: groups=open-frontier, probe_only=true.
   # Paid diagnostics start at one matched T28 repetition and advance only

@@ -52,6 +52,8 @@ task_prompt: |
   - `completed` = count of todos with completed=true
   - `pending` = total - completed
   - `by_priority` = count of todos grouped by priority value (1, 2, or 3)
+  - POST /todos must preserve a submitted priority so the grouped counts reflect
+    the actual stored todos rather than silently defaulting every item to priority 1
   - An empty store should return {"total":0,"completed":0,"pending":0,"by_priority":{"1":0,"2":0,"3":0}}
   - All existing tests must still pass
 
@@ -61,6 +63,7 @@ acceptance_criteria: |
   - [ ] `completed` equals the count of todos with completed=true
   - [ ] `pending` = total - completed
   - [ ] `by_priority` contains keys "1", "2", "3" (string keys) with correct counts
+  - [ ] Creating a todo with priority 2 or 3 preserves that value in the store
   - [ ] Empty store returns zeros for all counts
   - [ ] At least 3 tests: empty store, mixed completed/pending, by_priority grouping
   - [ ] GET /todos/stats returns 200, NOT 422 or 404 (route ordering is correct)

@@ -335,7 +335,8 @@ def _focused_repair_paths(row: dict[str, Any]) -> list[str]:
 
 
 def _initial_read_count(row: dict[str, Any]) -> int:
-    for event in row.get("agent_transcript") or []:
+    transcript = row.get("agent_transcript") or []
+    for event in transcript:
         if not isinstance(event, dict) or event.get("role") != "assistant":
             continue
         targets = [str(target) for target in event.get("tool_targets") or []]
@@ -343,12 +344,30 @@ def _initial_read_count(row: dict[str, Any]) -> int:
             continue
         if not all(target.startswith(("read_file:", "read_files:")) for target in targets):
             return 0
-        return sum(
-            len(target.removeprefix("read_files:").split(","))
+        attempted = sum(
+            len([path for path in target.removeprefix("read_files:").split(",") if path])
             if target.startswith("read_files:")
             else 1
             for target in targets
         )
+        # A FULL controller may suspend reads after it has already supplied the
+        # active boundary. Those calls still cost a model action, but they do
+        # not load the requested file bodies and therefore are not context
+        # overreads. Count only delivered reads in this context-size finding.
+        turn = event.get("turn")
+        suppressed: set[str] = set()
+        for candidate in transcript:
+            if (
+                isinstance(candidate, dict)
+                and candidate.get("role") == "tool"
+                and candidate.get("turn") == turn
+            ):
+                suppressed.update(
+                    _normalized_path(path)
+                    for path in candidate.get("suppressed_unchanged_reads") or []
+                    if path
+                )
+        return max(0, attempted - len(suppressed))
     return 0
 
 

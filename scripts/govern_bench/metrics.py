@@ -92,6 +92,11 @@ MODEL_PRICING_PER_1M: dict[str, tuple[float, float]] = {
     "meta-llama/llama-3.1-8b-instruct": (0.05, 0.08),
     "Qwen/Qwen3-Coder-30B-A3B-Instruct": (0.10, 0.30),
     "qwen/qwen3-coder-30b-a3b-instruct": (0.10, 0.30),
+    "Qwen/Qwen3.6-27B": (0.32, 3.20),
+    "qwen/qwen3.6-27b": (0.32, 3.20),
+    "openai/gpt-oss-20b": (0.10, 0.50),
+    "zai-org/GLM-4.7-Flash": (0.06, 0.40),
+    "zai-org/glm-4.7-flash": (0.06, 0.40),
     "Qwen/Qwen3.6-35B-A3B": (0.285, 1.71),
     "qwen/qwen3.6-35b-a3b": (0.285, 1.71),
     "Qwen/Qwen3-Coder-Next": (0.20, 1.50),
@@ -133,6 +138,10 @@ MODEL_CACHE_WRITE_MULTIPLIER: dict[str, float] = {
 # HF router prices can differ by explicitly pinned serving provider. Exact
 # route keys take precedence over the repo-level fallback above.
 MODEL_ROUTE_PRICING_PER_1M: dict[str, tuple[float, float]] = {
+    "Qwen/Qwen3.6-27B:deepinfra": (0.32, 3.20),
+    "openai/gpt-oss-20b:groq": (0.10, 0.50),
+    "Qwen/Qwen3-Coder-30B-A3B-Instruct:scaleway": (0.228, 0.912),
+    "zai-org/GLM-4.7-Flash:deepinfra": (0.06, 0.40),
     "Qwen/Qwen3.6-35B-A3B:deepinfra": (0.15, 0.95),
     "Qwen/Qwen3.6-35B-A3B:scaleway": (0.285, 1.71),
     "moonshotai/Kimi-K2.7-Code:deepinfra": (0.74, 3.50),
@@ -176,6 +185,9 @@ _MODEL_TIER_OVERRIDES: dict[str, str] = {
     # Keys are lowercased repo ids; model_tier() lowercases before lookup.
     "meta-llama/llama-3.1-8b-instruct": "open-small",
     "qwen/qwen3-coder-30b-a3b-instruct": "open-mid",
+    "qwen/qwen3.6-27b": "open-mid",
+    "openai/gpt-oss-20b": "open-mid",
+    "zai-org/glm-4.7-flash": "open-mid",
     "qwen/qwen3.6-35b-a3b": "open-mid",
     "qwen/qwen3-coder-next": "open-large",
     "qwen/qwen3-coder-480b-a35b-instruct": "open-xl",

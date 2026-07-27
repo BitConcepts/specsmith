@@ -194,12 +194,14 @@ def _chat_probe_payload(model_id: str) -> dict:
         bare_model = lowered.split(":", 1)[0]
         if "qwen3-coder-next" in bare_model:
             payload.update(temperature=1.0, top_p=0.95)
-        elif "qwen3-coder-480b" in bare_model:
+        elif "qwen3-coder-480b" in bare_model or "qwen3-coder-30b" in bare_model:
             payload.update(temperature=0.7, top_p=0.8)
         elif "qwen3.6" in bare_model:
             payload.update(temperature=0.6, top_p=0.95)
         elif "kimi-k2.7-code" in bare_model or "minimax-m3" in bare_model:
             payload.update(temperature=1.0, top_p=0.95)
+        elif "glm-4.7-flash" in bare_model:
+            payload.update(temperature=0.7, top_p=1.0)
         elif (
             "glm-5.2" in bare_model
             or "deepseek-v4-pro" in bare_model
