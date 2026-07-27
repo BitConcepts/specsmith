@@ -35,8 +35,10 @@ on:
           - scalar-parallel-required
           - scalar-parallel-compact
           - scalar-parallel-compact-auto
+          - scalar-parallel-edit
           - scalar-parallel-write-only
           - scalar-parallel-validator-authority
+          - scalar-milestone-bundle
         default: control
       groups:
         description: "Model groups to run (comma-separated: open,open-qwen,open-mid-admission,open-mid-followup,open-frontier,open-direct,openai,anthropic,google). Default: open."

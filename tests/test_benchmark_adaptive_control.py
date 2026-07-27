@@ -24,9 +24,11 @@ from govern_bench.harness import (  # noqa: E402
     _consolidate_write_receipts,
     _controller_experiment,
     _controller_tool_choice,
+    _exec_edit_file,
     _exec_read_file_with_evidence,
     _exec_read_files_with_evidence,
     _exec_write_files,
+    _exec_write_milestone,
     _focused_validator_failures,
     _focused_validator_repair_boundaries,
     _focused_validator_repair_progress,
@@ -206,8 +208,18 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
         ("scalar-parallel-required", ["read_file", "write_file", "done"], "required"),
         ("scalar-parallel-compact", ["read_file", "write_file", "done"], "required"),
         ("scalar-parallel-compact-auto", ["read_file", "write_file", "done"], "auto"),
+        (
+            "scalar-parallel-edit",
+            ["read_file", "write_file", "edit_file", "done"],
+            "auto",
+        ),
         ("scalar-parallel-write-only", ["write_file", "done"], "auto"),
         ("scalar-parallel-validator-authority", ["read_file", "write_file", "done"], "auto"),
+        (
+            "scalar-milestone-bundle",
+            ["read_file", "write_file", "write_milestone", "done"],
+            "auto",
+        ),
     ],
 )
 def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
@@ -226,9 +238,21 @@ def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
     assert _controller_tool_choice("SPECSMITH_FULL", experiment) == tool_choice
     assert _controller_tool_choice("UNGOVERNED", experiment) == "auto"
     contract = _milestone_contract(task)
-    if experiment.startswith("scalar-parallel"):
+    if experiment == "scalar-milestone-bundle":
+        assert "one write_milestone call" in contract
+        assert "fixed path_N/content_N scalar pairs" in contract
+        milestone_tool = next(
+            tool
+            for tool in _build_active_tools("SPECSMITH_FULL", task)
+            if tool["function"]["name"] == "write_milestone"
+        )
+        properties = milestone_tool["function"]["parameters"]["properties"]
+        assert not any(spec.get("type") == "array" for spec in properties.values())
+    elif experiment.startswith("scalar-parallel"):
         assert "Issue independent write_file calls together" in contract
         assert "use write_files" not in contract
+        if experiment == "scalar-parallel-edit":
+            assert "prefer edit_file" in contract
     else:
         assert "use write_files" in contract
 
@@ -281,6 +305,109 @@ def test_compact_experiment_evicts_completed_boundary_bodies_and_write_history(
     )
     assert "one.py" in serialized and "two.py" in serialized
     assert "stale turn receipt" not in serialized
+
+
+def test_native_edit_interface_is_exact_bounded_and_tracks_changes(tmp_path: Path) -> None:
+    path = tmp_path / "component.py"
+    path.write_text("VALUE = 1\nKEEP = True\n", encoding="utf-8")
+    written: list[str] = []
+
+    assert _exec_edit_file(
+        tmp_path,
+        "component.py",
+        "VALUE = 1",
+        "VALUE = 2",
+        written,
+    ).startswith("OK:")
+    assert path.read_text(encoding="utf-8") == "VALUE = 2\nKEEP = True\n"
+    assert written == ["component.py"]
+    assert _exec_edit_file(
+        tmp_path,
+        "missing.py",
+        "VALUE = 1",
+        "VALUE = 2",
+        written,
+    ).startswith("ERROR: file not found")
+    assert (
+        _exec_edit_file(
+            tmp_path,
+            "component.py",
+            "",
+            "VALUE = 3",
+            written,
+        )
+        == "ERROR: old_text must be non-empty text"
+    )
+
+    path.write_text("VALUE = 2\nVALUE = 2\n", encoding="utf-8")
+    ambiguous = _exec_edit_file(
+        tmp_path,
+        "component.py",
+        "VALUE = 2",
+        "VALUE = 3",
+        written,
+    )
+    assert "ambiguous" in ambiguous
+    assert path.read_text(encoding="utf-8") == "VALUE = 2\nVALUE = 2\n"
+
+    hidden = tmp_path / ".specsmith" / "state.json"
+    hidden.parent.mkdir()
+    hidden.write_text('{"trusted": true}\n', encoding="utf-8")
+    assert _exec_edit_file(
+        tmp_path,
+        ".specsmith/state.json",
+        "true",
+        "false",
+        written,
+    ).startswith("ERROR: controller governance state")
+    assert hidden.read_text(encoding="utf-8") == '{"trusted": true}\n'
+
+
+def test_scalar_milestone_bundle_validates_pairs_before_writing(tmp_path: Path) -> None:
+    written: list[str] = []
+    output, successful = _exec_write_milestone(
+        tmp_path,
+        {
+            "path_1": "one.py",
+            "content_1": "ONE = 1\n",
+            "path_2": "two.py",
+            "content_2": "TWO = 2\n",
+        },
+        written,
+    )
+
+    assert output.count("OK:") == 2
+    assert successful == ["one.py", "two.py"]
+    assert written == successful
+    assert (tmp_path / "one.py").read_text(encoding="utf-8") == "ONE = 1\n"
+    assert (tmp_path / "two.py").read_text(encoding="utf-8") == "TWO = 2\n"
+
+    invalid, invalid_paths = _exec_write_milestone(
+        tmp_path,
+        {
+            "path_1": "safe.py",
+            "content_1": "SAFE = True\n",
+            "path_2": "missing-content.py",
+        },
+        written,
+    )
+    assert invalid == "ERROR: content_2 must be text"
+    assert invalid_paths == []
+    assert not (tmp_path / "safe.py").exists()
+
+    duplicate, duplicate_paths = _exec_write_milestone(
+        tmp_path,
+        {
+            "path_1": "same.py",
+            "content_1": "ONE = 1\n",
+            "path_2": "./same.py",
+            "content_2": "TWO = 2\n",
+        },
+        written,
+    )
+    assert duplicate.startswith("ERROR: duplicate milestone path")
+    assert duplicate_paths == []
+    assert not (tmp_path / "same.py").exists()
 
 
 def test_accepted_aee_work_uses_one_compact_schema_and_bounded_scope() -> None:
@@ -638,10 +765,29 @@ def test_write_boundary_signature_covers_scalar_and_composite_calls() -> None:
             name="write_files",
             arguments='{"files":[{"path":"one.py","content":"ONE = 1"}]}',
         ),
+        NormalizedToolCall(
+            id="3",
+            name="edit_file",
+            arguments='{"path":"three.py","old_text":"OLD","new_text":"NEW"}',
+        ),
+        NormalizedToolCall(
+            id="4",
+            name="write_milestone",
+            arguments=(
+                '{"path_1":"four.py","content_1":"FOUR = 4",'
+                '"path_2":"five.py","content_2":"FIVE = 5"}'
+            ),
+        ),
     ]
 
-    assert _write_paths_from_calls(calls) == ["one.py", "two.py"]
-    assert _write_paths_from_calls([NormalizedToolCall(id="3", name="done", arguments="{}")]) == []
+    assert _write_paths_from_calls(calls) == [
+        "five.py",
+        "four.py",
+        "one.py",
+        "three.py",
+        "two.py",
+    ]
+    assert _write_paths_from_calls([NormalizedToolCall(id="5", name="done", arguments="{}")]) == []
     assert (
         _serialized_function_tool_call(
             'Narration <function=write_files>{"files":[]}',

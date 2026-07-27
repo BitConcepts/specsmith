@@ -78,8 +78,10 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-parallel-required",
         "scalar-parallel-compact",
         "scalar-parallel-compact-auto",
+        "scalar-parallel-edit",
         "scalar-parallel-write-only",
         "scalar-parallel-validator-authority",
+        "scalar-milestone-bundle",
     }
 )
 
@@ -286,8 +288,10 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-parallel-required",
         "scalar-parallel-compact",
         "scalar-parallel-compact-auto",
+        "scalar-parallel-edit",
         "scalar-parallel-write-only",
         "scalar-parallel-validator-authority",
+        "scalar-milestone-bundle",
     }
 
 
@@ -308,6 +312,14 @@ def _compact_context_experiment(experiment: str) -> bool:
 
 def _write_only_experiment(experiment: str) -> bool:
     return experiment == "scalar-parallel-write-only"
+
+
+def _native_edit_experiment(experiment: str) -> bool:
+    return experiment == "scalar-parallel-edit"
+
+
+def _milestone_bundle_experiment(experiment: str) -> bool:
+    return experiment == "scalar-milestone-bundle"
 
 
 def _validator_authority_experiment(experiment: str) -> bool:
@@ -451,6 +463,69 @@ _BASE_TOOLS: list[dict] = [
         },
     },
 ]
+
+_EDIT_FILE_TOOL: dict[str, Any] = {
+    "type": "function",
+    "function": {
+        "name": "edit_file",
+        "description": (
+            "Edit an existing project file by replacing exactly one occurrence of a "
+            "non-empty old_text block. Use the smallest exact block for focused repairs; "
+            "use write_file to create files or when a complete replacement is necessary."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "File path relative to project root"},
+                "old_text": {
+                    "type": "string",
+                    "description": "Exact non-empty text currently present exactly once",
+                },
+                "new_text": {
+                    "type": "string",
+                    "description": "Replacement text; may be empty to remove the matched block",
+                },
+            },
+            "required": ["path", "old_text", "new_text"],
+        },
+    },
+}
+
+_MILESTONE_WRITE_TOOL: dict[str, Any] = {
+    "type": "function",
+    "function": {
+        "name": "write_milestone",
+        "description": (
+            "Write up to four independent complete files for one coherent milestone in a "
+            "single call. Use fixed path_N/content_N scalar pairs in order; omit unused "
+            "pairs. Use write_file for a single file or focused whole-file repair."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                key: specification
+                for index in range(1, 5)
+                for key, specification in (
+                    (
+                        f"path_{index}",
+                        {
+                            "type": "string",
+                            "description": f"Project-relative path for file {index}",
+                        },
+                    ),
+                    (
+                        f"content_{index}",
+                        {
+                            "type": "string",
+                            "description": f"Complete replacement content for file {index}",
+                        },
+                    ),
+                )
+            },
+            "required": ["path_1", "content_1"],
+        },
+    },
+}
 
 _COMPOSITE_FILE_TOOLS: list[dict] = [
     {
@@ -747,6 +822,18 @@ def _build_active_tools(
     stable_names = {"read_file", "write_file", "done"}
     scalar_tools = [tool for tool in tools if tool["function"]["name"] in stable_names]
     if _scalar_parallel_experiment(_controller_experiment()):
+        if _milestone_bundle_experiment(_controller_experiment()):
+            scalar_tools = [
+                *[tool for tool in scalar_tools if tool["function"]["name"] != "done"],
+                _MILESTONE_WRITE_TOOL,
+                *[tool for tool in scalar_tools if tool["function"]["name"] == "done"],
+            ]
+        if _native_edit_experiment(_controller_experiment()):
+            scalar_tools = [
+                *[tool for tool in scalar_tools if tool["function"]["name"] != "done"],
+                _EDIT_FILE_TOOL,
+                *[tool for tool in scalar_tools if tool["function"]["name"] == "done"],
+            ]
         if _write_only_experiment(_controller_experiment()):
             return [
                 tool for tool in scalar_tools if tool["function"]["name"] in {"write_file", "done"}
@@ -771,7 +858,20 @@ def _tool_schema_hash(tools: list[dict]) -> str:
 
 
 _READ_TOOL_NAMES = frozenset({"read_file", "read_files"})
-_WRITE_TOOL_NAMES = frozenset({"write_file", "write_files"})
+_WRITE_TOOL_NAMES = frozenset({"write_file", "write_files", "edit_file", "write_milestone"})
+
+
+def _milestone_file_items(args: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return fixed scalar milestone pairs in their declared order."""
+    return [
+        {
+            "slot": index,
+            "path": args.get(f"path_{index}"),
+            "content": args.get(f"content_{index}"),
+        }
+        for index in range(1, 5)
+        if args.get(f"path_{index}") is not None or args.get(f"content_{index}") is not None
+    ]
 
 
 def _read_paths_from_calls(tool_calls: list[NormalizedToolCall]) -> list[str]:
@@ -797,7 +897,12 @@ def _write_paths_from_calls(tool_calls: list[NormalizedToolCall]) -> list[str]:
     for call in tool_calls:
         parsed = _json_loads_maybe(call.arguments)
         args = parsed if isinstance(parsed, dict) else {}
-        items = [args] if call.name == "write_file" else args.get("files") or []
+        if call.name in {"write_file", "edit_file"}:
+            items = [args]
+        elif call.name == "write_milestone":
+            items = _milestone_file_items(args)
+        else:
+            items = args.get("files") or []
         paths.extend(
             normalized
             for item in items
@@ -908,7 +1013,12 @@ def _milestone_contract(task: BenchTask) -> str:
         name = str(milestone.get("name") or f"milestone {index}")
         files = [str(path) for path in (milestone.get("files") or [])]
         lines.append(f"{index}. {name}: {', '.join(files)}")
-    if _scalar_parallel_experiment(_controller_experiment()):
+    if _milestone_bundle_experiment(_controller_experiment()):
+        write_instruction = (
+            "Finish one milestone coherently with one write_milestone call using fixed "
+            "path_N/content_N scalar pairs; do not serialize one file per response."
+        )
+    elif _scalar_parallel_experiment(_controller_experiment()):
         write_instruction = (
             "Finish one milestone coherently. Issue independent write_file calls together "
             "in one assistant response; do not serialize one file per response."
@@ -922,6 +1032,11 @@ def _milestone_contract(task: BenchTask) -> str:
         "milestone and validates completed milestones immediately; do not reread supplied "
         "paths. Prefer existing dependencies and standard libraries."
     )
+    if _native_edit_experiment(_controller_experiment()):
+        lines.append(
+            "For focused repairs to an existing file, prefer edit_file with the smallest "
+            "exact unique old_text block; use write_file for new files."
+        )
     return "\n".join(lines)
 
 
@@ -1208,7 +1323,15 @@ def _serialized_function_tool_call(
 
 
 _SERIAL_ACTION_TOOLS = frozenset(
-    {"read_file", "write_file", "list_files", "run_command", "run_validator"}
+    {
+        "read_file",
+        "write_file",
+        "edit_file",
+        "write_milestone",
+        "list_files",
+        "run_command",
+        "run_validator",
+    }
 )
 
 
@@ -1236,7 +1359,7 @@ def _compact_completed_tool_exchange(
 
     for call, serialized in zip(tool_calls, serialized_calls, strict=True):
         result = results_by_id.get(call.id)
-        if call.name not in {"write_file", "write_files"}:
+        if call.name not in {"write_file", "write_files", "edit_file", "write_milestone"}:
             retained_calls.append(serialized)
             if result is not None:
                 retained_results.append(result)
@@ -1245,16 +1368,17 @@ def _compact_completed_tool_exchange(
         parsed = _json_loads_maybe(call.arguments)
         args = parsed if isinstance(parsed, dict) else {}
         outcome = str((result or {}).get("content") or "no tool result").replace("\n", " ")
-        file_args = (
-            [args]
-            if call.name == "write_file"
-            else [item for item in (args.get("files") or []) if isinstance(item, dict)]
-        )
+        if call.name in {"write_file", "edit_file"}:
+            file_args = [args]
+        elif call.name == "write_milestone":
+            file_args = _milestone_file_items(args)
+        else:
+            file_args = [item for item in (args.get("files") or []) if isinstance(item, dict)]
         if not file_args:
             file_args = [{"path": "(missing path)", "content": ""}]
         for item in file_args:
             path = str(item.get("path") or "(missing path)")
-            content = item.get("content")
+            content = item.get("new_text") if call.name == "edit_file" else item.get("content")
             body = content if isinstance(content, str) else ""
             digest = hashlib.sha256(body.encode("utf-8")).hexdigest()[:16]
             write_summaries.append(
@@ -1281,10 +1405,10 @@ def _compact_completed_tool_exchange(
             {
                 "role": "user",
                 "content": (
-                    "[Specsmith write receipts] Completed write_file state summary. "
+                    "[Specsmith write receipts] Completed file-change state summary. "
                     "File bodies were omitted from "
                     "history; files on disk are authoritative. Use controller-provided repair "
-                    "context or read_file before sending a complete replacement body.\n"
+                    "context or read_file before sending another change.\n"
                     + "\n".join(write_summaries)
                 ),
             }
@@ -1589,10 +1713,16 @@ def _single_repair_context(
         remaining_chars -= len(content)
     if not chunks:
         return ""
+    if _native_edit_experiment(_controller_experiment()):
+        instruction = (
+            "Apply the smallest exact repair with edit_file; use write_file only when a "
+            "complete replacement is necessary"
+        )
+    else:
+        instruction = "Send corrected complete replacement bodies with write_file or write_files"
     return (
         "Current content for the active repair boundary (controller-provided; "
-        "do not reread these files). Send corrected complete replacement bodies "
-        "with write_file or write_files:\n\n" + "\n\n".join(chunks)
+        f"do not reread these files). {instruction}:\n\n" + "\n\n".join(chunks)
     )
 
 
@@ -1622,6 +1752,53 @@ def _exec_write_file(project_root: Path, path: str, content: str, files_written:
     if path not in files_written:
         files_written.append(path)
     return f"OK: wrote {len(content)} bytes to {path}"
+
+
+def _exec_edit_file(
+    project_root: Path,
+    path: str,
+    old_text: str,
+    new_text: str,
+    files_written: list[str],
+) -> str:
+    """Apply one deterministic exact-text edit without rewriting the whole file."""
+    p, error = _resolve_project_path(project_root, path)
+    if p is None:
+        return error
+    if _model_hidden_path(project_root, p):
+        return "ERROR: controller governance state cannot be changed by model file tools"
+    if not isinstance(old_text, str) or not old_text:
+        return "ERROR: old_text must be non-empty text"
+    if not isinstance(new_text, str):
+        return "ERROR: new_text must be text"
+    if not p.exists():
+        return f"ERROR: file not found: {path}; use write_file to create it"
+    if not p.is_file():
+        return f"ERROR: path is not a file: {path}"
+    try:
+        existing = p.read_text(encoding="utf-8", errors="replace")
+        occurrences = existing.count(old_text)
+        if occurrences == 0:
+            return f"ERROR: old_text not found in {path}; use current controller context"
+        if occurrences > 1:
+            return (
+                f"ERROR: old_text is ambiguous in {path} ({occurrences} occurrences); "
+                "include a larger unique block"
+            )
+        updated = existing.replace(old_text, new_text, 1)
+        if updated == existing:
+            return f"NO-OP: {path} already contains the requested edit"
+        if existing and not updated.strip():
+            return f"ERROR: refusing to replace all non-empty content in {path} with blank text"
+        p.write_text(updated, encoding="utf-8")
+    except OSError as exc:
+        return f"ERROR: unable to edit file ({type(exc).__name__})"
+    if path not in files_written:
+        files_written.append(path)
+    return (
+        f"OK: edited {path} (replaced {len(old_text)} chars with {len(new_text)}; "
+        f"{len(updated)} bytes total)"
+    )
 
 
 def _exec_read_files_with_evidence(
@@ -1676,6 +1853,36 @@ def _exec_write_files(
         if output.startswith("OK:"):
             successful.append(path)
     return "\n".join(outputs), successful
+
+
+def _exec_write_milestone(
+    project_root: Path,
+    args: dict[str, Any],
+    files_written: list[str],
+) -> tuple[str, list[str]]:
+    """Execute fixed scalar path/content pairs after validating the whole payload."""
+    items = _milestone_file_items(args)
+    if not items:
+        return "ERROR: at least path_1 and content_1 are required", []
+    normalized_paths: list[str] = []
+    for item in items:
+        index = int(item["slot"])
+        path = item.get("path")
+        content = item.get("content")
+        if not isinstance(path, str) or not path.strip():
+            return f"ERROR: path_{index} must be non-empty text", []
+        if not isinstance(content, str):
+            return f"ERROR: content_{index} must be text", []
+        normalized = _normalized_history_path(path)
+        if normalized in normalized_paths:
+            return f"ERROR: duplicate milestone path: {path}", []
+        normalized_paths.append(normalized)
+        resolved, error = _resolve_project_path(project_root, path)
+        if resolved is None:
+            return error, []
+        if _model_hidden_path(project_root, resolved):
+            return "ERROR: controller governance state cannot be changed by model file tools", []
+    return _exec_write_files(project_root, items, files_written)
 
 
 def _exec_list_files(project_root: Path, directory: str = ".") -> str:
@@ -1919,7 +2126,7 @@ def _tool_call_target(tool_call: NormalizedToolCall) -> str:
     """Return a content-free target label for transcript and loop diagnostics."""
     parsed = _json_loads_maybe(tool_call.arguments)
     args = parsed if isinstance(parsed, dict) else {}
-    if tool_call.name in {"read_file", "write_file"}:
+    if tool_call.name in {"read_file", "write_file", "edit_file"}:
         target = str(args.get("path") or "")
     elif tool_call.name == "read_files":
         target = ",".join(str(path) for path in (args.get("paths") or [])[:MAX_COMPOSITE_FILE_OPS])
@@ -1929,6 +2136,8 @@ def _tool_call_target(tool_call: NormalizedToolCall) -> str:
             for item in (args.get("files") or [])[:MAX_COMPOSITE_FILE_OPS]
             if isinstance(item, dict)
         )
+    elif tool_call.name == "write_milestone":
+        target = ",".join(str(item.get("path") or "") for item in _milestone_file_items(args))
     elif tool_call.name in {"run_command", "run_validator"}:
         target = str(args.get("command") or "")
     elif tool_call.name == "list_files":
@@ -3087,10 +3296,15 @@ def _run_agent_loop(
             ):
                 text_continuation_retries += 1
                 rework_turns += 1
+                repair_tool = (
+                    "edit_file or write_file"
+                    if _native_edit_experiment(controller_experiment)
+                    else "write_file"
+                )
                 recovery = (
                     "The controller already supplied authoritative focused-repair evidence "
                     "in the preceding tool result and adaptive progress. Apply that repair "
-                    "now with write_file; do not stop to request the same evidence."
+                    f"now with {repair_tool}; do not stop to request the same evidence."
                 )
                 messages.append({"role": "user", "content": recovery})
                 agent_transcript.append(
@@ -3172,6 +3386,45 @@ def _run_agent_loop(
                         _invalidate_validation_evidence(
                             task,
                             [path],
+                            lint_verified,
+                            tests_verified,
+                            validator_verified,
+                        )
+                    )
+
+            elif fn_name == "edit_file":
+                out = _exec_edit_file(
+                    project_root,
+                    args.get("path", ""),
+                    args.get("old_text", ""),
+                    args.get("new_text", ""),
+                    files_written,
+                )
+                if out.startswith("OK:"):
+                    path = str(args.get("path") or "")
+                    successful_write_paths.append(path)
+                    lint_verified, tests_verified, validator_verified = (
+                        _invalidate_validation_evidence(
+                            task,
+                            [path],
+                            lint_verified,
+                            tests_verified,
+                            validator_verified,
+                        )
+                    )
+
+            elif fn_name == "write_milestone":
+                out, milestone_write_paths = _exec_write_milestone(
+                    project_root,
+                    args,
+                    files_written,
+                )
+                if milestone_write_paths:
+                    successful_write_paths.extend(milestone_write_paths)
+                    lint_verified, tests_verified, validator_verified = (
+                        _invalidate_validation_evidence(
+                            task,
+                            milestone_write_paths,
                             lint_verified,
                             tests_verified,
                             validator_verified,
@@ -3529,9 +3782,14 @@ def _run_agent_loop(
         if condition.id == "SPECSMITH_FULL" and active_repair_focus:
             focus = active_repair_focus
             if invalid_composite_write_count:
+                repair_tool = (
+                    "edit_file or write_file"
+                    if _native_edit_experiment(controller_experiment)
+                    else "write_file"
+                )
                 focus += (
                     " This route already emitted an invalid composite write payload; "
-                    "use scalar write_file for the focused repair."
+                    f"use scalar {repair_tool} for the focused repair."
                 )
             if suppressed_unchanged_reads:
                 focus += (
