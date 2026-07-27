@@ -25,7 +25,7 @@ on:
           - substitution-release
         default: custom
       groups:
-        description: "Model groups to run (comma-separated: open,open-qwen,open-mid-admission,open-frontier,open-direct,openai,anthropic,google). Default: open."
+        description: "Model groups to run (comma-separated: open,open-qwen,open-mid-admission,open-mid-followup,open-frontier,open-direct,openai,anthropic,google). Default: open."
         required: false
         default: "open"
       providers:
@@ -103,6 +103,7 @@ jobs:
           python scripts/govern_bench/select_models.py --groups open --pretty
           python scripts/govern_bench/select_models.py --groups open-qwen --pretty
           python scripts/govern_bench/select_models.py --groups open-mid-admission --pretty
+          python scripts/govern_bench/select_models.py --groups open-mid-followup --pretty
           python scripts/govern_bench/select_models.py --groups open-frontier --pretty
           python scripts/govern_bench/select_models.py --groups open-direct --pretty
 

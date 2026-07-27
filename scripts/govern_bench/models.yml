@@ -106,6 +106,16 @@ models:
     group: open-mid-admission
     tier: open-mid
 
+  # ── Near-mid follow-up after the 20B–30B diagnostic ──────────────────
+  # Qwen3-32B is slightly above the target band, but it is the nearest
+  # managed reasoning model with a live tool-capable route. Keep it isolated
+  # so a one-cell admission does not silently repeat the failed cohort.
+  - label: qwen3-32b
+    provider: huggingface
+    model: Qwen/Qwen3-32B:deepinfra
+    group: open-mid-followup
+    tier: open-mid
+
   # ── Current open frontier coding/agent candidates ─────────────────────
   # Probe all routes first with: groups=open-frontier, probe_only=true.
   # Paid diagnostics start at one matched T28 repetition and advance only

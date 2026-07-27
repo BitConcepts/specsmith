@@ -94,6 +94,8 @@ MODEL_PRICING_PER_1M: dict[str, tuple[float, float]] = {
     "qwen/qwen3-coder-30b-a3b-instruct": (0.10, 0.30),
     "Qwen/Qwen3.6-27B": (0.32, 3.20),
     "qwen/qwen3.6-27b": (0.32, 3.20),
+    "Qwen/Qwen3-32B": (0.08, 0.28),
+    "qwen/qwen3-32b": (0.08, 0.28),
     "openai/gpt-oss-20b": (0.10, 0.50),
     "zai-org/GLM-4.7-Flash": (0.06, 0.40),
     "zai-org/glm-4.7-flash": (0.06, 0.40),
@@ -139,6 +141,7 @@ MODEL_CACHE_WRITE_MULTIPLIER: dict[str, float] = {
 # route keys take precedence over the repo-level fallback above.
 MODEL_ROUTE_PRICING_PER_1M: dict[str, tuple[float, float]] = {
     "Qwen/Qwen3.6-27B:deepinfra": (0.32, 3.20),
+    "Qwen/Qwen3-32B:deepinfra": (0.08, 0.28),
     "openai/gpt-oss-20b:nscale": (0.05, 0.20),
     "Qwen/Qwen3-Coder-30B-A3B-Instruct:scaleway": (0.228, 0.912),
     "zai-org/GLM-4.7-Flash:deepinfra": (0.06, 0.40),
@@ -186,6 +189,7 @@ _MODEL_TIER_OVERRIDES: dict[str, str] = {
     "meta-llama/llama-3.1-8b-instruct": "open-small",
     "qwen/qwen3-coder-30b-a3b-instruct": "open-mid",
     "qwen/qwen3.6-27b": "open-mid",
+    "qwen/qwen3-32b": "open-mid",
     "openai/gpt-oss-20b": "open-mid",
     "zai-org/glm-4.7-flash": "open-mid",
     "qwen/qwen3.6-35b-a3b": "open-mid",

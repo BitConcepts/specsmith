@@ -1505,6 +1505,48 @@ def test_agent_loop_stops_repeated_write_boundary_loop(
     assert any(event.get("repeated_tool_target") for event in result.agent_transcript)
 
 
+def test_full_agent_loop_stops_repeated_suppressed_reads(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task = get_task("T28")
+    project = tmp_path / "project"
+    _copy_project_fixture(_get_project_dir(task.project), project)
+    repeated = NormalizedLLMResponse(
+        message=NormalizedAssistantMessage(
+            tool_calls=[
+                NormalizedToolCall(
+                    id="read-repeat",
+                    name="read_file",
+                    arguments='{"path":"backend/main.py"}',
+                )
+            ]
+        ),
+        usage=NormalizedUsage(prompt_tokens=10, completion_tokens=1),
+    )
+    monkeypatch.setattr(harness_module, "_call_llm", lambda **_kwargs: repeated)
+    monkeypatch.setattr(
+        harness_module,
+        "_run_standard_validation",
+        lambda *_args: (True, "", True, "", False, "hidden failure"),
+    )
+
+    result = _run_agent_loop(
+        provider="openai",
+        client=object(),
+        model="test-model",
+        task=task,
+        condition=get_condition("SPECSMITH_FULL"),
+        project_root=project,
+        specsmith_dir=tmp_path,
+        max_turns=10,
+    )
+
+    assert result.stop_reason == "repeated_tool_loop"
+    assert result.llm_turns == 3
+    assert any(event.get("suppressed_read_loop") for event in result.agent_transcript)
+
+
 def test_full_agent_loop_uses_public_equilibrium_and_runs_hidden_oracle_once(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

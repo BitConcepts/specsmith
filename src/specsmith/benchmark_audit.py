@@ -142,6 +142,7 @@ def _next_experiment_decision(
         "initial_scope_overread",
         "late_boundary_validation",
         "repeated_tool_loop",
+        "suppressed_read_loop",
         "scope_expansion",
         "systematic_repair_hotspot",
         "token_amplification",
@@ -718,6 +719,33 @@ def audit_benchmark_rows(
                 ),
                 tasks=sorted({str(row.get("task")) for row in repeated_loops}),
                 conditions=sorted({str(row.get("condition")) for row in repeated_loops}),
+            )
+        )
+
+    suppressed_read_loops = [
+        row
+        for row in valid
+        if any(
+            isinstance(event, dict) and bool(event.get("suppressed_read_loop"))
+            for event in row.get("agent_transcript") or []
+        )
+    ]
+    if suppressed_read_loops:
+        weaknesses.append(
+            BenchmarkWeakness(
+                code="suppressed_read_loop",
+                severity="high",
+                title="Agent repeated reads after current evidence was supplied",
+                evidence=(
+                    f"{len(suppressed_read_loops)} row(s) repeated a controller-suppressed "
+                    "read for three consecutive turns."
+                ),
+                recommendation=(
+                    "Reject the serving route or scaffold after the bounded recovery; do not "
+                    "spend additional turns returning evidence already present in context."
+                ),
+                tasks=sorted({str(row.get("task")) for row in suppressed_read_loops}),
+                conditions=sorted({str(row.get("condition")) for row in suppressed_read_loops}),
             )
         )
 

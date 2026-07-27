@@ -403,6 +403,7 @@ def test_open_model_sampling_uses_official_model_specific_defaults(
     [
         ("Let me update the tests next.", True),
         ("Now I'll run the validator.", True),
+        ("Now implementing Milestone 2: Go worker boundary.", True),
         ("I'll write the UI boundary files for milestone 3.", True),
         ("I have enough evidence. Writing milestone 2 now.", True),
         ("All four milestones have implementation evidence. Calling done.", True),
@@ -640,6 +641,30 @@ def test_audit_identifies_provider_tool_continuation_failure() -> None:
     assert "model-native tool protocol" in weaknesses["tool_continuation_failure"].recommendation
     assert report.next_experiment.action == "repair_and_rerun"
     assert "tool_continuation_failure" in report.next_experiment.evidence_codes
+
+
+def test_audit_identifies_suppressed_read_loop() -> None:
+    failed = _audit_row(condition="SPECSMITH_FULL", passed=False)
+    failed.update(
+        {
+            "stop_reason": "repeated_tool_loop",
+            "agent_transcript": [
+                {
+                    "turn": 3,
+                    "role": "controller",
+                    "suppressed_read_loop": ["worker/main.go"],
+                    "count": 3,
+                }
+            ],
+        }
+    )
+
+    report = audit_benchmark_rows([failed])
+    weaknesses = {item.code: item for item in report.weaknesses}
+
+    assert "suppressed_read_loop" in weaknesses
+    assert "evidence already present" in weaknesses["suppressed_read_loop"].recommendation
+    assert report.next_experiment.action == "repair_and_rerun"
 
 
 def test_qwen_agentic_coding_candidates_have_hf_routes_pricing_and_tiers() -> None:

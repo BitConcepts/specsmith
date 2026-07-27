@@ -196,7 +196,7 @@ def _chat_probe_payload(model_id: str) -> dict:
             payload.update(temperature=1.0, top_p=0.95)
         elif "qwen3-coder-480b" in bare_model or "qwen3-coder-30b" in bare_model:
             payload.update(temperature=0.7, top_p=0.8)
-        elif "qwen3.6" in bare_model:
+        elif "qwen3.6" in bare_model or "qwen3-32b" in bare_model:
             payload.update(temperature=0.6, top_p=0.95)
         elif "kimi-k2.7-code" in bare_model or "minimax-m3" in bare_model:
             payload.update(temperature=1.0, top_p=0.95)

@@ -234,7 +234,7 @@ def _openai_sampling_params(model: str) -> dict[str, float]:
         return {"temperature": 1.0, "top_p": 0.95}
     if "qwen3-coder-480b" in model_id or "qwen3-coder-30b" in model_id:
         return {"temperature": 0.7, "top_p": 0.8}
-    if "qwen3.6" in model_id:
+    if "qwen3.6" in model_id or "qwen3-32b" in model_id:
         return {"temperature": 0.6, "top_p": 0.95}
     if "kimi-k2.7-code" in model_id or "minimax-m3" in model_id:
         return {"temperature": 1.0, "top_p": 0.95}
@@ -952,6 +952,7 @@ def _looks_like_nonterminal_narration(content: str) -> bool:
         "let me ",
         "now i'll ",
         "now i will ",
+        "now implementing ",
         "next i'll ",
         "next i will ",
         "i need to ",
@@ -3419,6 +3420,50 @@ def _run_agent_loop(
             msg.tool_calls,
             suppressed_unchanged_reads,
         )
+
+        if (
+            condition.id == "SPECSMITH_FULL"
+            and unchanged_read_only_streak >= 1
+            and read_tools_suspended
+            and not validation_failed
+        ):
+            if unchanged_read_only_streak == 1:
+                progress_detail = (
+                    _milestone_progress(task, files_written)
+                    if task.is_long_horizon
+                    else _scope_progress(task, files_written)
+                )
+                recovery = (
+                    "That read was suppressed because the controller already supplied the "
+                    "current boundary. Do not call a read tool again. Use write_file or "
+                    f"write_files for the next incomplete boundary now. {progress_detail}"
+                )
+                messages = _replace_adaptive_progress_message(messages, recovery)
+                agent_transcript.append(
+                    {
+                        "turn": turn + 1,
+                        "role": "controller",
+                        "adaptive_tool_surface": {
+                            "reason": "suppressed_read_recovery",
+                            "count": unchanged_read_only_streak,
+                            "schema_stable": True,
+                            "tool_schema_hash": _tool_schema_hash(tools),
+                        },
+                    }
+                )
+                rework_turns += 1
+            elif unchanged_read_only_streak >= 3:
+                repeated_paths = _read_paths_from_calls(msg.tool_calls)
+                agent_transcript.append(
+                    {
+                        "turn": turn + 1,
+                        "role": "controller",
+                        "suppressed_read_loop": repeated_paths,
+                        "count": unchanged_read_only_streak,
+                    }
+                )
+                stop_reason = "repeated_tool_loop"
+                break
 
         if (
             condition.id == "SPECSMITH_FULL"

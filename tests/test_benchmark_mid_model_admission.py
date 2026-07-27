@@ -49,6 +49,27 @@ def test_mid_model_admission_cohort_has_exact_routes_prices_and_sampling() -> No
     }
 
 
+def test_near_mid_followup_has_exact_route_price_tier_and_sampling() -> None:
+    registry = load_registry(_SCRIPTS_DIR / "govern_bench" / "models.yml")
+    candidates = select(registry, groups={"open-mid-followup"})
+
+    assert candidates == [
+        {
+            "label": "qwen3-32b",
+            "provider": "huggingface",
+            "model": "Qwen/Qwen3-32B:deepinfra",
+            "group": "open-mid-followup",
+            "tier": "open-mid",
+        }
+    ]
+    assert model_tier(candidates[0]["model"]) == "open-mid"
+    assert estimate_cost(candidates[0]["model"], 1_000_000, 1_000_000) == pytest.approx(0.36)
+    assert _openai_sampling_params(candidates[0]["model"]) == {
+        "temperature": 0.6,
+        "top_p": 0.95,
+    }
+
+
 def test_suspended_initial_reads_are_not_reported_as_loaded_context() -> None:
     row = {
         "task": "T28",
