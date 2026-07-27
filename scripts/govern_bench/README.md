@@ -103,7 +103,10 @@ Controller experiments are versioned separately from the task profile through
   automatic tool choice;
 - `scalar-parallel-write-only`: remove reads during governed implementation
   because the controller already supplies each active boundary's current
-  content.
+  content;
+- `scalar-parallel-validator-authority`: prioritize requirement-linked
+  independent validator failures over supplementary tests authored by the
+  same model run, and expose one repair boundary at a time.
 
 Run each causal variant as one `admission` cell on the same commit. Advance a
 variant only when the independent oracle passes and correct-answer token cost

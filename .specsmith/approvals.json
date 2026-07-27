@@ -31,5 +31,16 @@
     "requirement_ids": [
       "REQ-490"
     ]
+  },
+  {
+    "approval_type": "implementation",
+    "work_item_id": "WI-E9B49C27057B",
+    "approver": "Tristen Pierson <98970594+tbitcs@users.noreply.github.com>",
+    "timestamp": "2026-07-27T15:28:54Z",
+    "scope": "REQ-490 independent-validator authority admission",
+    "rationale": "User explicitly requested additional experiments with potential for large efficiency gains; this experiment is narrowly limited to deterministic evidence-authority ordering with unchanged task and oracle.",
+    "requirement_ids": [
+      "REQ-490"
+    ]
   }
 ]

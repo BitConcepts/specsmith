@@ -79,6 +79,7 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-parallel-compact",
         "scalar-parallel-compact-auto",
         "scalar-parallel-write-only",
+        "scalar-parallel-validator-authority",
     }
 )
 
@@ -286,6 +287,7 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-parallel-compact",
         "scalar-parallel-compact-auto",
         "scalar-parallel-write-only",
+        "scalar-parallel-validator-authority",
     }
 
 
@@ -306,6 +308,10 @@ def _compact_context_experiment(experiment: str) -> bool:
 
 def _write_only_experiment(experiment: str) -> bool:
     return experiment == "scalar-parallel-write-only"
+
+
+def _validator_authority_experiment(experiment: str) -> bool:
+    return experiment == "scalar-parallel-validator-authority"
 
 
 def _controller_tool_choice(condition_id: str, experiment: str) -> str:
@@ -619,6 +625,24 @@ def _focused_validator_repair_boundaries(
             return [("ruff check .", linked_paths)]
 
     commands = [*_validator_commands_for_task(task), "pytest"]
+    if _validator_authority_experiment(_controller_experiment()):
+        # Independent task validators carry more epistemic weight than tests
+        # authored inside the same agent run. Process their requirement-linked
+        # boundary first, then reconcile supplementary pytest evidence.
+        commands = [
+            command for command in commands if command not in {"ruff check .", "pytest"}
+        ] + ["pytest"]
+        for command in commands:
+            failure = next(
+                (item for item in failures if item.startswith(f"{command} FAILED:")),
+                "",
+            )
+            if not failure:
+                continue
+            paths = _validator_boundaries_for_task(task, command)
+            if paths:
+                return [(command, paths)]
+
     for failure in failures:
         for command in commands:
             if not failure.startswith(f"{command} FAILED:"):
@@ -633,6 +657,18 @@ def _focused_validator_repair_boundaries(
                 if linked_paths:
                     return [("pytest", linked_paths)]
     return boundaries
+
+
+def _focused_validator_failures(task: BenchTask, failures: list[str]) -> list[str]:
+    """Return only the authoritative failure in the authority experiment."""
+    if not _validator_authority_experiment(_controller_experiment()):
+        return failures
+    boundaries = _focused_validator_repair_boundaries(task, failures)
+    if not boundaries:
+        return failures[:1]
+    command = boundaries[0][0]
+    focused = [failure for failure in failures if failure.startswith(f"{command} FAILED:")]
+    return focused or failures[:1]
 
 
 def _focused_validator_repair_progress(task: BenchTask, failures: list[str]) -> str:
@@ -3349,19 +3385,20 @@ def _run_agent_loop(
                 )
             if milestone_failures:
                 validation_failed = True
+                repair_failures = _focused_validator_failures(task, milestone_failures)
                 repair_focus = _focused_validator_repair_progress(
                     task,
-                    milestone_failures,
+                    repair_failures,
                 )
                 repair_context = _single_repair_context(
                     project_root,
                     task,
-                    milestone_failures,
+                    repair_failures,
                 )
                 repair_context_provided = bool(repair_context)
                 milestone_output = (
                     "Milestone validation failed immediately; repair this boundary before "
-                    "starting the next milestone.\n\n" + "\n\n".join(milestone_failures)
+                    "starting the next milestone.\n\n" + "\n\n".join(repair_failures)
                 )
                 if repair_context:
                     milestone_output += f"\n\n{repair_context}"

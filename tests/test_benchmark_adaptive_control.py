@@ -27,6 +27,7 @@ from govern_bench.harness import (  # noqa: E402
     _exec_read_file_with_evidence,
     _exec_read_files_with_evidence,
     _exec_write_files,
+    _focused_validator_failures,
     _focused_validator_repair_boundaries,
     _focused_validator_repair_progress,
     _looks_like_nonterminal_narration,
@@ -206,6 +207,7 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
         ("scalar-parallel-compact", ["read_file", "write_file", "done"], "required"),
         ("scalar-parallel-compact-auto", ["read_file", "write_file", "done"], "auto"),
         ("scalar-parallel-write-only", ["write_file", "done"], "auto"),
+        ("scalar-parallel-validator-authority", ["read_file", "write_file", "done"], "auto"),
     ],
 )
 def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
@@ -427,6 +429,22 @@ def test_pytest_repair_keeps_implementation_and_test_boundaries() -> None:
     )
 
     assert ("pytest", ["cli/commands/process.py", "tests/test_process.py"]) in boundaries
+
+
+def test_validator_authority_prioritizes_independent_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("BENCH_CONTROLLER_EXPERIMENT", "scalar-parallel-validator-authority")
+    task = get_task("T28")
+    failures = [
+        "pytest FAILED:\nself-authored test expects query parameters",
+        "python tools/validate_api.py FAILED:\nPOST must accept the contract body",
+    ]
+
+    assert _focused_validator_repair_boundaries(task, failures) == [
+        ("python tools/validate_api.py", ["backend/main.py"])
+    ]
+    assert _focused_validator_failures(task, failures) == [failures[1]]
 
 
 def test_full_completion_applies_one_bounded_ruff_safe_fix(
