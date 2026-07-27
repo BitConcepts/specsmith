@@ -39,12 +39,14 @@ from govern_bench.harness import (  # noqa: E402
     _openai_sampling_params,
     _read_paths_from_calls,
     _record_written_evidence,
+    _repair_failure_signature,
     _replace_adaptive_progress_message,
     _run_missing_completion_validators,
     _scope_contract,
     _scope_progress,
     _serialized_done_tool_call,
     _serialized_function_tool_call,
+    _updated_repeated_write_streak,
     _updated_serialized_action_count,
     _updated_unchanged_read_only_streak,
     _write_paths_from_calls,
@@ -121,6 +123,38 @@ def test_successful_model_writes_become_known_evidence(tmp_path: Path) -> None:
     assert suppressed
     assert "prior read from turn 4" in repeated
     assert "VALUE = 2" not in repeated
+
+
+def test_repair_failure_signature_ignores_volatile_ids_and_numbers() -> None:
+    first = _repair_failure_signature(
+        ["pytest FAILED: tmp/run-123 expected 4 got 5 550e8400-e29b-41d4-a716-446655440000"]
+    )
+    equivalent = _repair_failure_signature(
+        ["pytest FAILED: tmp/run-987 expected 8 got 9 123e4567-e89b-42d3-a456-426614174000"]
+    )
+    changed = _repair_failure_signature(["pytest FAILED: missing authorization boundary"])
+
+    assert first == equivalent
+    assert first != changed
+    assert _repair_failure_signature([]) == ""
+
+
+def test_repeated_write_streak_requires_success_and_unchanged_failure() -> None:
+    boundary = ("backend/main.py",)
+
+    assert _updated_repeated_write_streak(0, boundary, boundary, "same", "same") == 1
+    assert _updated_repeated_write_streak(2, boundary, boundary, "changed", "old") == 0
+    assert _updated_repeated_write_streak(2, (), boundary, "same", "same") == 2
+    assert (
+        _updated_repeated_write_streak(
+            2,
+            ("tests/test_backend.py",),
+            boundary,
+            "same",
+            "same",
+        )
+        == 0
+    )
 
 
 def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> None:

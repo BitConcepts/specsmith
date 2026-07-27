@@ -1537,19 +1537,26 @@ def test_agent_loop_stops_repeated_write_boundary_loop(
     task = get_task("T1")
     project = tmp_path / "project"
     _copy_project_fixture(_get_project_dir(task.project), project)
-    repeated = NormalizedLLMResponse(
-        message=NormalizedAssistantMessage(
-            tool_calls=[
-                NormalizedToolCall(
-                    id="write-repeat",
-                    name="write_file",
-                    arguments='{"path":"notes.txt","content":"same\\n"}',
-                )
-            ]
-        ),
-        usage=NormalizedUsage(prompt_tokens=10, completion_tokens=1),
-    )
-    monkeypatch.setattr(harness_module, "_call_llm", lambda **_kwargs: repeated)
+    repeated = [
+        NormalizedLLMResponse(
+            message=NormalizedAssistantMessage(
+                tool_calls=[
+                    NormalizedToolCall(
+                        id=f"write-repeat-{index}",
+                        name="write_file",
+                        arguments=(
+                            '{"path":"notes.txt","content":"'
+                            f"same boundary, successful write {index}\\n"
+                            '"}'
+                        ),
+                    )
+                ]
+            ),
+            usage=NormalizedUsage(prompt_tokens=10, completion_tokens=1),
+        )
+        for index in range(1, 5)
+    ]
+    monkeypatch.setattr(harness_module, "_call_llm", lambda **_kwargs: repeated.pop(0))
     monkeypatch.setattr(
         harness_module,
         "_run_standard_validation",

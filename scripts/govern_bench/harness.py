@@ -944,6 +944,37 @@ def _updated_unchanged_read_only_streak(
     return 0
 
 
+def _repair_failure_signature(failures: list[str]) -> str:
+    """Return a stable signature for authoritative validator evidence."""
+    normalized = "\n".join(failures).casefold()
+    normalized = re.sub(
+        r"\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-"
+        r"[89ab][0-9a-f]{3}-[0-9a-f]{12}\b",
+        "<uuid>",
+        normalized,
+    )
+    normalized = re.sub(r"\d+", "<n>", normalized)
+    normalized = " ".join(normalized.split())
+    if not normalized:
+        return ""
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:16]
+
+
+def _updated_repeated_write_streak(
+    prior: int,
+    current_boundary: tuple[str, ...],
+    last_boundary: tuple[str, ...],
+    current_repair_signature: str,
+    last_repair_signature: str,
+) -> int:
+    """Count only successful repeated writes with unchanged failure evidence."""
+    if not current_boundary:
+        return prior
+    if current_boundary == last_boundary and current_repair_signature == last_repair_signature:
+        return prior + 1
+    return 0
+
+
 def _is_specsmith_condition(condition_id: str) -> bool:
     return condition_id in {"SPECSMITH_LIGHT", "SPECSMITH_FULL"}
 
@@ -3126,6 +3157,8 @@ def _run_agent_loop(
     repeated_write_streak = 0
     unchanged_read_only_streak = 0
     active_repair_focus = ""
+    active_repair_evidence_signature = ""
+    last_repair_evidence_signature = ""
     invalid_composite_write_count = 0
     stop_reason = "max_turns"
 
@@ -3534,25 +3567,33 @@ def _run_agent_loop(
                     )
                     if completion_failures:
                         validation_failed = True
-                        active_repair_focus = _focused_validator_repair_progress(
+                        repair_failures = _focused_validator_failures(
                             task,
                             completion_failures,
+                        )
+                        active_repair_evidence_signature = _repair_failure_signature(
+                            repair_failures
+                        )
+                        active_repair_focus = _focused_validator_repair_progress(
+                            task,
+                            repair_failures,
                         )
                         repair_context = _single_repair_context(
                             project_root,
                             task,
-                            completion_failures,
+                            repair_failures,
                         )
                         repair_context_provided = bool(repair_context)
                         out = (
                             "Completion blocked by deterministic validation. Repair these "
                             "failures, then call done again; the controller will rerun only "
-                            "missing checks.\n\n" + "\n\n".join(completion_failures)
+                            "missing checks.\n\n" + "\n\n".join(repair_failures)
                         )
                         if repair_context:
                             out += f"\n\n{repair_context}"
                     elif finished:
                         active_repair_focus = ""
+                        active_repair_evidence_signature = ""
                 if not finished and condition.id == "SPECSMITH_FULL":
                     governance_turns += 1
                 elif (
@@ -3639,6 +3680,7 @@ def _run_agent_loop(
             if milestone_failures:
                 validation_failed = True
                 repair_failures = _focused_validator_failures(task, milestone_failures)
+                active_repair_evidence_signature = _repair_failure_signature(repair_failures)
                 repair_focus = _focused_validator_repair_progress(
                     task,
                     repair_failures,
@@ -3663,6 +3705,7 @@ def _run_agent_loop(
             elif active_repair_focus:
                 diagnostics_required = False
                 active_repair_focus = ""
+                active_repair_evidence_signature = ""
             if milestone_commands or milestone_failures or milestone_receipts:
                 agent_transcript.append(
                     {
@@ -4042,12 +4085,25 @@ def _run_agent_loop(
             )
             rework_turns += 1
 
-        current_write_boundary = tuple(_write_paths_from_calls(msg.tool_calls))
-        if current_write_boundary and current_write_boundary == last_write_boundary:
-            repeated_write_streak += 1
-        else:
-            repeated_write_streak = 0
-        last_write_boundary = current_write_boundary
+        current_write_boundary = tuple(
+            sorted(
+                {
+                    normalized
+                    for path in successful_write_paths
+                    if (normalized := _normalized_history_path(path))
+                }
+            )
+        )
+        repeated_write_streak = _updated_repeated_write_streak(
+            repeated_write_streak,
+            current_write_boundary,
+            last_write_boundary,
+            active_repair_evidence_signature,
+            last_repair_evidence_signature,
+        )
+        if current_write_boundary:
+            last_write_boundary = current_write_boundary
+            last_repair_evidence_signature = active_repair_evidence_signature
 
         if repeated_write_streak and not finished:
             remaining = [path for path in task.expected_files_changed if path not in files_written]
