@@ -1455,7 +1455,7 @@ def test_agent_loop_replays_compact_valid_history_after_write(
     assert result.stop_reason == "text_response"
     assert len(provider_histories) == 2
     assert "VERY_SECRET_PROVIDER_BODY" not in provider_histories[1]
-    assert "Completed write_file state summary" in provider_histories[1]
+    assert "Completed file-change state summary" in provider_histories[1]
     assert "content_bytes" not in provider_histories[1]
 
 
@@ -1527,7 +1527,7 @@ def test_agent_loop_drops_superseded_reads_after_successful_write(
     assert "OBSOLETE_READ_BODY" in provider_histories[1]
     assert "OBSOLETE_READ_BODY" not in provider_histories[2]
     assert "read-old" not in provider_histories[2]
-    assert "Completed write_file state summary" in provider_histories[2]
+    assert "Completed file-change state summary" in provider_histories[2]
 
 
 def test_agent_loop_stops_repeated_write_boundary_loop(
