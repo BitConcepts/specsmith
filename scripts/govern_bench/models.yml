@@ -85,10 +85,10 @@ models:
     tier: open-mid
   - label: gpt-oss-20b
     provider: huggingface
-    # Use Groq rather than the DeepInfra route that previously emitted empty
-    # post-tool continuations for GPT-OSS-120B. This isolates model capacity
-    # from that known serving-stack failure.
-    model: openai/gpt-oss-20b:groq
+    # Groq returned HTTP 403 in live probe 30264148420. Nscale advertises
+    # native tools and avoids the DeepInfra stack that previously emitted
+    # empty post-tool continuations for GPT-OSS-120B.
+    model: openai/gpt-oss-20b:nscale
     group: open-mid-admission
     tier: open-mid
   - label: qwen3-coder-30b

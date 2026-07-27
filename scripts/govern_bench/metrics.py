@@ -139,7 +139,7 @@ MODEL_CACHE_WRITE_MULTIPLIER: dict[str, float] = {
 # route keys take precedence over the repo-level fallback above.
 MODEL_ROUTE_PRICING_PER_1M: dict[str, tuple[float, float]] = {
     "Qwen/Qwen3.6-27B:deepinfra": (0.32, 3.20),
-    "openai/gpt-oss-20b:groq": (0.10, 0.50),
+    "openai/gpt-oss-20b:nscale": (0.05, 0.20),
     "Qwen/Qwen3-Coder-30B-A3B-Instruct:scaleway": (0.228, 0.912),
     "zai-org/GLM-4.7-Flash:deepinfra": (0.06, 0.40),
     "Qwen/Qwen3.6-35B-A3B:deepinfra": (0.15, 0.95),

@@ -30,7 +30,7 @@ def test_mid_model_admission_cohort_has_exact_routes_prices_and_sampling() -> No
     assert all(model_tier(candidate["model"]) == "open-mid" for candidate in candidates)
     expected_costs = {
         "Qwen/Qwen3.6-27B:deepinfra": 3.52,
-        "openai/gpt-oss-20b:groq": 0.60,
+        "openai/gpt-oss-20b:nscale": 0.25,
         "Qwen/Qwen3-Coder-30B-A3B-Instruct:scaleway": 1.14,
         "zai-org/GLM-4.7-Flash:deepinfra": 0.46,
     }
