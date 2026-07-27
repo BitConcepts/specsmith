@@ -9,5 +9,16 @@
     "requirement_ids": [
       "REQ-128"
     ]
+  },
+  {
+    "approval_type": "implementation",
+    "work_item_id": "WI-A6CEB1380F72",
+    "approver": "Tristen Pierson <98970594+tbitcs@users.noreply.github.com>",
+    "timestamp": "2026-07-27T14:16:10Z",
+    "scope": "REQ-490 controller protocol experiments only",
+    "rationale": "User explicitly requested the next high-upside benchmark experiment and additional orthogonal experiments; implementation is bounded to one-cell admissions with independent-oracle and TPCA gates.",
+    "requirement_ids": [
+      "REQ-490"
+    ]
   }
 ]

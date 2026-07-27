@@ -449,9 +449,11 @@ def test_gpt56_openai_call_uses_stable_cache_key_and_records_cache_usage(
         "gpt-5.6-sol",
         [{"role": "user", "content": "repair"}],
         [],
+        tool_choice="required",
     )
 
     assert captured["prompt_cache_key"] == "governancebench:test"
+    assert captured["tool_choice"] == "required"
     assert response.usage.cached_tokens == 80
     assert response.usage.cache_write_tokens == 10
 
@@ -556,6 +558,7 @@ def test_live_probe_requires_credential_without_network() -> None:
 def test_probe_payload_matches_reasoning_and_tool_surfaces() -> None:
     regular = _chat_probe_payload("gpt-4o-mini")
     reasoning = _chat_probe_payload("gpt-5.6-sol")
+    required = _chat_probe_payload("gpt-5.6-sol", tool_choice="required")
     qwen = _chat_probe_payload("Qwen/Qwen3-Coder-Next:novita")
     kimi = _chat_probe_payload("moonshotai/Kimi-K2.7-Code:novita")
     glm = _chat_probe_payload("zai-org/GLM-5.2:deepinfra")
@@ -564,6 +567,8 @@ def test_probe_payload_matches_reasoning_and_tool_surfaces() -> None:
     assert reasoning["max_completion_tokens"] == 32
     assert reasoning["reasoning_effort"] == "none"
     assert "temperature" not in reasoning
+    assert regular["tool_choice"] == "auto"
+    assert required["tool_choice"] == "required"
     assert qwen["temperature"] == 1.0
     assert qwen["top_p"] == 0.95
     assert (kimi["temperature"], kimi["top_p"]) == (1.0, 0.95)
@@ -764,6 +769,9 @@ def test_comparison_workflow_excludes_audit_json_objects() -> None:
         encoding="utf-8"
     )
     assert '[[ "$file" == *.audit.json ]] || FILES+=("$file")' in workflow
+    assert "scalar-parallel-compact" in workflow
+    assert "BENCH_CONTROLLER_EXPERIMENT:" in workflow
+    assert "Controller experiment:" in workflow
 
 
 def test_standard_task_without_oracle_fails_closed(tmp_path: Path) -> None:
@@ -1330,6 +1338,62 @@ def test_agent_loop_recovers_once_from_empty_provider_response(
     assert result.stop_reason == "done"
     assert result.rework_turns == 2
     assert any("recovery" in event for event in result.agent_transcript)
+
+
+def test_agent_loop_applies_and_records_required_scalar_protocol(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task = get_task("T1")
+    project = tmp_path / "project"
+    _copy_project_fixture(_get_project_dir(task.project), project)
+    captured: dict[str, object] = {}
+
+    def fake_call(**kwargs: object) -> NormalizedLLMResponse:
+        captured.update(kwargs)
+        return NormalizedLLMResponse(
+            message=NormalizedAssistantMessage(content="Intentional stop."),
+            usage=NormalizedUsage(prompt_tokens=10, completion_tokens=2),
+            finish_reason="stop",
+        )
+
+    monkeypatch.setenv("BENCH_CONTROLLER_EXPERIMENT", "scalar-parallel-required")
+    monkeypatch.setattr(harness_module, "_call_llm", fake_call)
+    monkeypatch.setattr(
+        harness_module,
+        "_run_governance_controller",
+        lambda *_args: {
+            "decision": "accepted",
+            "work_item_id": "WI-BENCH",
+            "requirement_ids": ["REQ-BENCH-001"],
+            "test_case_ids": ["TEST-BENCH-001"],
+            "confidence_target": 0.7,
+        },
+    )
+    monkeypatch.setattr(
+        harness_module,
+        "_run_standard_validation",
+        lambda *_args: (False, "", False, "", False, "hidden failure"),
+    )
+
+    result = _run_agent_loop(
+        provider="openai",
+        client=object(),
+        model="test-model",
+        task=task,
+        condition=get_condition("SPECSMITH_FULL"),
+        project_root=project,
+        specsmith_dir=tmp_path,
+        max_turns=1,
+    )
+
+    assert captured["tool_choice"] == "required"
+    assert [
+        tool["function"]["name"]  # type: ignore[index]
+        for tool in captured["tools"]  # type: ignore[union-attr]
+    ] == ["read_file", "write_file", "done"]
+    assert result.call_usage[0]["controller_experiment"] == "scalar-parallel-required"
+    assert result.call_usage[0]["tool_choice"] == "required"
 
 
 def test_agent_loop_replays_compact_valid_history_after_write(

@@ -16,9 +16,14 @@ from govern_bench.harness import (  # noqa: E402
     NormalizedToolCall,
     _active_boundary_has_current_evidence,
     _active_tool_names,
+    _boundary_context_packet,
     _build_active_tools,
     _build_focused_repair_tools,
     _can_recover_nonterminal_narration,
+    _compact_completed_boundary_context,
+    _consolidate_write_receipts,
+    _controller_experiment,
+    _controller_tool_choice,
     _exec_read_file_with_evidence,
     _exec_read_files_with_evidence,
     _exec_write_files,
@@ -181,6 +186,97 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
     messages = _replace_adaptive_progress_message(messages, "second")
     assert len(messages) == 1
     assert messages[0]["content"].endswith("second")
+
+
+@pytest.mark.parametrize(
+    ("experiment", "expected_tools", "tool_choice"),
+    [
+        (
+            "control",
+            ["read_files", "write_files", "read_file", "write_file", "done"],
+            "auto",
+        ),
+        (
+            "required-tools",
+            ["read_files", "write_files", "read_file", "write_file", "done"],
+            "required",
+        ),
+        ("scalar-parallel", ["read_file", "write_file", "done"], "auto"),
+        ("scalar-parallel-required", ["read_file", "write_file", "done"], "required"),
+        ("scalar-parallel-compact", ["read_file", "write_file", "done"], "required"),
+    ],
+)
+def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
+    monkeypatch: pytest.MonkeyPatch,
+    experiment: str,
+    expected_tools: list[str],
+    tool_choice: str,
+) -> None:
+    monkeypatch.setenv("BENCH_CONTROLLER_EXPERIMENT", experiment)
+    task = get_task("T28")
+
+    assert _controller_experiment() == experiment
+    assert [
+        tool["function"]["name"] for tool in _build_active_tools("SPECSMITH_FULL", task)
+    ] == expected_tools
+    assert _controller_tool_choice("SPECSMITH_FULL", experiment) == tool_choice
+    assert _controller_tool_choice("UNGOVERNED", experiment) == "auto"
+    contract = _milestone_contract(task)
+    if experiment.startswith("scalar-parallel"):
+        assert "Issue independent write_file calls together" in contract
+        assert "use write_files" not in contract
+    else:
+        assert "use write_files" in contract
+
+
+def test_unknown_controller_experiment_fails_loudly(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("BENCH_CONTROLLER_EXPERIMENT", "mystery")
+    with pytest.raises(RuntimeError, match="Unsupported BENCH_CONTROLLER_EXPERIMENT"):
+        _controller_experiment()
+
+
+def test_compact_experiment_evicts_completed_boundary_bodies_and_write_history(
+    tmp_path: Path,
+) -> None:
+    (tmp_path / "one.py").write_text("VALUE = 1\n", encoding="utf-8")
+    (tmp_path / "two.py").write_text("VALUE = 2\n", encoding="utf-8")
+    evidence: dict[str, tuple[str, int]] = {}
+    packet = _boundary_context_packet(
+        tmp_path,
+        ["one.py", "two.py"],
+        evidence,
+        turn=0,
+        replaceable=True,
+    )
+    messages = [
+        {"role": "user", "content": f"Task contract\n\n{packet}"},
+        {"role": "user", "content": "[Specsmith write receipts] stale turn receipt"},
+    ]
+
+    partial = _compact_completed_boundary_context(messages, ["one.py"])
+    assert "VALUE = 1" in partial[0]["content"]
+    completed = _compact_completed_boundary_context(partial, ["one.py", "two.py"])
+    consolidated = _consolidate_write_receipts(
+        completed,
+        tmp_path,
+        ["one.py", "two.py"],
+    )
+
+    serialized = str(consolidated)
+    assert "VALUE = 1" not in serialized
+    assert "VALUE = 2" not in serialized
+    assert "completed boundary receipt" in serialized
+    assert (
+        sum(
+            str(message.get("content") or "").startswith("[Specsmith write receipts]")
+            for message in consolidated
+        )
+        == 1
+    )
+    assert "one.py" in serialized and "two.py" in serialized
+    assert "stale turn receipt" not in serialized
 
 
 def test_accepted_aee_work_uses_one_compact_schema_and_bounded_scope() -> None:

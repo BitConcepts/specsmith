@@ -33,6 +33,7 @@ Environment variables:
     BENCH_DRY_RUN         Set to '1' to skip actual agent calls (for CI)
     BENCH_MAX_TURNS       LLM turn cap per cell (default: 8)
     BENCH_CONTEXT_BYTES   Opt-in initial file-body context (default: 0; retrieve just in time)
+    BENCH_CONTROLLER_EXPERIMENT  Versioned controller protocol (default: control)
     BENCH_TEMPERATURE     Reproducible sampling temperature where supported (default: 0.2)
     BENCH_MAX_COMPLETION_TOKENS  Reasoning-model completion cap (default: 16384; max: 32768)
 """
@@ -298,6 +299,7 @@ def _result_rows(
             "model": r.model,
             "provider": provider,
             "dry_run": dry_run,
+            "controller_experiment": os.environ.get("BENCH_CONTROLLER_EXPERIMENT", "control"),
             "horizon": task_map[r.task_id].horizon if r.task_id in task_map else "standard",
             "category": task_map[r.task_id].category if r.task_id in task_map else "unknown",
             "task_max_turns": task_map[r.task_id].max_turns if r.task_id in task_map else None,

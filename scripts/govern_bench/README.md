@@ -89,6 +89,21 @@ The paid-run profiles are:
 - `substitution-screen`: T1/T10/T13/T28, raw/FULL, n=5.
 - `substitution-release`: T1/T2/T6/T7/T10/T11/T13/T28, raw/FULL, n=10.
 
+Controller experiments are versioned separately from the task profile through
+`BENCH_CONTROLLER_EXPERIMENT` or the workflow's `experiment` input:
+
+- `control`: published composite reads/writes with automatic tool choice;
+- `required-tools`: unchanged schema with a required executable tool action;
+- `scalar-parallel`: remove nested composite payloads and request parallel
+  `write_file` calls;
+- `scalar-parallel-required`: combine the prior two changes;
+- `scalar-parallel-compact`: also evict completed boundary bodies and
+  consolidate write receipts.
+
+Run each causal variant as one `admission` cell on the same commit. Advance a
+variant only when the independent oracle passes and correct-answer token cost
+materially improves; do not pool cells across controller commits.
+
 Profile task, condition, and repetition counts are locked. Use `custom` only
 for explicitly diagnostic work.
 

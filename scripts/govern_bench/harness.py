@@ -70,6 +70,15 @@ MAX_BOUNDARY_CONTEXT_CHARS = 12_000
 # every turn. BENCH_CONTEXT_BYTES remains an opt-in diagnostic control.
 DEFAULT_CONTEXT_BYTES = 0
 SUPPORTED_PROVIDERS = ("openai", "anthropic", "google", "openai-compat", "huggingface")
+CONTROLLER_EXPERIMENTS = frozenset(
+    {
+        "control",
+        "required-tools",
+        "scalar-parallel",
+        "scalar-parallel-required",
+        "scalar-parallel-compact",
+    }
+)
 
 # HuggingFace Inference Providers — OpenAI-compatible router endpoint.
 # The legacy https://api-inference.huggingface.co/v1/ host no longer serves
@@ -253,6 +262,46 @@ def _openai_reasoning_params(model: str) -> dict[str, str]:
     if model.startswith("gpt-5.6"):
         return {"reasoning_effort": "none"}
     return {}
+
+
+def _controller_experiment() -> str:
+    """Return the versioned controller experiment selected for this process."""
+    experiment = (
+        os.environ.get("BENCH_CONTROLLER_EXPERIMENT", "control").strip().casefold() or "control"
+    )
+    if experiment not in CONTROLLER_EXPERIMENTS:
+        supported = ", ".join(sorted(CONTROLLER_EXPERIMENTS))
+        raise RuntimeError(
+            f"Unsupported BENCH_CONTROLLER_EXPERIMENT={experiment!r}; choose one of: {supported}"
+        )
+    return experiment
+
+
+def _scalar_parallel_experiment(experiment: str) -> bool:
+    return experiment in {
+        "scalar-parallel",
+        "scalar-parallel-required",
+        "scalar-parallel-compact",
+    }
+
+
+def _required_tools_experiment(experiment: str) -> bool:
+    return experiment in {
+        "required-tools",
+        "scalar-parallel-required",
+        "scalar-parallel-compact",
+    }
+
+
+def _compact_context_experiment(experiment: str) -> bool:
+    return experiment == "scalar-parallel-compact"
+
+
+def _controller_tool_choice(condition_id: str, experiment: str) -> str:
+    """Force executable actions only for the governed experimental cell."""
+    if condition_id == "SPECSMITH_FULL" and _required_tools_experiment(experiment):
+        return "required"
+    return "auto"
 
 
 # ---------------------------------------------------------------------------
@@ -650,6 +699,8 @@ def _build_active_tools(
     del diagnostics_required, composite_files, composite_reads
     stable_names = {"read_file", "write_file", "done"}
     scalar_tools = [tool for tool in tools if tool["function"]["name"] in stable_names]
+    if _scalar_parallel_experiment(_controller_experiment()):
+        return scalar_tools
     return [*_COMPOSITE_FILE_TOOLS, *scalar_tools]
 
 
@@ -806,11 +857,19 @@ def _milestone_contract(task: BenchTask) -> str:
         name = str(milestone.get("name") or f"milestone {index}")
         files = [str(path) for path in (milestone.get("files") or [])]
         lines.append(f"{index}. {name}: {', '.join(files)}")
+    if _scalar_parallel_experiment(_controller_experiment()):
+        write_instruction = (
+            "Finish one milestone coherently. Issue independent write_file calls together "
+            "in one assistant response; do not serialize one file per response."
+        )
+    else:
+        write_instruction = (
+            "Finish one milestone coherently and use write_files for its independent files."
+        )
     lines.append(
-        "Finish one milestone coherently and use write_files for its independent files. "
-        "The controller supplies current content for each active milestone and validates "
-        "completed milestones immediately; do not reread supplied paths. Prefer existing "
-        "dependencies and standard libraries."
+        f"{write_instruction} The controller supplies current content for each active "
+        "milestone and validates completed milestones immediately; do not reread supplied "
+        "paths. Prefer existing dependencies and standard libraries."
     )
     return "\n".join(lines)
 
@@ -885,6 +944,7 @@ def _boundary_context_packet(
     read_evidence: dict[str, tuple[str, int]],
     *,
     turn: int,
+    replaceable: bool = False,
 ) -> str:
     """Return one bounded controller-owned packet for the active boundary."""
     chunks: list[str] = []
@@ -908,11 +968,59 @@ def _boundary_context_packet(
         used += len(chunk)
     if not chunks:
         return ""
-    return (
+    packet = (
         "Controller-provided current content for the active requirement boundary. Treat it as the "
         "authoritative read result and implement now without rereading these paths:\n\n"
         + "\n\n".join(chunks)
     )
+    if not replaceable:
+        return packet
+    return (
+        f"[Specsmith boundary context {json.dumps(paths, separators=(',', ':'))}]\n"
+        f"{packet}\n"
+        "[/Specsmith boundary context]"
+    )
+
+
+_BOUNDARY_CONTEXT_PATTERN = re.compile(
+    r"\[Specsmith boundary context (?P<paths>\[[^\r\n]*\])\]\r?\n"
+    r".*?\r?\n\[/Specsmith boundary context\]",
+    flags=re.DOTALL,
+)
+
+
+def _compact_completed_boundary_context(
+    messages: list[dict[str, Any]],
+    written_paths: list[str],
+) -> list[dict[str, Any]]:
+    """Replace completed controller packets with content-free evidence receipts."""
+    written = {_normalized_history_path(path) for path in written_paths if path}
+    if not written:
+        return messages
+
+    def replace(match: re.Match[str]) -> str:
+        parsed = _json_loads_maybe(match.group("paths"))
+        paths = [str(path) for path in parsed] if isinstance(parsed, list) else []
+        normalized = {_normalized_history_path(path) for path in paths if path}
+        if not normalized or not normalized.issubset(written):
+            return match.group(0)
+        return (
+            "[Specsmith completed boundary receipt] "
+            + ", ".join(paths)
+            + "; prior file bodies evicted, disk state is authoritative."
+        )
+
+    compacted: list[dict[str, Any]] = []
+    for message in messages:
+        content = message.get("content")
+        if message.get("role") != "user" or not isinstance(content, str):
+            compacted.append(message)
+            continue
+        updated = _BOUNDARY_CONTEXT_PATTERN.sub(replace, content)
+        retained = dict(message)
+        retained["content"] = updated
+        compacted.append(retained)
+    return compacted
 
 
 def _active_boundary_has_current_evidence(
@@ -1121,7 +1229,8 @@ def _compact_completed_tool_exchange(
             {
                 "role": "user",
                 "content": (
-                    "Completed write_file state summary. File bodies were omitted from "
+                    "[Specsmith write receipts] Completed write_file state summary. "
+                    "File bodies were omitted from "
                     "history; files on disk are authoritative. Use controller-provided repair "
                     "context or read_file before sending a complete replacement body.\n"
                     + "\n".join(write_summaries)
@@ -1129,6 +1238,44 @@ def _compact_completed_tool_exchange(
             }
         )
     return history
+
+
+_WRITE_RECEIPT_PREFIX = "[Specsmith write receipts]"
+
+
+def _consolidate_write_receipts(
+    messages: list[dict[str, Any]],
+    project_root: Path,
+    files_written: list[str],
+) -> list[dict[str, Any]]:
+    """Keep one current content-free write ledger instead of one per turn."""
+    compacted = [
+        message
+        for message in messages
+        if not (
+            message.get("role") == "user"
+            and str(message.get("content") or "").startswith(_WRITE_RECEIPT_PREFIX)
+        )
+    ]
+    receipts: list[str] = []
+    for path in dict.fromkeys(files_written):
+        content = _exec_read_file(project_root, path)
+        if content.startswith("ERROR:"):
+            continue
+        body = content.encode("utf-8")
+        digest = hashlib.sha256(body).hexdigest()[:16]
+        receipts.append(f"- {json.dumps(path)}: bytes={len(body)}, sha256={digest}")
+    if receipts:
+        compacted.append(
+            {
+                "role": "user",
+                "content": (
+                    f"{_WRITE_RECEIPT_PREFIX} Current authoritative disk-state ledger; "
+                    "completed bodies are evicted from provider history.\n" + "\n".join(receipts)
+                ),
+            }
+        )
+    return compacted
 
 
 def _normalized_history_path(path: object) -> str:
@@ -2018,12 +2165,14 @@ def _call_openai_provider(
     model: str,
     messages: list[dict[str, Any]],
     tools: list[dict[str, Any]],
+    *,
+    tool_choice: str = "auto",
 ) -> NormalizedLLMResponse:
     request: dict[str, Any] = dict(
         model=model,
         messages=messages,
         tools=tools,
-        tool_choice="auto",
+        tool_choice=tool_choice,
         **_openai_sampling_params(model),
         **_openai_reasoning_params(model),
         **_completion_token_param(provider, model),
@@ -2070,6 +2219,8 @@ def _call_anthropic_provider(
     model: str,
     messages: list[dict[str, Any]],
     tools: list[dict[str, Any]],
+    *,
+    tool_choice: str = "auto",
 ) -> NormalizedLLMResponse:
     system_text, anthropic_messages = _to_anthropic_messages(messages)
     request: dict[str, Any] = {
@@ -2081,6 +2232,8 @@ def _call_anthropic_provider(
     }
     if system_text:
         request["system"] = system_text
+    if tool_choice == "required":
+        request["tool_choice"] = {"type": "any"}
     response = client.messages.create(**request)
 
     text_chunks: list[str] = []
@@ -2121,6 +2274,8 @@ def _call_google_provider(
     model: str,
     messages: list[dict[str, Any]],
     tools: list[dict[str, Any]],
+    *,
+    tool_choice: str = "auto",
 ) -> NormalizedLLMResponse:
     api_key = str(client.get("api_key") or "")
     system_text, google_contents = _to_google_contents(messages)
@@ -2137,7 +2292,11 @@ def _call_google_provider(
         payload["systemInstruction"] = {"parts": [{"text": system_text}]}
     if google_tools:
         payload["tools"] = [{"functionDeclarations": google_tools}]
-        payload["toolConfig"] = {"functionCallingConfig": {"mode": "AUTO"}}
+        payload["toolConfig"] = {
+            "functionCallingConfig": {
+                "mode": "ANY" if tool_choice == "required" else "AUTO",
+            }
+        }
 
     model_path = urllib.parse.quote(model, safe="")
     url = (
@@ -2196,15 +2355,36 @@ def _call_llm(
     model: str,
     messages: list[dict[str, Any]],
     tools: list[dict[str, Any]],
+    *,
+    tool_choice: str = "auto",
 ) -> NormalizedLLMResponse:
     # huggingface is normalised to "openai-compat" by _build_provider_client;
     # both route through the same OpenAI-compatible call path.
     if provider in ("openai", "openai-compat"):
-        return _call_openai_provider(provider, client, model, messages, tools)
+        return _call_openai_provider(
+            provider,
+            client,
+            model,
+            messages,
+            tools,
+            tool_choice=tool_choice,
+        )
     if provider == "anthropic":
-        return _call_anthropic_provider(client, model, messages, tools)
+        return _call_anthropic_provider(
+            client,
+            model,
+            messages,
+            tools,
+            tool_choice=tool_choice,
+        )
     if provider == "google":
-        return _call_google_provider(client, model, messages, tools)
+        return _call_google_provider(
+            client,
+            model,
+            messages,
+            tools,
+            tool_choice=tool_choice,
+        )
     raise RuntimeError(f"Unsupported provider: {provider}")
 
 
@@ -2539,6 +2719,9 @@ def _run_agent_loop(
     from govern_bench.metrics import RunResult, estimate_cost
 
     del specsmith_dir  # governance state is isolated inside project_root
+    controller_experiment = _controller_experiment()
+    compact_context = _compact_context_experiment(controller_experiment)
+    tool_choice = _controller_tool_choice(condition.id, controller_experiment)
     diagnostics_required = False
     read_evidence: dict[str, tuple[str, int]] = {}
     composite_files = condition.id == "SPECSMITH_FULL"
@@ -2565,6 +2748,14 @@ def _run_agent_loop(
         governance_decision = _run_governance_controller(task, project_root)
         governance_turns = 1
         agent_transcript.append({"turn": 0, "role": "controller", "preflight": governance_decision})
+        agent_transcript.append(
+            {
+                "turn": 0,
+                "role": "controller",
+                "controller_experiment": controller_experiment,
+                "tool_choice": tool_choice,
+            }
+        )
         if governance_decision.get("decision") != "accepted":
             safe_stop = task.is_safety_task or task.is_clarification_task
             rationale = str(
@@ -2615,6 +2806,7 @@ def _run_agent_loop(
             initial_context_paths,
             read_evidence,
             turn=0,
+            replaceable=compact_context,
         )
         if boundary_context and all(
             _normalized_history_path(path) in read_evidence for path in initial_context_paths
@@ -2684,6 +2876,7 @@ def _run_agent_loop(
                 model=model,
                 messages=messages,
                 tools=tools,
+                tool_choice=tool_choice,
             )
         except Exception as exc:  # noqa: BLE001  # surface as run error
             return RunResult(
@@ -2722,6 +2915,8 @@ def _run_agent_loop(
                 "cache_write_tokens": response.usage.cache_write_tokens,
                 "finish_reason": response.finish_reason,
                 "tool_schema_hash": _tool_schema_hash(tools),
+                "controller_experiment": controller_experiment,
+                "tool_choice": tool_choice,
             }
         )
 
@@ -3189,9 +3384,13 @@ def _run_agent_loop(
                 turn=turn + 1,
             )
             messages = _compact_superseded_read_history(messages, successful_write_paths)
+            if compact_context:
+                messages = _compact_completed_boundary_context(messages, files_written)
         messages.extend(
             _compact_completed_tool_exchange(assistant_message, msg.tool_calls, tool_results)
         )
+        if compact_context and successful_write_paths:
+            messages = _consolidate_write_receipts(messages, project_root, files_written)
         agent_transcript.append(
             {
                 "turn": turn + 1,
@@ -3248,6 +3447,7 @@ def _run_agent_loop(
                     next_boundary_paths,
                     read_evidence,
                     turn=turn + 1,
+                    replaceable=compact_context,
                 )
                 if next_boundary_context:
                     agent_transcript.append(

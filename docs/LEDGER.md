@@ -166,3 +166,17 @@
 - **Status**: complete
 - **Epistemic status**: high
 - **Chain hash**: `8b2123d874bf6874...`
+
+## 2026-07-27T09:51 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `97d4683f27e90ecf...`
+
+## 2026-07-27T10:15 — wi_close WI-A6CEB1380F72: REQ-490 controller experiments implemented with 198 passing benchmark tests and independent-oracle behavior preserved.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `94ec0ff0bffd1ca9...`

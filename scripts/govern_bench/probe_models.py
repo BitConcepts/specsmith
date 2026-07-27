@@ -167,8 +167,20 @@ def _probe_openai_model(model_id: str, token: str | None, timeout: float) -> dic
     }
 
 
-def _chat_probe_payload(model_id: str) -> dict:
+def _chat_probe_payload(model_id: str, *, tool_choice: str | None = None) -> dict:
     """Build a minimal tool-enabled request matching the benchmark API surface."""
+    if tool_choice is None:
+        experiment = os.environ.get("BENCH_CONTROLLER_EXPERIMENT", "control").strip().casefold()
+        tool_choice = (
+            "required"
+            if experiment
+            in {
+                "required-tools",
+                "scalar-parallel-required",
+                "scalar-parallel-compact",
+            }
+            else "auto"
+        )
     payload: dict = {
         "model": model_id,
         "messages": [{"role": "user", "content": "Reply with OK."}],
@@ -182,7 +194,7 @@ def _chat_probe_payload(model_id: str) -> dict:
                 },
             }
         ],
-        "tool_choice": "auto",
+        "tool_choice": tool_choice,
     }
     lowered = model_id.lower()
     if lowered.startswith(("gpt-5", "o1", "o3", "o4")):

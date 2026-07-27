@@ -24,6 +24,17 @@ on:
           - substitution-screen
           - substitution-release
         default: custom
+      experiment:
+        description: "Versioned controller protocol; use one admission per causal variant."
+        required: false
+        type: choice
+        options:
+          - control
+          - required-tools
+          - scalar-parallel
+          - scalar-parallel-required
+          - scalar-parallel-compact
+        default: control
       groups:
         description: "Model groups to run (comma-separated: open,open-qwen,open-mid-admission,open-mid-followup,open-frontier,open-direct,openai,anthropic,google). Default: open."
         required: false
@@ -164,6 +175,12 @@ jobs:
             --provider openai --model gpt-4o-mini \
             --output /tmp/bench-smoke-substitution-release.md \
             --json-output /tmp/bench-smoke-substitution-release.json
+          BENCH_CONTROLLER_EXPERIMENT=scalar-parallel-compact \
+          python scripts/govern_bench/run_bench.py \
+            --profile admission \
+            --provider huggingface --model Qwen/Qwen3.6-27B:deepinfra \
+            --output /tmp/bench-smoke-controller-experiment.md \
+            --json-output /tmp/bench-smoke-controller-experiment.json
 
       - name: Upload smoke report
         uses: actions/upload-artifact@v7
@@ -185,6 +202,9 @@ jobs:
             /tmp/bench-smoke-substitution-release.md
             /tmp/bench-smoke-substitution-release.json
             /tmp/bench-smoke-substitution-release.audit.json
+            /tmp/bench-smoke-controller-experiment.md
+            /tmp/bench-smoke-controller-experiment.json
+            /tmp/bench-smoke-controller-experiment.audit.json
           retention-days: 7
 
   # ──────────────────────────────────────────────────────────────────────────
@@ -231,6 +251,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           BENCH_OPENAI_COMPAT_API_KEY: ${{ secrets.BENCH_OPENAI_COMPAT_API_KEY }}
           BENCH_OPENAI_BASE_URL: ${{ vars.BENCH_OPENAI_BASE_URL || 'https://openrouter.ai/api/v1' }}
+          BENCH_CONTROLLER_EXPERIMENT: ${{ github.event.inputs.experiment || 'control' }}
         run: python scripts/govern_bench/probe_models.py --matrix matrix.json --live-call
 
   # ──────────────────────────────────────────────────────────────────────────
@@ -345,6 +366,7 @@ jobs:
           BENCH_OPENAI_BASE_URL:       ${{ vars.BENCH_OPENAI_BASE_URL || 'https://openrouter.ai/api/v1' }}
           BENCH_DRY_RUN:     ${{ github.event.inputs.dry_run == 'true' && '1' || '' }}
           BENCH_MAX_TURNS:   "12"
+          BENCH_CONTROLLER_EXPERIMENT: ${{ github.event.inputs.experiment || 'control' }}
         run: |
           DRY_FLAG=""
           [ "${{ github.event.inputs.dry_run }}" = "true" ] && DRY_FLAG="--dry-run"
@@ -437,6 +459,7 @@ jobs:
             echo "## GovernanceBench — Model Comparison"
             echo ""
             echo "- Profile: ${{ github.event.inputs.profile || 'custom' }}"
+            echo "- Controller experiment: ${{ github.event.inputs.experiment || 'control' }}"
             echo "- Groups: ${{ github.event.inputs.groups || 'open' }}"
             echo "- Tasks: ${{ github.event.inputs.tasks || 'T1,T2,T6,T7,T10,T11,T13' }}"
             echo "- Reps: ${{ github.event.inputs.reps || '5' }}"
