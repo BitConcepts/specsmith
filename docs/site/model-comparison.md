@@ -305,6 +305,17 @@ not another managed-route repetition. It is the same one-cell gate behind a
 native Qwen tool parser or a patch-oriented editing surface, followed by n=5
 only if correctness remains intact and TPCA enters the frontier envelope.
 
+The final managed-route confirmation changed only observed controller
+boundaries. Finish-reason telemetry and scalar fallback still failed at
+33,884 tokens in
+[workflow 30268327224](https://github.com/layer1labs/specsmith/actions/runs/30268327224).
+Exact bounded recovery for the model's implementation promise then passed in
+[workflow 30269000016](https://github.com/layer1labs/specsmith/actions/runs/30269000016)
+at 77,776 tokens and 14 turns. This second correct cell is 7.6% above the
+prior pass and 4.44× the Sol envelope. The next candidate must therefore
+change the native parser or editing interface; repeating the same managed
+route is stopped.
+
 ## Historical open-frontier admissions
 
 Four current checkpoints were admitted through live route probes and one T28

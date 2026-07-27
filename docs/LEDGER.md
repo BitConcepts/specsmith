@@ -152,3 +152,9 @@
 - **Status**: complete
 - **Epistemic status**: high
 - **Chain hash**: `257170271dbac764...`
+
+## 2026-07-27T09:32 — wi_close WI-EE3315048981: Documentation and compact evidence update only; existing invocation-doc and benchmark-audit coverage passed, with no new product behavior.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `4872a80e2a0920a9...`

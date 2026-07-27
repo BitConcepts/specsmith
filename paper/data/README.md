@@ -15,6 +15,7 @@ fields.
 | `admission-30211920507` | 30211920507 | Final Llama 3.1 8B closing-tag route diagnostic |
 | `admission-30265818081` | 30265818081 | Qwen3.6-27B correct n=1 T28/FULL admission; above frontier efficiency envelope |
 | `admission-30265830535` | 30265830535 | Qwen3-32B failed n=1 T28/FULL follow-up |
+| `admission-30269000016` | 30269000016 | Qwen3.6-27B correct final T28/FULL confirmation; no TPCA gain |
 
 Full raw rows, traces, diffs, and validator output remain in the cited GitHub
 Actions artifacts for the configured retention period. They are not copied

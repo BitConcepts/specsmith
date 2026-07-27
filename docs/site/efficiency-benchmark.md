@@ -547,6 +547,20 @@ does not replace frontier Sol on token efficiency. No n=5 spend is justified
 until a native parser, patch-oriented edit interface, or other measured
 serving boundary materially reduces the 72.3k-token cell.
 
+Two final causal checks closed this managed-route loop. Finish-reason
+telemetry and scalar fallback after an invalid composite payload produced a
+33,884-token failure in
+[workflow 30268327224](https://github.com/layer1labs/specsmith/actions/runs/30268327224);
+the model stopped while promising Milestone 2. Extending the same bounded
+future-action recovery yielded a second correct cell in
+[workflow 30269000016](https://github.com/layer1labs/specsmith/actions/runs/30269000016):
+77,776 tokens, 14 turns, all ten files, and a passing independent oracle.
+Every provider finish reason was `tool_calls` or `stop`, ruling out output
+truncation for that run. The confirmation is 7.6% more expensive than the
+72,255-token pass and 4.44× the Sol envelope. The optimization produced no
+TPCA gain, so the audit returned `advance_candidate` and managed DeepInfra
+repetition stops here.
+
 ### Research-aligned next improvements
 
 The traces agree with several independent systems results:

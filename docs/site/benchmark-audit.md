@@ -363,6 +363,18 @@ of the 14 turns. A future experiment should change the native tool parser or
 edit interface and record finish-reason/truncation evidence. Raising the turn
 cap or repeating the same route would not test a causal improvement.
 
+The final causal checks tested those alternatives directly.
+[Workflow 30268327224](https://github.com/layer1labs/specsmith/actions/runs/30268327224)
+failed at 33,884 tokens after scalar fallback because the model stopped on an
+explicit “I'll implement” promise.
+[Workflow 30269000016](https://github.com/layer1labs/specsmith/actions/runs/30269000016)
+then passed at 77,776 tokens after exact bounded phrase recovery. Its recorded
+finish reasons were only `tool_calls` and `stop`, with no
+`completion_truncation` finding. Because the second correct cell was more
+expensive than the first, the experiment falsified truncation handling and
+scalar fallback as sufficient efficiency fixes. The audit returned
+`advance_candidate`, ending managed-route repetition.
+
 The final scorer now reruns public task validators before installing the hidden
 oracle, applies at most one FULL default-safe Ruff repair, and executes the
 oracle exactly once after the model loop. Agent-loop equilibrium uses public

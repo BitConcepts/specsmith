@@ -88,6 +88,13 @@ complete the governed task, but it is an n=1 capability result and 4.13× the
 governed Sol token envelope. It strengthens the case for native-parser and
 edit-interface research, not a current frontier-replacement claim.
 
+An exact-boundary confirmation later passed in
+[workflow 30269000016](https://github.com/layer1labs/specsmith/actions/runs/30269000016)
+at 77,776 tokens and 14 turns. It is not pooled with the first cell because
+the controller commit changed between runs. The result shows that 27B
+capability can recur, but the 4.44× frontier-envelope ratio and lack of TPCA
+gain preserve the negative efficiency conclusion.
+
 ## Reproduction
 
 The cited workflow retains full traces for the repository's configured
