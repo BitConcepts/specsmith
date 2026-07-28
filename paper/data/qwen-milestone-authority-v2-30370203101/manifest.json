@@ -1,0 +1,57 @@
+{
+  "cell_fields": [
+    "workflow_id",
+    "commit_sha",
+    "task",
+    "category",
+    "horizon",
+    "condition",
+    "rep",
+    "model",
+    "provider",
+    "model_tier",
+    "benchmark_profile",
+    "passed",
+    "acceptance_oracle_passed",
+    "project_tests_passed",
+    "input_tokens",
+    "output_tokens",
+    "cached_input_tokens",
+    "cache_write_tokens",
+    "tokens",
+    "cost_usd",
+    "rework_turns",
+    "governance_turns",
+    "llm_turns",
+    "wall_clock_s",
+    "stop_reason",
+    "expected_file_count",
+    "written_file_count",
+    "milestones_completed",
+    "milestones_total",
+    "tokens_per_completed_milestone",
+    "language_count",
+    "tool_schema_hashes"
+  ],
+  "cells_canonical_sha256": "629a6e212aa7f991ad72a6710ba858be9524512b9d80f736418d0bb08bc7e16d",
+  "cells_csv_sha256": "fc92710d52677612adeeab1d7a46f9ae0abb100bbde716bbdef64f1ad571690c",
+  "commit_sha": "34501278f005daa6fae655fbd18c70db25ef8b45",
+  "excluded_fields": [
+    "agent_transcript",
+    "final_diff",
+    "governance_decision",
+    "lint_output",
+    "test_output",
+    "verify_result"
+  ],
+  "row_count": 1,
+  "schema": "governancebench-evidence-v2",
+  "source_artifacts": [
+    {
+      "name": "bench-results-scalar-milestone-packet-authority-v2.json",
+      "rows": 1,
+      "sha256": "1bbde7e490f27c558c89f2a3883f44894819b77303fbf4e305ac46a415988c53"
+    }
+  ],
+  "workflow_id": "30370203101"
+}

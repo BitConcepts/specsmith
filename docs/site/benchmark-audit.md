@@ -451,6 +451,23 @@ required choice prevents that stop but amplifies serial work until the turn
 budget is exhausted. The audit therefore rejects repetition and selects
 controller-owned milestone batching or a stronger tool-serving model.
 
+The milestone-packet series then made progress measurable rather than inferred:
+
+| Workflow | Policy | Tokens | Stop | Milestones | Audit diagnosis |
+|---|---|---:|---|---:|---|
+| [30367659754](https://github.com/layer1labs/specsmith/actions/runs/30367659754) | packet | 108,021 | `max_turns` | 1/4 | serialized repair and milestone fragmentation |
+| [30367659754](https://github.com/layer1labs/specsmith/actions/runs/30367659754) | adaptive packet | 112,933 | `text_response` | 1/4 | one bounded recovery did not prevent later prose stop |
+| [30369089983](https://github.com/layer1labs/specsmith/actions/runs/30369089983) | validator authority + patch | 18,646 | `text_response` | 1/4 | evidence conflict removed; fail-fast improved |
+| [30370203101](https://github.com/layer1labs/specsmith/actions/runs/30370203101) | authority v2 | 98,679 | `max_turns` | 1/4 | exact no-op patch repeated thirteen times |
+
+Authority selected independent task validators before tests authored by the
+same agent run, eliminating HTTP-status oscillation and cutting failed spend by
+82.7%. Correctness did not improve. V2's forced continuation instead amplified
+an already-applied patch. The resulting deterministic guard hashes one
+single-action no-op, provides one recovery, and stops the second identical
+attempt. This counterfactual would reduce the observed loop but is not reported
+as a live token result.
+
 The final scorer now reruns public task validators before installing the hidden
 oracle, applies at most one FULL default-safe Ruff repair, and executes the
 oracle exactly once after the model loop. Agent-loop equilibrium uses public

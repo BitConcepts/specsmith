@@ -68,9 +68,9 @@ def test_specsmith_empty_args_defaults_to_help() -> None:
 
 def test_specsmith_non_empty_args_preserved() -> None:
     """Non-empty args are passed through verbatim."""
-    _, args = _parse_command("/specsmith audit --strict")
+    _, args = _parse_command("/specsmith audit")
     sm_args = _sm_args_for(args)
-    assert sm_args == "audit --strict"
+    assert sm_args == "audit"
 
 
 # ---------------------------------------------------------------------------

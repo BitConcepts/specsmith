@@ -30,7 +30,7 @@ All specsmith governance operations should be invoked through the
 ```
 /specsmith save               # backup + commit + push governance state
 /specsmith load               # pull + restore governance state
-/specsmith audit --strict     # strict governance audit
+/specsmith audit              # governance audit
 /specsmith status             # show governance status
 /specsmith sync               # full two-way sync
 ```

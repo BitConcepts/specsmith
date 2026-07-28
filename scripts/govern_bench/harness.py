@@ -1744,6 +1744,40 @@ def _updated_repeated_action_batch_streak(
     return 0
 
 
+def _noop_action_signature(
+    tool_calls: list[NormalizedToolCall],
+    tool_results: list[dict[str, Any]],
+) -> str:
+    """Hash one rejected no-op action without retaining provider arguments."""
+    if len(tool_calls) != 1 or len(tool_results) != 1:
+        return ""
+    result = str(tool_results[0].get("content") or "")
+    if not result.startswith("NO-OP:"):
+        return ""
+    call = tool_calls[0]
+    payload = (
+        call.name,
+        _tool_call_target(call),
+        hashlib.sha256(call.arguments.encode("utf-8")).hexdigest(),
+    )
+    return hashlib.sha256(json.dumps(payload, separators=(",", ":")).encode("utf-8")).hexdigest()[
+        :16
+    ]
+
+
+def _updated_repeated_noop_streak(
+    prior: int,
+    current_signature: str,
+    last_signature: str,
+) -> int:
+    """Count consecutive identical single-action no-op results."""
+    if not current_signature:
+        return 0
+    if current_signature == last_signature:
+        return prior + 1
+    return 1
+
+
 def _compact_completed_tool_exchange(
     assistant_message: dict[str, Any],
     tool_calls: list[NormalizedToolCall],
@@ -3679,6 +3713,8 @@ def _run_agent_loop(
     repeated_write_streak = 0
     last_action_batch_signature = ""
     repeated_action_batch_streak = 0
+    last_noop_action_signature = ""
+    repeated_noop_streak = 0
     unchanged_read_only_streak = 0
     active_repair_focus = ""
     active_repair_evidence_signature = ""
@@ -4345,6 +4381,36 @@ def _run_agent_loop(
                 "suppressed_unchanged_reads": suppressed_unchanged_reads,
             }
         )
+
+        noop_action_signature = _noop_action_signature(msg.tool_calls, tool_results)
+        repeated_noop_streak = _updated_repeated_noop_streak(
+            repeated_noop_streak,
+            noop_action_signature,
+            last_noop_action_signature,
+        )
+        last_noop_action_signature = noop_action_signature
+        if condition.id == "SPECSMITH_FULL" and repeated_noop_streak:
+            target = _tool_call_target(msg.tool_calls[0])
+            recovery = (
+                "Loop guard: that exact action was already applied and made no change. "
+                "Do not repeat identical arguments; use the latest validator evidence and "
+                "current content to choose a materially different action."
+            )
+            agent_transcript.append(
+                {
+                    "turn": turn + 1,
+                    "role": "controller",
+                    "recovery": recovery,
+                    "repeated_noop_action": target,
+                    "count": repeated_noop_streak,
+                }
+            )
+            rework_turns += 1
+            if repeated_noop_streak >= 2:
+                stop_reason = "repeated_tool_loop"
+                break
+            messages.append({"role": "user", "content": recovery})
+            force_tool_call_next_turn = True
 
         action_batch_signature = _action_batch_signature(msg.tool_calls)
         repeated_action_batch_streak = _updated_repeated_action_batch_streak(

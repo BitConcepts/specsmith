@@ -345,6 +345,22 @@ uncertainty; it does not rescue this 30B checkpoint under the tested policies.
 The clean next comparison is a stronger tool-serving model or controller-owned
 milestone decomposition, not more repetitions of these failed cells.
 
+Milestone-packet follow-ups tested that decomposition directly:
+
+| Workflow | Controller | Correct | Tokens | Turns | Milestones |
+|---|---|---:|---:|---:|---:|
+| [30367659754](https://github.com/layer1labs/specsmith/actions/runs/30367659754) | packet | no | 108,021 | 20 | 1/4 |
+| [30367659754](https://github.com/layer1labs/specsmith/actions/runs/30367659754) | packet + adaptive recovery | no | 112,933 | 17 | 1/4 |
+| [30369089983](https://github.com/layer1labs/specsmith/actions/runs/30369089983) | validator authority + atomic repair | no | 18,646 | 5 | 1/4 |
+| [30370203101](https://github.com/layer1labs/specsmith/actions/runs/30370203101) | authority v2 + repeated forcing | no | 98,679 | 20 | 1/4 |
+
+Independent-validator authority and repair-only patches materially bounded
+failure cost, but did not improve milestone completion. Repeated required turns
+regressed by 5.29× relative to the fail-fast authority cell. The native
+Qwen3-Coder-30B checkpoint is therefore rejected for T28 promotion under every
+tested controller; the next credible comparison needs a stronger tool-serving
+model or route.
+
 ## Historical open-frontier admissions
 
 Four current checkpoints were admitted through live route probes and one T28

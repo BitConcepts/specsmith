@@ -668,6 +668,33 @@ premature prose stops at more than five times the best literal-parser failure
 tokens, so it is rejected. No literal-parser row has defined TPCA, and none is
 eligible for paid repetition.
 
+### Milestone packets and evidence authority
+
+Three later workflows compiled T28 into bounded active work packets and recorded
+milestone yield explicitly. All used the same FP8 checkpoint, native
+`qwen3_xml` parser, task, hidden oracle, and 20-turn cap.
+
+| Workflow · policy | Correct | Tokens | Turns | Milestones | Wall time | Finding |
+|---|---:|---:|---:|---:|---:|---|
+| [30367659754](https://github.com/layer1labs/specsmith/actions/runs/30367659754) · packet only | no | 108,021 | 20 | 1/4 | 205.37 s | serialized repair exhausted the cap |
+| [30367659754](https://github.com/layer1labs/specsmith/actions/runs/30367659754) · packet + one-turn adaptive | no | 112,933 | 17 | 1/4 | 187.62 s | one required recovery fired, then prose stop |
+| [30369089983](https://github.com/layer1labs/specsmith/actions/runs/30369089983) · validator authority + atomic repair | no | 18,646 | 5 | 1/4 | 36.30 s | two native patches; fail-fast after prose |
+| [30370203101](https://github.com/layer1labs/specsmith/actions/runs/30370203101) · authority v2 + repeated forcing | no | 98,679 | 20 | 1/4 | 169.75 s | identical already-applied patch loop |
+
+Validator authority withheld contradictory tests authored by the same model run
+and selected one independent repair boundary. Combined with a repair-only atomic
+surface, it reduced failed-run tokens by 82.7% relative to packet-only. That is
+a large failure-cost improvement, not a TPCA result: public tests and the hidden
+oracle still failed. V2 then proved that repeatedly forcing tools converts prose
+failure into expensive no-op looping; it is rejected.
+
+The final trace earned a content-free single-action no-op guard. One identical
+no-op receives recovery and the second stops the loop. Compact evidence schema
+v2 now preserves milestone completion and tokens per completed milestone while
+continuing to exclude prompts, diffs, validator output, governance decisions,
+and transcripts. The three endpoint receipts confirm pause and deletion and
+report approximately `$0.564815` combined compute cost.
+
 ### Research-aligned next improvements
 
 The traces agree with several independent systems results:
@@ -696,9 +723,11 @@ The traces agree with several independent systems results:
   first, then a lower-cost model only inside a proven task envelope, with a
   frontier fallback when correctness or loop guards fail.
 
-These are preregistered experiment candidates, not claims of improvement.
-Each must beat the current exact-route cell without weakening tests, hidden
-oracles, or stop bounds.
+These are experiment candidates, not claims of improvement. The atomic-edit,
+active-packet, evidence-authority, and no-op controls have now been tested; none
+made native Qwen 30B correct. A new candidate must change the model or serving
+capability, not merely repeat forcing. It must beat the current exact-route cell
+without weakening tests, hidden oracles, or stop bounds.
 
 ## Benchmark-driven optimization loop
 

@@ -210,7 +210,11 @@ Do not publish comparative claims when intervals overlap substantially without c
   evidence.
 - Long-horizon milestone maps and requirement-linked change boundaries are
   versioned task metadata, not evaluator evidence. Report only the next
-  incomplete boundary and replace stale progress messages.
+  incomplete boundary and replace stale progress messages. Diagnostic
+  milestone-packet cells compile the active milestone's public criteria,
+  allowed write paths, validator names, and bounded current content into one
+  executable work packet. Raw and compact evidence record completed/total
+  milestones and tokens per completed milestone.
 - Public task-specific validators may declare versioned repair boundaries.
   After a failure, report the authoritative failure plus only its linked files;
   suppress unchanged validator rereads. Keep hidden-oracle failures isolated.
@@ -232,6 +236,11 @@ Do not publish comparative claims when intervals overlap substantially without c
 - Bound endpoint deployment, each provider request, the full cell, and external
   workflow execution separately. Default to zero provider retries so a timeout
   is a visible censored observation rather than hidden duplicate spend.
+- Hash identical single-action no-op arguments without retaining their bodies.
+  Issue one recovery, then stop the second identical no-op as a repeated tool
+  loop. Versioned repair-only tool-surface experiments remain diagnostic when
+  they change the provider schema; promotion still requires one stable compact
+  schema and a passing independent oracle.
 - Current open-frontier admissions use their published coding/agent defaults:
   Kimi K2.7 Code and MiniMax-M3 `temperature=1.0, top_p=0.95`; GLM-5.2
   and DeepSeek-V4 Pro `1.0/1.0`. Provider routes remain pinned and priced

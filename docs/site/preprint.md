@@ -153,6 +153,27 @@ globally required tool choice is actively inefficient for this model/task.
 None of the three rows is eligible for repetition or a frontier-substitution
 claim.
 
+Active milestone packets were then tested on the same literal-parser route.
+[Workflow 30367659754](https://github.com/layer1labs/specsmith/actions/runs/30367659754)
+produced packet-only and one-turn-adaptive failures at 108,021/20 turns and
+112,933/17 turns; each completed one of four milestones. Independent-validator
+authority plus a repair-only atomic surface in
+[workflow 30369089983](https://github.com/layer1labs/specsmith/actions/runs/30369089983)
+reduced the failed diagnostic to 18,646 tokens, five turns, and 36.30 seconds,
+an 82.7% reduction from packet-only. It still completed only one milestone and
+failed both public and hidden correctness.
+
+A final trace-derived forced-repair revision in
+[workflow 30370203101](https://github.com/layer1labs/specsmith/actions/runs/30370203101)
+regressed to 98,679 tokens and 20 turns. After reaching invalid-severity
+handling, the model repeated the same already-applied patch thirteen times.
+This establishes a useful negative result: deterministic evidence authority and
+atomic editing can sharply lower failure cost, while required tool forcing does
+not supply missing semantic capability. None of these rows has defined TPCA or
+supports model substitution. Compact evidence v2 records the 1/4 milestone
+yield, and a final content-free no-op guard stops the second identical retry;
+that guard is locally verified but was not followed by another paid run.
+
 ## Reproduction
 
 The cited workflow retains full traces for the repository's configured

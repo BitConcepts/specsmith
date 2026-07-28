@@ -48,6 +48,9 @@ def _row(**overrides: object) -> dict:
         "stop_reason": "done",
         "expected_files_changed": ["app.py"],
         "files_written": ["app.py"],
+        "milestones_completed": 1,
+        "milestones_total": 4,
+        "tokens_per_completed_milestone": 120.0,
         "languages": ["python"],
         "call_usage": [{"tool_schema_hash": "abc123"}],
         "agent_transcript": [{"content": "private prompt"}],
@@ -76,11 +79,15 @@ def test_export_is_compact_hashed_and_excludes_trace_payloads(tmp_path: Path) ->
     assert rows[0]["workflow_id"] == "12345"
     assert rows[0]["model"] == "gpt-5.6-terra"
     assert rows[0]["tool_schema_hashes"] == "abc123"
+    assert rows[0]["milestones_completed"] == "1"
+    assert rows[0]["milestones_total"] == "4"
+    assert rows[0]["tokens_per_completed_milestone"] == "120.0"
     serialized = cells_path.read_text(encoding="utf-8")
     assert "private prompt" not in serialized
     assert "secret source patch" not in serialized
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert manifest["row_count"] == 1
+    assert manifest["schema"] == "governancebench-evidence-v2"
     assert set(EXCLUDED_FIELDS) <= set(manifest["excluded_fields"])
     assert len(manifest["cells_csv_sha256"]) == 64
     assert len(manifest["cells_canonical_sha256"]) == 64
@@ -195,6 +202,35 @@ def test_committed_qwen_native_tool_evidence_is_verifiable(
     assert rows[0]["workflow_id"] == workflow_id
     assert rows[0]["tokens"] == tokens
     assert rows[0]["stop_reason"] == stop_reason
+    assert rows[0]["passed"] == "False"
+
+
+@pytest.mark.parametrize(
+    ("directory", "workflow_id", "tokens", "turns"),
+    [
+        ("qwen-milestone-packet-30367659754", "30367659754", "108021", "20"),
+        ("qwen-milestone-packet-adaptive-30367659754", "30367659754", "112933", "17"),
+        ("qwen-milestone-authority-30369089983", "30369089983", "18646", "5"),
+        ("qwen-milestone-authority-v2-30370203101", "30370203101", "98679", "20"),
+    ],
+)
+def test_committed_qwen_milestone_evidence_retains_yield(
+    directory: str,
+    workflow_id: str,
+    tokens: str,
+    turns: str,
+) -> None:
+    evidence_dir = _SCRIPTS_DIR.parent / "paper" / "data" / directory
+
+    verified = verify_evidence(evidence_dir / "manifest.json")
+    rows = list(csv.DictReader((evidence_dir / "cells.csv").open(encoding="utf-8")))
+
+    assert verified["schema"] == "governancebench-evidence-v2"
+    assert rows[0]["workflow_id"] == workflow_id
+    assert rows[0]["tokens"] == tokens
+    assert rows[0]["llm_turns"] == turns
+    assert rows[0]["milestones_completed"] == "1"
+    assert rows[0]["milestones_total"] == "4"
     assert rows[0]["passed"] == "False"
 
 

@@ -727,7 +727,7 @@ def specsmith_run(
     """Run a specsmith CLI command with /specsmith prefix or verb shortcut support.
 
     Accepts three input forms:
-      1. Slash prefix:  ``/specsmith save`` or ``/specsmith audit --strict``
+      1. Slash prefix:  ``/specsmith save`` or ``/specsmith audit``
       2. Verb shortcut: ``save``, ``push``, ``pull``, etc.
       3. Passthrough:   ``specsmith <anything>`` or any other full command
 
@@ -738,7 +738,7 @@ def specsmith_run(
 
         specsmith_run("/specsmith save")
         specsmith_run("save")
-        specsmith_run("/specsmith audit --strict")
+        specsmith_run("/specsmith audit")
         specsmith_run("specsmith status")
     """
     cmd = command.strip()

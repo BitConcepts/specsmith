@@ -15,8 +15,9 @@ if __package__ in {None, ""}:
 
 from govern_bench.metrics import model_tier
 
-SCHEMA_VERSION = "governancebench-evidence-v1"
-CELL_FIELDS = (
+LEGACY_SCHEMA_VERSION = "governancebench-evidence-v1"
+SCHEMA_VERSION = "governancebench-evidence-v2"
+LEGACY_CELL_FIELDS = (
     "workflow_id",
     "commit_sha",
     "task",
@@ -47,6 +48,17 @@ CELL_FIELDS = (
     "language_count",
     "tool_schema_hashes",
 )
+CELL_FIELDS = (
+    *LEGACY_CELL_FIELDS[:-2],
+    "milestones_completed",
+    "milestones_total",
+    "tokens_per_completed_milestone",
+    *LEGACY_CELL_FIELDS[-2:],
+)
+SCHEMA_FIELDS = {
+    LEGACY_SCHEMA_VERSION: LEGACY_CELL_FIELDS,
+    SCHEMA_VERSION: CELL_FIELDS,
+}
 EXCLUDED_FIELDS = (
     "agent_transcript",
     "final_diff",
@@ -112,6 +124,9 @@ def _cell(
         "stop_reason": str(row.get("stop_reason") or ""),
         "expected_file_count": len(row.get("expected_files_changed") or []),
         "written_file_count": len(row.get("files_written") or []),
+        "milestones_completed": int(row.get("milestones_completed") or 0),
+        "milestones_total": int(row.get("milestones_total") or 0),
+        "tokens_per_completed_milestone": row.get("tokens_per_completed_milestone"),
         "language_count": len(row.get("languages") or []),
         "tool_schema_hashes": ";".join(hashes),
     }
@@ -191,7 +206,9 @@ def export_evidence(
 def verify_evidence(manifest_path: Path, *, source_dir: Path | None = None) -> dict[str, Any]:
     """Verify one compact bundle and optional downloaded raw artifacts."""
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if manifest.get("schema") != SCHEMA_VERSION:
+    schema = str(manifest.get("schema") or "")
+    expected_fields = SCHEMA_FIELDS.get(schema)
+    if expected_fields is None:
         raise ValueError("unsupported evidence manifest schema")
     cells_path = manifest_path.parent / "cells.csv"
     if not cells_path.is_file():
@@ -200,7 +217,7 @@ def verify_evidence(manifest_path: Path, *, source_dir: Path | None = None) -> d
         raise ValueError("cells.csv SHA-256 mismatch")
     with cells_path.open(encoding="utf-8", newline="") as handle:
         reader = csv.DictReader(handle)
-        if tuple(reader.fieldnames or ()) != CELL_FIELDS:
+        if tuple(reader.fieldnames or ()) != expected_fields:
             raise ValueError("cells.csv field schema mismatch")
         row_count = sum(1 for _row in reader)
     if row_count != int(manifest.get("row_count") or 0):
@@ -226,7 +243,7 @@ def verify_evidence(manifest_path: Path, *, source_dir: Path | None = None) -> d
                 raise ValueError(f"raw source SHA-256 mismatch: {path.name}")
             verified_sources += 1
     return {
-        "schema": SCHEMA_VERSION,
+        "schema": schema,
         "rows": row_count,
         "cells_csv_sha256": manifest["cells_csv_sha256"],
         "verified_sources": verified_sources,

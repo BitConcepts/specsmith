@@ -41,6 +41,7 @@ from govern_bench.harness import (  # noqa: E402
     _milestone_progress,
     _milestone_work_packet,
     _next_incomplete_boundary_paths,
+    _noop_action_signature,
     _openai_sampling_params,
     _provider_max_retries,
     _read_paths_from_calls,
@@ -55,6 +56,7 @@ from govern_bench.harness import (  # noqa: E402
     _serialized_done_tool_call,
     _serialized_function_tool_call,
     _updated_repeated_action_batch_streak,
+    _updated_repeated_noop_streak,
     _updated_repeated_write_streak,
     _updated_serialized_action_count,
     _updated_unchanged_read_only_streak,
@@ -206,6 +208,23 @@ def test_repeated_parallel_action_batch_stops_without_retaining_bodies() -> None
         == 0
     )
     assert _action_batch_signature(first[:1]) == ""
+
+
+def test_identical_single_action_noops_stop_after_one_recovery() -> None:
+    call = NormalizedToolCall(
+        id="patch-1",
+        name="patch_file",
+        arguments='{"path":"backend/main.py","old_text_1":"400","new_text_1":"422"}',
+    )
+    result = [{"role": "tool", "tool_call_id": "patch-1", "content": "NO-OP: already applied"}]
+    signature = _noop_action_signature([call], result)
+
+    assert signature
+    assert _noop_action_signature([call], [{**result[0], "content": "OK: patched"}]) == ""
+    first = _updated_repeated_noop_streak(0, signature, "")
+    second = _updated_repeated_noop_streak(first, signature, signature)
+    assert first == 1
+    assert second == 2
 
 
 def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> None:

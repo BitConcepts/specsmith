@@ -24,6 +24,15 @@ T28/FULL cells all failed at 34,146, 53,451, and 181,884 tokens. The native
 parser is therefore compatible, but none of these controller policies is ready
 for repetition or a substitution claim.
 
+Trace-derived milestone-packet workflows `30367659754`, `30369089983`, and
+`30370203101` also remained incorrect. Packet-only and one-turn-adaptive cells
+used 108,021 and 112,933 tokens. Independent-validator authority plus
+repair-only atomic patches reduced the failed diagnostic to 18,646 tokens and
+five turns, but completed only one of four milestones. Requiring subsequent
+repeated repairs regressed to 98,679 tokens. The controller now records
+milestone yield and stops an identical single-action no-op after one recovery;
+no additional paid repetition is admitted.
+
 ---
 
 ## Quick Start
@@ -104,7 +113,11 @@ Controller experiments are versioned separately from the task profile through
   content;
 - `scalar-parallel-validator-authority`: prioritize requirement-linked
   independent validator failures over supplementary tests authored by the
-  same model run, and expose one repair boundary at a time.
+  same model run, and expose one repair boundary at a time;
+- `scalar-milestone-packet*`: compile only the active milestone's public
+  criteria, allowed paths, and current content; compact completed packets and
+  record milestone yield. Authority variants isolate independent evidence and
+  atomic repair. These are diagnostic cells, not promoted defaults.
 
 Run each causal variant as one `admission` cell on the same commit. Advance a
 variant only when the independent oracle passes and correct-answer token cost

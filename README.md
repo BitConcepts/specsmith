@@ -156,8 +156,11 @@ native-tool route, scoped atomic patching cut a failed T28 attempt from 123.4k
 to 34.9k tokens, but did not make it correct; forcing tool use regressed to
 81.6k. A later literal vLLM `qwen3_xml` run proved native parser compatibility,
 but its atomic, scoped, and required-tool cells still failed at 34.1k, 53.5k,
-and 181.9k tokens. Specsmith therefore does not claim that small models
-generally replace frontier models.
+and 181.9k tokens. Milestone packets also failed; independent-validator
+authority plus atomic repair cut one failed diagnostic to 18.6k tokens, but it
+completed only one of four milestones. Forcing repeated repairs regressed to
+98.7k. Specsmith therefore does not claim that small models generally replace
+frontier models.
 
 See the
 [full benchmark report](https://specsmith.readthedocs.io/stable/efficiency-benchmark/),

@@ -378,7 +378,7 @@ chain and `specsmith checkpoint` to emit a compact continuity anchor.
 Add to your CI pipeline:
 ```yaml
 - name: Specsmith governance audit
-  run: specsmith audit --strict
+  run: specsmith audit
 ```
 
 This will fail the build if the belief system falls below 60% overall certainty.
