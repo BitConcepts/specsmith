@@ -11,6 +11,16 @@ consolidated into the next published release.
 ## [Unreleased]
 
 ### Added
+- Add a guarded ephemeral Hugging Face endpoint lane for
+  `Qwen3-Coder-30B-A3B-Instruct-FP8` on vLLM with the native `qwen3_xml`
+  parser, explicit deployment/request/cell deadlines, zero provider retries,
+  exact tool probes, lifecycle receipts, and best-effort pause/delete cleanup.
+- Archive compact evidence for hosted Qwen3-Coder-30B atomic-patch workflows
+  `30317439173`, `30317963475`, and `30318295306`, plus a separate censored
+  infrastructure receipt for native-parser workflow `30317300977`.
+- Stop an identical multi-file action batch after three repeated recoveries
+  using content-free argument digests. This converts the required-tool trace's
+  11-batch repair loop into a bounded deterministic failure.
 - Complete preregistered substitution-release workflow `30210886840` at
   `75a8c791`: Terra+FULL passed 80/80 mixed-suite cells at 11,737 TPCA versus
   Sol raw at 65/80 and 28,023. Fixed-suite and task-cluster substitution gates

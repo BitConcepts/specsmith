@@ -172,6 +172,49 @@ def test_verifier_rejects_ambiguous_nested_source_names(tmp_path: Path) -> None:
         verify_evidence(manifest_path, source_dir=tmp_path / "download")
 
 
+@pytest.mark.parametrize(
+    ("directory", "workflow_id", "tokens", "stop_reason"),
+    [
+        ("qwen-native-tools-30317439173", "30317439173", "123384", "max_turns"),
+        ("qwen-native-tools-scoped-30317963475", "30317963475", "34892", "text_response"),
+        ("qwen-native-tools-required-30318295306", "30318295306", "81648", "empty_response"),
+    ],
+)
+def test_committed_qwen_native_tool_evidence_is_verifiable(
+    directory: str,
+    workflow_id: str,
+    tokens: str,
+    stop_reason: str,
+) -> None:
+    evidence_dir = _SCRIPTS_DIR.parent / "paper" / "data" / directory
+
+    verified = verify_evidence(evidence_dir / "manifest.json")
+    rows = list(csv.DictReader((evidence_dir / "cells.csv").open(encoding="utf-8")))
+
+    assert verified["rows"] == 1
+    assert rows[0]["workflow_id"] == workflow_id
+    assert rows[0]["tokens"] == tokens
+    assert rows[0]["stop_reason"] == stop_reason
+    assert rows[0]["passed"] == "False"
+
+
+def test_native_qwen_parser_censor_receipt_is_not_a_model_result() -> None:
+    receipt_path = (
+        _SCRIPTS_DIR.parent
+        / "paper"
+        / "data"
+        / "qwen-native-parser-censored-30317300977"
+        / "receipt.json"
+    )
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+
+    assert receipt["status"] == "censored_before_provisioning"
+    assert receipt["endpoint_created"] is False
+    assert receipt["model_request_sent"] is False
+    assert receipt["endpoint_compute_cost_usd"] == 0.0
+    assert receipt["attempted_tool_parser"] == "qwen3_xml"
+
+
 @pytest.mark.parametrize("script", ["export_evidence.py", "compare_runs.py"])
 def test_reproduction_scripts_run_directly_from_repository(script: str) -> None:
     completed = subprocess.run(

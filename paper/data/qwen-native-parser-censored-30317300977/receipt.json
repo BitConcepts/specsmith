@@ -1,0 +1,21 @@
+{
+  "schema": "governancebench-censored-infrastructure-v1",
+  "workflow_id": "30317300977",
+  "workflow_url": "https://github.com/layer1labs/specsmith/actions/runs/30317300977",
+  "commit_sha": "27bb2d60f641484f1240f9e3f45e4831079e6212",
+  "attempted_model": "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8",
+  "attempted_runtime": "vllm/vllm-openai:v0.24.0",
+  "attempted_tool_parser": "qwen3_xml",
+  "status": "censored_before_provisioning",
+  "reason": "The Hugging Face token lacked inference.endpoints.write.",
+  "endpoint_created": false,
+  "model_request_sent": false,
+  "endpoint_compute_cost_usd": 0.0,
+  "cleanup_attempted": true,
+  "cleanup_confirmed": false,
+  "cleanup_note": "Pause and delete also returned the same permission error; no endpoint had been created to clean up.",
+  "source_artifact": {
+    "name": "native-endpoint-cleanup.json",
+    "sha256": "983ea9280f4e3ea35b358d3808918f60b6f1f79cfa4a5dae173485a081a04b1b"
+  }
+}

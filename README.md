@@ -151,9 +151,12 @@ the full long-horizon admission. A later n=1 controller diagnostic reduced
 that correct cell from 72.3k to 26.9k tokens, but it remains 1.53× the 17.5k
 GPT-5.6 Sol envelope and has not passed repeated promotion gates. A fixed-scalar
 milestone bundle independently restored correctness at 71.1k tokens; exact-edit
-and alternate managed Qwen routes failed, while the atomic-patch run was
-provider-censored. Specsmith therefore does not claim that small models
-generally replace frontier models.
+and alternate managed Qwen routes failed. On a hosted Qwen3-Coder-30B
+native-tool route, scoped atomic patching cut a failed T28 attempt from 123.4k
+to 34.9k tokens, but did not make it correct; forcing tool use regressed to
+81.6k. The literal vLLM `qwen3_xml` endpoint attempt was censored before
+provisioning by missing endpoint-write permission. Specsmith therefore does
+not claim that small models generally replace frontier models.
 
 See the
 [full benchmark report](https://specsmith.readthedocs.io/stable/efficiency-benchmark/),

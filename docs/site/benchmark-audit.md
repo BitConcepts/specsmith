@@ -327,8 +327,8 @@ returns repair writes directly to deterministic validation. The public T28
 contract now also enforces the starter Go package and safely composed UI query
 parameters. These changes close observed governance gaps without changing the
 turn cap or hidden oracle. The remaining finding is route/model reliability:
-managed Qwen3.6 is not promoted, and the next Qwen test must change the native
-tool-serving protocol.
+managed Qwen3.6 was not promoted, so the subsequent Qwen tests changed the
+editing surface and tool-serving protocol.
 
 ## 20B–32B audit outcome
 
@@ -411,12 +411,35 @@ The same interface did not rescue Coder-480B, which exhausted 20 turns at
 `milestone_fragmentation`, and `context_dominance`.
 
 An atomic three-hunk `patch_file` control now validates every exact,
-non-overlapping replacement before one write. Its live outcome remains unknown:
+non-overlapping replacement before one write. Its outcome on that DeepInfra
+route remains unknown:
 [workflow 30290375485](https://github.com/layer1labs/specsmith/actions/runs/30290375485)
 was rejected after a Hugging Face HTML 504, and
 [workflow 30291702747](https://github.com/layer1labs/specsmith/actions/runs/30291702747)
 failed the route probe. The audit's fail-closed handling prevented either
 censored attempt from entering the denominator.
+
+The next hosted route isolation supplied Qwen3-Coder-30B with the atomic patch
+schema after a successful structured-tool probe:
+
+| Workflow | Tokens | Stop | Trace diagnosis |
+|---|---:|---|---|
+| [30317439173](https://github.com/layer1labs/specsmith/actions/runs/30317439173) | 123,384 | `max_turns` | seven suppressed model-owned reads, semantically empty patches, and an invalid self-authored test |
+| [30317963475](https://github.com/layer1labs/specsmith/actions/runs/30317963475) | 34,892 | `text_response` | scoped tools cut churn, but the route leaked raw tool text and stopped at 3/10 files |
+| [30318295306](https://github.com/layer1labs/specsmith/actions/runs/30318295306) | 81,648 | `empty_response` | turns 2–12 repeated one identical three-action batch |
+
+The final trace produced a new content-free `repeated_tool_loop` guard for
+parallel action batches. It hashes tool names, targets, and arguments, warns
+after a repeat, and stops on the fourth identical batch. This would have
+eliminated seven of the eleven observed repeated batches; that saving is a
+deterministic trace counterfactual, not a new live token measurement.
+
+Literal-parser workflow
+[30317300977](https://github.com/layer1labs/specsmith/actions/runs/30317300977)
+was rejected by HF before endpoint provisioning because the token lacked
+`inference.endpoints.write`. The cleanup receipt records the same permission
+failure, but there was no created endpoint to delete. The audit classifies this
+as censored infrastructure rather than provider, model, or cleanup leakage.
 
 The final scorer now reruns public task validators before installing the hidden
 oracle, applies at most one FULL default-safe Ruff repair, and executes the

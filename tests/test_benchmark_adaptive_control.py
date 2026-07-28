@@ -14,6 +14,7 @@ if str(_SCRIPTS_DIR) not in sys.path:
 from govern_bench import harness as harness_module  # noqa: E402
 from govern_bench.harness import (  # noqa: E402
     NormalizedToolCall,
+    _action_batch_signature,
     _active_boundary_has_current_evidence,
     _active_tool_names,
     _boundary_context_packet,
@@ -50,6 +51,7 @@ from govern_bench.harness import (  # noqa: E402
     _scope_progress,
     _serialized_done_tool_call,
     _serialized_function_tool_call,
+    _updated_repeated_action_batch_streak,
     _updated_repeated_write_streak,
     _updated_serialized_action_count,
     _updated_unchanged_read_only_streak,
@@ -159,6 +161,48 @@ def test_repeated_write_streak_requires_success_and_unchanged_failure() -> None:
         )
         == 0
     )
+
+
+def test_repeated_parallel_action_batch_stops_without_retaining_bodies() -> None:
+    first = [
+        NormalizedToolCall(
+            id="write-1",
+            name="write_file",
+            arguments='{"path":"one.py","content":"PRIVATE BODY"}',
+        ),
+        NormalizedToolCall(
+            id="patch-1",
+            name="patch_file",
+            arguments=('{"path":"two.py","old_text_1":"OLD PRIVATE","new_text_1":"NEW PRIVATE"}'),
+        ),
+    ]
+    same = [
+        NormalizedToolCall(id=call.id + "-again", name=call.name, arguments=call.arguments)
+        for call in first
+    ]
+    changed = [
+        NormalizedToolCall(
+            id="write-2",
+            name="write_file",
+            arguments='{"path":"three.py","content":"DIFFERENT PRIVATE BODY"}',
+        ),
+        first[1],
+    ]
+
+    signature = _action_batch_signature(first)
+    assert len(signature) == 16
+    assert "PRIVATE" not in signature
+    assert _action_batch_signature(same) == signature
+    assert _updated_repeated_action_batch_streak(0, signature, signature) == 1
+    assert (
+        _updated_repeated_action_batch_streak(
+            2,
+            _action_batch_signature(changed),
+            signature,
+        )
+        == 0
+    )
+    assert _action_batch_signature(first[:1]) == ""
 
 
 def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> None:

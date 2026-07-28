@@ -117,6 +117,32 @@ They are excluded from performance inference. The evidence therefore preserves
 the 26,850-token scalar cell as the best Qwen diagnostic and does not strengthen
 the substitution claim.
 
+A newer atomic-patch series tested
+`Qwen/Qwen3-Coder-30B-A3B-Instruct:scaleway` after an exact structured-tool
+probe. The baseline
+[workflow 30317439173](https://github.com/layer1labs/specsmith/actions/runs/30317439173)
+failed T28 at 123,384 tokens, 20 turns, and four of ten declared files.
+Removing model-owned rereads and narrowing the patch surface in
+[workflow 30317963475](https://github.com/layer1labs/specsmith/actions/runs/30317963475)
+reduced the failed attempt to 34,892 tokens, 10 turns, and 29.86 seconds:
+71.7% fewer tokens, 73.9% lower estimated cost, and 78.3% lower wall time.
+It still wrote only three files and failed the independent oracle, so the
+result is evidence of bounded failure cost, not correctness or substitution.
+Requiring a tool on every turn in
+[workflow 30318295306](https://github.com/layer1labs/specsmith/actions/runs/30318295306)
+regressed to 81,648 tokens and repeated the same three-action batch; that
+variant is rejected.
+
+The separately preregistered literal parser
+[workflow 30317300977](https://github.com/layer1labs/specsmith/actions/runs/30317300977)
+would have served the FP8 checkpoint on vLLM with `qwen3_xml`, but Hugging
+Face rejected endpoint creation because the workflow token lacked
+`inference.endpoints.write`. No endpoint or model request was created and no
+endpoint compute was billed. This is censored infrastructure evidence, not a
+Qwen result. The next valid run requires only the corrected secret permission;
+the model, parser, image, hardware class, probes, and time bounds are already
+locked.
+
 ## Reproduction
 
 The cited workflow retains full traces for the repository's configured

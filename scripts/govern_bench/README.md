@@ -8,23 +8,19 @@ across coding-agent workflows.
 > five repetitions per cell, Cursor rules passed 34/40 at 33.8k TPCA;
 > Specsmith FULL passed 40/40 at 9.0k TPCA.
 
-Managed Qwen runs are diagnostic-only. The current Qwen3.6/DeepInfra T28
-sequence produced one correct 180,895-token cell (`30010219286`), one
-136,360-token oracle failure (`30011743699`), and one 151,666-token cell whose
-hidden oracle passed but public tests and Ruff failed (`30013020354`). Each used
-all 20 turns; stochastic n=1 cells are never combined as repetitions.
-Qwen3-Coder-Next/Novita also failed admission (`30007255204` provider HTTP 400;
-`30007554143` no files written in its T2 control). No managed Qwen route earns
-an n=5 promotion. The next Qwen test must use a native `qwen3_coder` tool parser
-or a Qwen-native agent surface, not a larger turn budget.
-Live tool probes allow 60 seconds for high-latency managed routes but still fail
-closed before the benchmark matrix starts on auth, billing, timeout, or tool errors.
+Managed Qwen runs are diagnostic-only. Hosted Qwen3-Coder-30B atomic-patch
+workflows `30317439173`, `30317963475`, and `30318295306` all failed T28.
+Scoping reduced failure tokens from 123,384 to 34,892, while required tool
+choice regressed to 81,648 and exposed a repeated action-batch loop. No row is
+promotion evidence.
 
-For a future native Qwen admission test, serve `Qwen/Qwen3-Coder-Next` with
-vLLM `--enable-auto-tool-choice --tool-call-parser qwen3_coder`, point
-`BENCH_OPENAI_BASE_URL` at its `/v1` endpoint, and run only T28/FULL at one
-repetition. Preserve parser, runtime, revision, quantization, hardware, and
-sampling metadata; promote only a correct cell.
+Workflow `30317300977` pins a dedicated FP8 vLLM route with
+`--enable-auto-tool-choice --tool-call-parser qwen3_xml`, bounded deployment,
+request, and cell deadlines, zero provider retries, an exact tool probe, and
+cleanup. HF rejected endpoint creation because the secret lacked
+`inference.endpoints.write`; no endpoint compute was incurred. After fixing
+that permission, rerun only the one-cell T28/FULL admission before any
+repetition.
 
 ---
 

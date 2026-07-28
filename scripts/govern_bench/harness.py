@@ -1558,6 +1558,34 @@ def _updated_serialized_action_count(
     return prior
 
 
+def _action_batch_signature(tool_calls: list[NormalizedToolCall]) -> str:
+    """Return a content-free signature for one parallel executable batch."""
+    if len(tool_calls) < 2 or any(call.name not in _SERIAL_ACTION_TOOLS for call in tool_calls):
+        return ""
+    rows = sorted(
+        (
+            call.name,
+            _tool_call_target(call),
+            hashlib.sha256(call.arguments.encode("utf-8")).hexdigest(),
+        )
+        for call in tool_calls
+    )
+    return hashlib.sha256(json.dumps(rows, separators=(",", ":")).encode("utf-8")).hexdigest()[:16]
+
+
+def _updated_repeated_action_batch_streak(
+    prior: int,
+    current_signature: str,
+    last_signature: str,
+) -> int:
+    """Count consecutive identical multi-tool batches without retaining bodies."""
+    if not current_signature:
+        return 0
+    if current_signature == last_signature:
+        return prior + 1
+    return 0
+
+
 def _compact_completed_tool_exchange(
     assistant_message: dict[str, Any],
     tool_calls: list[NormalizedToolCall],
@@ -3463,6 +3491,8 @@ def _run_agent_loop(
     serialized_action_count = 0
     last_write_boundary: tuple[str, ...] = ()
     repeated_write_streak = 0
+    last_action_batch_signature = ""
+    repeated_action_batch_streak = 0
     unchanged_read_only_streak = 0
     active_repair_focus = ""
     active_repair_evidence_signature = ""
@@ -4097,6 +4127,36 @@ def _run_agent_loop(
                 "suppressed_unchanged_reads": suppressed_unchanged_reads,
             }
         )
+
+        action_batch_signature = _action_batch_signature(msg.tool_calls)
+        repeated_action_batch_streak = _updated_repeated_action_batch_streak(
+            repeated_action_batch_streak,
+            action_batch_signature,
+            last_action_batch_signature,
+        )
+        last_action_batch_signature = action_batch_signature
+        if condition.id == "SPECSMITH_FULL" and repeated_action_batch_streak:
+            repeated_targets = sorted(_tool_call_target(call) for call in msg.tool_calls)
+            recovery = (
+                "Loop guard: this exact parallel action batch was already attempted. "
+                "Do not repeat identical arguments; advance to a different requirement "
+                "boundary or call done for controller-owned validation."
+            )
+            messages.append({"role": "user", "content": recovery})
+            agent_transcript.append(
+                {
+                    "turn": turn + 1,
+                    "role": "controller",
+                    "recovery": recovery,
+                    "repeated_tool_batch": repeated_targets,
+                    "batch_signature": action_batch_signature,
+                    "count": repeated_action_batch_streak,
+                }
+            )
+            rework_turns += 1
+            if repeated_action_batch_streak >= 3:
+                stop_reason = "repeated_tool_loop"
+                break
 
         if condition.id == "SPECSMITH_FULL" and invalid_composite_this_turn:
             recovery = (

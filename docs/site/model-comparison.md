@@ -172,56 +172,29 @@ The Qwen3-Coder-Next/Novita experiments also failed admission: `30007255204`
 returned HTTP 400 before the first action, while `30007554143` wrote no files in
 58,149 tokens. Neither demonstrates the native parser.
 
-## Which Qwen to test next
+## Native Qwen experiment
 
-No further managed Qwen repetition is earned. The next experiment must change
-the serving/tool protocol: Qwen3-Coder-Next behind the native `qwen3_coder`
-parser, with one T28 FULL cell as the admission test. It advances to a matched
-Cursor/FULL n=5 screen only after that cell is correct and materially better on
-tokens and wall time. The Novita OpenAI-compatible route is not a substitute for
-this experiment because its trace did not demonstrate native multi-tool
-semantics.
+No same-route repetition was earned. The repository now defines the cleaner
+one-cell experiment in `.github/workflows/qwen-native-bench.yml`:
 
-For a stronger open-weight tool-serving experiment, prefer one of these lanes:
+- `Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8`;
+- vLLM `v0.24.0` with automatic tool choice and `qwen3_xml`;
+- one L40S GPU, 32k context, exact native tool probe, and zero provider retries;
+- 20-minute deployment, 120-second request, and 15-minute cell bounds;
+- pause and delete attempted even when deployment or inference fails.
 
-1. **Qwen-native managed agent:** Qwen Code or Qwen-Agent with a current coder
-   endpoint such as `qwen3-coder-plus`, keeping provider and scaffold metadata.
-2. **Self-hosted coder:** Qwen3-Coder-Next through vLLM/SGLang with automatic
-   tool choice and the `qwen3_coder` parser required by its model card.
-3. **Capacity control:** Qwen3-Coder-480B-A35B only after the same native parser
-   is proven; the Novita result shows that parameter count alone is not enough.
+Workflow `30317300977` reached HF identity resolution but endpoint creation
+returned 403 because `HF_TOKEN` lacked `inference.endpoints.write`. No endpoint
+or model request was created. After that secret permission is corrected, rerun
+the existing workflow once; do not alter the model, parser, hardware, task,
+controller, or timeout bounds. A correct cell must also beat the current
+17,501.7-token Sol envelope before an n=5 screen is justified.
 
-The self-hosted admission experiment is intentionally one cell:
-
-```bash
-vllm serve Qwen/Qwen3-Coder-Next \
-  --enable-auto-tool-choice \
-  --tool-call-parser qwen3_coder
-
-export BENCH_OPENAI_BASE_URL=http://127.0.0.1:8000/v1
-export BENCH_OPENAI_COMPAT_API_KEY=local
-export PYTHONPATH=scripts
-python -m govern_bench.run_bench \
-  --provider openai-compat \
-  --model Qwen/Qwen3-Coder-Next \
-  --task T28 \
-  --condition SPECSMITH_FULL \
-  --reps 1 \
-  --json-output qwen-coder-next-native-t28.json
-```
-
-Record the runtime, parser, model revision, quantization, hardware, sampling,
-and endpoint metadata with the artifact. Without those fields, the result is a
-generic OpenAI-compatible route test rather than evidence about native Qwen tool
-serving.
-
-[Qwen3-Coder-Next](https://huggingface.co/Qwen/Qwen3-Coder-Next) is attractive
-because it is an 80B-total/3B-active coding-agent model with a 256K context and
-explicit long-horizon/tool recovery training. The larger
-[Qwen3-Coder-480B-A35B-Instruct](https://huggingface.co/Qwen/Qwen3-Coder-480B-A35B-Instruct)
-is a useful capacity control, not the default recommendation.
-[Qwen3.6-35B-A3B](https://huggingface.co/Qwen/Qwen3.6-35B-A3B) remains the best
-managed-HF candidate measured here.
+If the literal-parser cell still fails, the next distinct lane is a Qwen-native
+agent scaffold such as Qwen Code or Qwen-Agent, with scaffold and endpoint
+metadata retained. A larger Coder-480B capacity control is lower priority
+because the Novita result already showed that parameter count alone did not
+repair tool-loop behavior.
 
 ## FP8 and base variants
 
@@ -237,7 +210,7 @@ scaffold; compare it as a scientific control, not as the expected winner.
 - A current smaller OpenAI model: degradation and price sensitivity, never as a
   proxy for frontier behavior.
 - Qwen3.6/DeepInfra: managed open-weight portability after adaptive tools.
-- Qwen3-Coder-Next/native parser: self-hosted or Qwen-native tool-serving lane.
+- Qwen3-Coder-30B/native `qwen3_xml`: pinned one-cell endpoint admission.
 
 ## July 24 open-frontier replay
 
@@ -345,6 +318,28 @@ received an HTML 504 and its
 failed the availability probe. Those attempts are provider-censored, not model
 failures. The best measured managed Qwen result therefore remains the 26,850
 token scalar-parallel cell, still 1.53× the Sol envelope.
+
+A subsequent hosted Qwen3-Coder-30B route passed exact structured-tool probes
+and isolated three atomic-patch policies:
+
+| Workflow | Policy | Correct | Tokens | Decision |
+|---|---|---:|---:|---|
+| [30317439173](https://github.com/layer1labs/specsmith/actions/runs/30317439173) | atomic patch | no | 123,384 | reject baseline failure |
+| [30317963475](https://github.com/layer1labs/specsmith/actions/runs/30317963475) | scoped atomic patch | no | 34,892 | retain failure-spend controls; repair correctness |
+| [30318295306](https://github.com/layer1labs/specsmith/actions/runs/30318295306) | scoped + required tools | no | 81,648 | reject forced tool choice |
+
+The scoped variant lowered failure spend materially but did not pass the
+oracle. The required variant repeated one three-action batch and motivated a
+deterministic batch-loop guard. The provider does not disclose whether its
+backend used `qwen3_xml`, so these are hosted structured-tool results.
+
+The literal vLLM `qwen3_xml` lane in
+[workflow 30317300977](https://github.com/layer1labs/specsmith/actions/runs/30317300977)
+was censored before endpoint creation because the HF token lacked
+`inference.endpoints.write`. It incurred no endpoint compute and says nothing
+about model correctness. Once that permission is present, the already pinned
+FP8 checkpoint, vLLM image, parser, hardware, probe, and timeouts provide the
+clean next route comparison.
 
 ## Historical open-frontier admissions
 

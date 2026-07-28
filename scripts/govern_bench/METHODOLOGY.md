@@ -224,6 +224,14 @@ Do not publish comparative claims when intervals overlap substantially without c
   Qwen routes: Coder Next `temperature=1.0, top_p=0.95`; Coder 480B-A35B
   `0.7/0.8`; Qwen3.6 coding `0.6/0.95`. Record the exact hosted route because
   parser, template, quantization, and latency are part of the result.
+- Dedicated Qwen3-Coder-30B FP8 admissions pin vLLM, `qwen3_xml`, hardware,
+  context length, and model revision as experiment variables. Hosted
+  structured-tool probes demonstrate route compatibility but must not be
+  described as proof of a specific server-side parser when the provider does
+  not disclose it.
+- Bound endpoint deployment, each provider request, the full cell, and external
+  workflow execution separately. Default to zero provider retries so a timeout
+  is a visible censored observation rather than hidden duplicate spend.
 - Current open-frontier admissions use their published coding/agent defaults:
   Kimi K2.7 Code and MiniMax-M3 `temperature=1.0, top_p=0.95`; GLM-5.2
   and DeepSeek-V4 Pro `1.0/1.0`. Provider routes remain pinned and priced

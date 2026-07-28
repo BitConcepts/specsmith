@@ -544,8 +544,8 @@ misreported as benchmark failures.
 The result narrows the claim precisely: Specsmith can help a 27B model finish
 this controlled long-horizon task, but the current serving/controller pair
 does not replace frontier Sol on token efficiency. No n=5 spend is justified
-until a native parser, patch-oriented edit interface, or other measured
-serving boundary materially reduces the 72.3k-token cell.
+from that result; later sections test parser, patch, and other serving-boundary
+changes rather than pooling them as repetitions.
 
 Two final causal checks closed this managed-route loop. Finish-reason
 telemetry and scalar fallback after an invalid composite payload produced a
@@ -620,9 +620,40 @@ evidence.
 
 This closes the managed-route decision. The bundle proves that provider-visible
 tool structure can restore correctness, but its 71,090 TPCA is 4.06× the
-17,501.7-token Sol envelope and 2.65× the 26,850-token scalar winner. The atomic
-patch remains a tested controller capability awaiting a different healthy
-serving route; no further DeepInfra repetition is justified.
+17,501.7-token Sol envelope and 2.65× the 26,850-token scalar winner. This
+closed further DeepInfra repetition and advanced the atomic patch to the hosted
+route and literal-parser experiments below.
+
+### Hosted native-tool and literal-parser isolation
+
+The next route used `Qwen/Qwen3-Coder-30B-A3B-Instruct:scaleway`. It passed an
+exact structured-tool probe before each paid cell, but the hosted service does
+not expose its server-side parser flag; these rows are native-tool route
+evidence, not proof of literal `qwen3_xml`.
+
+| Workflow · controller | Correct | Tokens | Cost | Turns | Wall time | Finding |
+|---|---:|---:|---:|---:|---:|---|
+| [30317439173](https://github.com/layer1labs/specsmith/actions/runs/30317439173) · atomic patch | no | 123,384 | $0.040616 | 20 | 137.44 s | 4/10 files; turn exhaustion |
+| [30317963475](https://github.com/layer1labs/specsmith/actions/runs/30317963475) · scoped atomic patch | no | 34,892 | $0.010609 | 10 | 29.86 s | 3/10 files; premature text stop |
+| [30318295306](https://github.com/layer1labs/specsmith/actions/runs/30318295306) · scoped + required tools | no | 81,648 | $0.040819 | 13 | 209.69 s | one file; repeated three-action batch and empty response |
+
+Scoping cut failed-run tokens by 71.7%, estimated cost by 73.9%, rework turns
+by 73.3%, and wall time by 78.3% relative to the hosted baseline. Because all
+three cells failed the unchanged independent oracle, TPCA remains undefined.
+Forcing tools reversed much of the saving and is rejected. The trace instead
+earned a deterministic repeated-batch guard: an identical multi-file action
+batch receives bounded recovery and stops on its fourth occurrence, using only
+content-free target and argument digests.
+
+The literal parser lane is
+[workflow 30317300977](https://github.com/layer1labs/specsmith/actions/runs/30317300977).
+It pins `Qwen3-Coder-30B-A3B-Instruct-FP8`, vLLM `v0.24.0`, `qwen3_xml`,
+one L40S GPU, a 32k context, zero provider retries, a 120-second request
+timeout, a 15-minute cell timeout, and guaranteed cleanup steps. Endpoint
+creation was rejected before provisioning because the HF secret lacked
+`inference.endpoints.write`; therefore no endpoint, model request, or compute
+charge existed. This censored attempt is not included in correctness or
+efficiency denominators. Rerun it only after correcting that secret scope.
 
 ### Research-aligned next improvements
 

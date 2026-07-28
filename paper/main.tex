@@ -328,6 +328,28 @@ from correctness and efficiency inference. These results show that tool-serving
 structure can alter correctness while leaving the broad frontier-replacement
 claim unsupported.
 
+A follow-up used the same atomic interface with the hosted
+Qwen3-Coder-30B-A3B route after an exact structured-tool probe. The baseline
+failed at 123,384 tokens, 20 turns, and four of ten files. A scoped variant
+removed model-owned rereads and reduced the failed attempt to 34,892 tokens,
+10 turns, and 29.86 seconds---reductions of 71.7 percent in tokens, 73.9
+percent in estimated cost, and 78.3 percent in wall time. It still failed the
+independent oracle, so this is a failure-cost result rather than a TPCA or
+substitution result. Requiring a tool on every turn regressed to 81,648 tokens
+and repeated one three-action batch across eleven turns. We reject required
+tool choice and add a content-free batch-repeat guard that would stop the
+observed sequence after its fourth identical batch.
+
+We separately preregistered an ephemeral endpoint for the official FP8
+checkpoint, vLLM 0.24.0, and the native \texttt{qwen3\_xml} parser
+\citep{qwen3coder30b,vllmtoolcalling,hfendpoints}. Endpoint creation was
+rejected before provisioning because the credential lacked
+\texttt{inference.endpoints.write}; no model request or endpoint compute
+occurred. This censored infrastructure attempt is archived separately and is
+not evidence about model behavior. The hosted provider does not disclose its
+server-side parser, so successful structured-tool probes on that route are
+not described as literal \texttt{qwen3\_xml} evidence.
+
 \section{Threats to Validity}
 
 \paragraph{Construct validity.}

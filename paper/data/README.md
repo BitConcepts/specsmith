@@ -27,6 +27,10 @@ fields.
 | `controller-30287972114` | 30287972114 | Initial fixed-scalar milestone-bundle diagnostics |
 | `controller-30289264577` | 30289264577 | Evidence-aware exact-edit diagnostic; unchanged repair failure |
 | `controller-30289266484` | 30289266484 | Qwen3.6 bundle correct at 71,090 tokens; Coder-480B failed |
+| `qwen-native-parser-censored-30317300977` | 30317300977 | Literal vLLM `qwen3_xml` endpoint attempt censored before provisioning by missing HF endpoint-write permission |
+| `qwen-native-tools-30317439173` | 30317439173 | Hosted Qwen3-Coder-30B atomic-patch baseline; failed at 123,384 tokens |
+| `qwen-native-tools-scoped-30317963475` | 30317963475 | Scoped atomic-patch diagnostic; failed at 34,892 tokens after cutting failure spend |
+| `qwen-native-tools-required-30318295306` | 30318295306 | Required-tool diagnostic; failed at 81,648 tokens in a repeated action-batch loop |
 
 Full raw rows, traces, diffs, and validator output remain in the cited GitHub
 Actions artifacts for the configured retention period. They are not copied
