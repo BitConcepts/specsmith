@@ -182,6 +182,8 @@ def test_native_workflow_always_cleans_up_and_fails_closed() -> None:
     assert "huggingface_hub==1.25.1" in workflow
     assert 'NATIVE_QWEN_TOOL_PARSER: "qwen3_xml"' in workflow
     assert 'BENCH_PROVIDER_MAX_RETRIES: "0"' in workflow
+    assert "- required-only" in workflow
+    assert 'EXPERIMENTS="scalar-native-patch-scoped-required"' in workflow
     assert "if: always()" in workflow
     assert "native_endpoint.py cleanup" in workflow
     assert "Fail closed on benchmark errors" in workflow

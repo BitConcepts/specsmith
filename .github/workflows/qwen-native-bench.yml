@@ -4,12 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       experiment_set:
-        description: "Atomic patch alone, or matched atomic + boundary-scoped read control."
+        description: "Select the bounded native-parser controller cells to execute."
         required: true
         type: choice
         options:
           - atomic-and-scoped
           - atomic-only
+          - required-only
         default: atomic-and-scoped
       deploy_timeout_seconds:
         description: "Hard deployment deadline."
@@ -87,7 +88,11 @@ jobs:
           BENCH_PROVIDER_MAX_RETRIES: "0"
           BENCH_MAX_TURNS: "12"
         run: |
-          EXPERIMENTS="scalar-native-patch"
+          if [ "${{ inputs.experiment_set }}" = "required-only" ]; then
+            EXPERIMENTS="scalar-native-patch-scoped-required"
+          else
+            EXPERIMENTS="scalar-native-patch"
+          fi
           if [ "${{ inputs.experiment_set }}" = "atomic-and-scoped" ]; then
             EXPERIMENTS="$EXPERIMENTS scalar-native-patch-scoped"
           fi
