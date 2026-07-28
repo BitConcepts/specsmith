@@ -75,7 +75,6 @@ def deployment_kwargs(
         "instance_size": instance_size,
         "min_replica": 1,
         "max_replica": 1,
-        "scale_to_zero_timeout": 15,
         "custom_image": {
             "healthRoute": "/health",
             "url": image,

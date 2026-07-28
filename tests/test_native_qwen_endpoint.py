@@ -29,6 +29,7 @@ def test_deployment_spec_pins_native_parser_and_bounded_context() -> None:
     assert spec["repository"] == DEFAULT_MODEL
     assert spec["custom_image"]["url"] == DEFAULT_IMAGE
     assert spec["min_replica"] == spec["max_replica"] == 1
+    assert "scale_to_zero_timeout" not in spec
     assert spec["type"] == "authenticated"
     assert spec["container_args"][0] == "/repository"
     assert spec["container_args"][-2:] == ["--tool-call-parser", DEFAULT_TOOL_PARSER]
