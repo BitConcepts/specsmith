@@ -320,6 +320,13 @@ def _result_rows(
             "llm_turns": r.llm_turns,
             "wall_clock_s": round(r.wall_clock_s, 3),
             "stop_reason": r.stop_reason,
+            "milestones_completed": r.milestones_completed,
+            "milestones_total": r.milestones_total,
+            "tokens_per_completed_milestone": (
+                round(r.total_tokens / r.milestones_completed, 3)
+                if r.milestones_completed
+                else None
+            ),
             "lint_passed": r.lint_passed,
             "tests_passed": r.tests_passed,
             "project_tests_passed": r.project_tests_passed,

@@ -16,6 +16,10 @@ languages:
   - css
 milestones:
   - name: shared contract and API
+    criteria:
+      - "Schema declares exactly the seven incident fields, both enums, nullable acknowledged_at, required fields, and rejects additional properties."
+      - "One resettable in-memory store powers create (201), composable list filters, acknowledge (404 when absent), and the unchanged health route."
+      - "Public backend tests cover create, filtering, acknowledgement, missing IDs, and isolated store state."
     files:
       - contracts/incident.schema.json
       - backend/main.py
@@ -25,12 +29,20 @@ milestones:
       - "pytest"
       - "python tools/validate_api.py"
   - name: worker boundary
+    criteria:
+      - "Exported NormalizeAlert rejects missing title, service, or severity and rejects values outside the shared severity enum."
+      - "Normalized incidents use every shared field name with status=open and non-empty id and created_at defaults."
+      - "The worker remains package main, uses the standard library, and tests valid and invalid inputs."
     files:
       - worker/main.go
       - worker/main_test.go
     validators:
       - "go -C worker test ./..."
   - name: interactive UI journey
+    criteria:
+      - "API requests compose severity and status filters without one replacing the other."
+      - "The React UI exposes accessible loading, error, empty, list, filter, and acknowledge flows and refreshes after acknowledgement."
+      - "Playwright covers load, filtering, and acknowledgement against the shared contract."
     files:
       - ui/src/api.ts
       - ui/src/App.tsx
@@ -40,6 +52,8 @@ milestones:
       - "python tools/validate_contract.py"
       - "python tools/validate_ui.py"
   - name: architecture evidence
+    criteria:
+      - "Architecture documentation explains ownership, end-to-end data flow, failure handling, contract alignment, and why storage remains in memory."
     files:
       - docs/architecture.md
 estimated_tokens_ungoverned: 32000

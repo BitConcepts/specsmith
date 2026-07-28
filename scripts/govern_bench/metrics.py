@@ -365,6 +365,8 @@ class RunResult:
     llm_turns: int = 0
     wall_clock_s: float = 0.0
     stop_reason: str = ""
+    milestones_completed: int = 0
+    milestones_total: int = 0
 
     # Error tracking
     error: str | None = None

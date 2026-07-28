@@ -23,6 +23,7 @@ from govern_bench.harness import (  # noqa: E402
     _can_recover_nonterminal_narration,
     _cell_timeout_seconds,
     _compact_completed_boundary_context,
+    _completed_milestone_count,
     _consolidate_write_receipts,
     _controller_experiment,
     _controller_tool_choice,
@@ -38,6 +39,7 @@ from govern_bench.harness import (  # noqa: E402
     _looks_like_nonterminal_narration,
     _milestone_contract,
     _milestone_progress,
+    _milestone_work_packet,
     _next_incomplete_boundary_paths,
     _openai_sampling_params,
     _provider_max_retries,
@@ -317,6 +319,21 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
             ["read_file", "write_file", "write_milestone", "done"],
             "auto",
         ),
+        (
+            "scalar-milestone-packet",
+            ["write_file", "write_milestone", "done"],
+            "auto",
+        ),
+        (
+            "scalar-milestone-packet-adaptive",
+            ["write_file", "write_milestone", "done"],
+            "auto",
+        ),
+        (
+            "scalar-milestone-packet-patch",
+            ["write_file", "write_milestone", "patch_file", "done"],
+            "auto",
+        ),
     ],
 )
 def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
@@ -335,7 +352,7 @@ def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
     assert _controller_tool_choice("SPECSMITH_FULL", experiment) == tool_choice
     assert _controller_tool_choice("UNGOVERNED", experiment) == "auto"
     contract = _milestone_contract(task)
-    if experiment == "scalar-milestone-bundle":
+    if experiment.startswith("scalar-milestone"):
         assert "one write_milestone call" in contract
         assert "fixed path_N/content_N scalar pairs" in contract
         milestone_tool = next(
@@ -345,6 +362,10 @@ def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
         )
         properties = milestone_tool["function"]["parameters"]["properties"]
         assert not any(spec.get("type") == "array" for spec in properties.values())
+        if experiment.startswith("scalar-milestone-packet"):
+            assert milestone_tool["function"]["strict"] is True
+        if experiment == "scalar-milestone-packet-patch":
+            assert "prefer one atomic patch_file call" in contract
     elif experiment.startswith("scalar-parallel") or experiment.startswith("scalar-native-patch"):
         assert "Issue independent write_file calls together" in contract
         assert "use write_files" not in contract
@@ -379,6 +400,12 @@ def test_benchmark_workflow_exposes_scoped_native_patch_experiment() -> None:
     )
     assert "scalar-native-patch-scoped" in workflow
     assert "scalar-native-patch-scoped-required" in workflow
+    native_workflow = (
+        Path(__file__).parent.parent / ".github" / "workflows" / "qwen-native-bench.yml"
+    ).read_text(encoding="utf-8")
+    assert "milestone-packets" in native_workflow
+    assert "scalar-milestone-packet-adaptive" in native_workflow
+    assert "scalar-milestone-packet-patch" in native_workflow
 
 
 def test_benchmark_deadlines_and_retry_policy_are_bounded(
@@ -457,6 +484,41 @@ def test_compact_experiment_evicts_completed_boundary_bodies_and_write_history(
     )
     assert "one.py" in serialized and "two.py" in serialized
     assert "stale turn receipt" not in serialized
+
+
+def test_milestone_packet_compiles_only_the_active_public_boundary(tmp_path: Path) -> None:
+    task = get_task("T28")
+    packet = _milestone_work_packet(task, [])
+
+    assert "Active work packet 1/4: shared contract and API" in packet
+    assert "contracts/incident.schema.json" in packet
+    assert "Schema declares exactly the seven incident fields" in packet
+    assert "Controller-owned checks after the write" in packet
+    assert "worker/main.go" not in packet
+    assert "NormalizeAlert rejects" not in packet
+
+    first_milestone = [str(path) for path in task.milestones[0]["files"]]
+    assert _completed_milestone_count(task, first_milestone) == 1
+    next_packet = _milestone_work_packet(task, first_milestone)
+    assert "Active work packet 2/4: worker boundary" in next_packet
+    assert "NormalizeAlert rejects" in next_packet
+    assert "Schema declares exactly" not in next_packet
+
+    for path in first_milestone:
+        target = tmp_path / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(f"starter {path}\n", encoding="utf-8")
+    evidence: dict[str, tuple[str, int]] = {}
+    context = _boundary_context_packet(
+        tmp_path,
+        first_milestone,
+        evidence,
+        turn=0,
+        replaceable=True,
+        work_packet=packet,
+    )
+    assert packet in context
+    assert "starter backend/main.py" in context
 
 
 def test_native_edit_interface_is_exact_bounded_and_tracks_changes(tmp_path: Path) -> None:
@@ -598,6 +660,22 @@ def test_scalar_milestone_bundle_validates_pairs_before_writing(tmp_path: Path) 
     assert duplicate.startswith("ERROR: duplicate milestone path")
     assert duplicate_paths == []
     assert not (tmp_path / "same.py").exists()
+
+    out_of_scope, out_of_scope_paths = _exec_write_milestone(
+        tmp_path,
+        {
+            "path_1": "allowed.py",
+            "content_1": "ALLOWED = True\n",
+            "path_2": "later.py",
+            "content_2": "LATER = True\n",
+        },
+        written,
+        allowed_paths=["allowed.py"],
+    )
+    assert "outside the active milestone boundary" in out_of_scope
+    assert out_of_scope_paths == []
+    assert not (tmp_path / "allowed.py").exists()
+    assert not (tmp_path / "later.py").exists()
 
 
 def test_accepted_aee_work_uses_one_compact_schema_and_bounded_scope() -> None:

@@ -11,6 +11,8 @@ on:
           - atomic-and-scoped
           - atomic-only
           - required-only
+          - milestone-packets
+          - milestone-patch-only
         default: atomic-and-scoped
       deploy_timeout_seconds:
         description: "Hard deployment deadline."
@@ -88,7 +90,11 @@ jobs:
           BENCH_PROVIDER_MAX_RETRIES: "0"
           BENCH_MAX_TURNS: "12"
         run: |
-          if [ "${{ inputs.experiment_set }}" = "required-only" ]; then
+          if [ "${{ inputs.experiment_set }}" = "milestone-packets" ]; then
+            EXPERIMENTS="scalar-milestone-packet scalar-milestone-packet-adaptive"
+          elif [ "${{ inputs.experiment_set }}" = "milestone-patch-only" ]; then
+            EXPERIMENTS="scalar-milestone-packet-patch"
+          elif [ "${{ inputs.experiment_set }}" = "required-only" ]; then
             EXPERIMENTS="scalar-native-patch-scoped-required"
           else
             EXPERIMENTS="scalar-native-patch"

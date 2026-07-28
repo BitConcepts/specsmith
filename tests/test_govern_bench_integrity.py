@@ -1474,6 +1474,90 @@ def test_agent_loop_applies_and_records_required_scalar_protocol(
     assert result.call_usage[0]["tool_choice"] == "required"
 
 
+@pytest.mark.parametrize(
+    ("experiment", "expected_choices"),
+    [
+        ("scalar-milestone-packet", ["auto", "auto", "auto"]),
+        ("scalar-milestone-packet-adaptive", ["auto", "required", "auto"]),
+    ],
+)
+def test_milestone_packet_requires_a_tool_for_only_one_recovery_turn(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    experiment: str,
+    expected_choices: list[str],
+) -> None:
+    task = get_task("T1")
+    project = tmp_path / "project"
+    _copy_project_fixture(_get_project_dir(task.project), project)
+    target = task.expected_files_changed[0]
+    responses = iter(
+        [
+            NormalizedLLMResponse(
+                message=NormalizedAssistantMessage(content="I will now implement the change."),
+                usage=NormalizedUsage(prompt_tokens=10, completion_tokens=2),
+            ),
+            NormalizedLLMResponse(
+                message=NormalizedAssistantMessage(
+                    tool_calls=[
+                        NormalizedToolCall(
+                            id="write-1",
+                            name="write_file",
+                            arguments=json.dumps(
+                                {"path": target, "content": "# bounded implementation\n"}
+                            ),
+                        )
+                    ]
+                ),
+                usage=NormalizedUsage(prompt_tokens=11, completion_tokens=3),
+            ),
+            NormalizedLLMResponse(
+                message=NormalizedAssistantMessage(content="Intentional stop."),
+                usage=NormalizedUsage(prompt_tokens=12, completion_tokens=2),
+            ),
+        ]
+    )
+    choices: list[str] = []
+
+    def fake_call(**kwargs: object) -> NormalizedLLMResponse:
+        choices.append(str(kwargs["tool_choice"]))
+        return next(responses)
+
+    monkeypatch.setenv("BENCH_CONTROLLER_EXPERIMENT", experiment)
+    monkeypatch.setattr(harness_module, "_call_llm", fake_call)
+    monkeypatch.setattr(
+        harness_module,
+        "_run_governance_controller",
+        lambda *_args: {
+            "decision": "accepted",
+            "work_item_id": "WI-BENCH",
+            "requirement_ids": ["REQ-BENCH-001"],
+            "test_case_ids": ["TEST-BENCH-001"],
+            "confidence_target": 0.7,
+        },
+    )
+    monkeypatch.setattr(
+        harness_module,
+        "_run_standard_validation",
+        lambda *_args: (False, "", False, "", False, "hidden failure"),
+    )
+
+    result = _run_agent_loop(
+        provider="openai",
+        client=object(),
+        model="test-model",
+        task=task,
+        condition=get_condition("SPECSMITH_FULL"),
+        project_root=project,
+        specsmith_dir=tmp_path,
+        max_turns=3,
+    )
+
+    assert choices == expected_choices
+    assert [item["tool_choice"] for item in result.call_usage] == expected_choices
+    assert any(event.get("nonterminal_narration") for event in result.agent_transcript)
+
+
 def test_agent_loop_replays_compact_valid_history_after_write(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

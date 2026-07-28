@@ -843,14 +843,17 @@ def audit_benchmark_rows(
 
     fragmented: list[dict[str, Any]] = []
     for row in valid:
-        writes = _tool_targets(row, "write_file:")
         is_long = str(row.get("horizon") or "").casefold() == "long"
+        milestones_total = _as_int(row.get("milestones_total"))
+        milestones_completed = _as_int(row.get("milestones_completed"))
+        writes = _tool_targets(row, "write_file:")
+        legacy_fragmented = len(writes) >= 6 and len(_top_level_components(writes)) >= 3
+        measured_fragmented = milestones_total > 0 and milestones_completed < milestones_total
         if (
             is_long
             and not row.get("passed")
             and row.get("stop_reason") == "max_turns"
-            and len(writes) >= 6
-            and len(_top_level_components(writes)) >= 3
+            and (measured_fragmented or legacy_fragmented)
         ):
             fragmented.append(row)
     if fragmented:
@@ -860,8 +863,8 @@ def audit_benchmark_rows(
                 severity="high",
                 title="Long-horizon work advanced serially without reaching a milestone boundary",
                 evidence=(
-                    f"{len(fragmented)} row(s) changed at least three components but exhausted "
-                    "the turn budget before completion."
+                    f"{len(fragmented)} row(s) exhausted the turn budget with incomplete "
+                    "milestone evidence; explicit completion counts are retained when available."
                 ),
                 recommendation=(
                     "Expose a bounded controller-owned milestone map, batch independent edits "

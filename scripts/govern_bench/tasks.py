@@ -125,6 +125,11 @@ class BenchTask:
                         for command in (item.get("validators") or [])
                         if str(command).strip()
                     ],
+                    "criteria": [
+                        str(criterion)
+                        for criterion in (item.get("criteria") or [])
+                        if str(criterion).strip()
+                    ],
                 }
                 for item in (data.get("milestones") or [])
                 if isinstance(item, dict)

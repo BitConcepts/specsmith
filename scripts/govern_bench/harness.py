@@ -89,6 +89,9 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-parallel-write-only",
         "scalar-parallel-validator-authority",
         "scalar-milestone-bundle",
+        "scalar-milestone-packet",
+        "scalar-milestone-packet-adaptive",
+        "scalar-milestone-packet-patch",
     }
 )
 
@@ -302,6 +305,9 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-parallel-write-only",
         "scalar-parallel-validator-authority",
         "scalar-milestone-bundle",
+        "scalar-milestone-packet",
+        "scalar-milestone-packet-adaptive",
+        "scalar-milestone-packet-patch",
     }
 
 
@@ -318,6 +324,9 @@ def _compact_context_experiment(experiment: str) -> bool:
     return experiment in {
         "scalar-parallel-compact",
         "scalar-parallel-compact-auto",
+        "scalar-milestone-packet",
+        "scalar-milestone-packet-adaptive",
+        "scalar-milestone-packet-patch",
     }
 
 
@@ -331,6 +340,7 @@ def _native_edit_experiment(experiment: str) -> bool:
         "scalar-native-patch",
         "scalar-native-patch-scoped",
         "scalar-native-patch-scoped-required",
+        "scalar-milestone-packet-patch",
     }
 
 
@@ -339,6 +349,7 @@ def _native_patch_experiment(experiment: str) -> bool:
         "scalar-native-patch",
         "scalar-native-patch-scoped",
         "scalar-native-patch-scoped-required",
+        "scalar-milestone-packet-patch",
     }
 
 
@@ -347,6 +358,9 @@ def _scoped_read_experiment(experiment: str) -> bool:
     return experiment in {
         "scalar-native-patch-scoped",
         "scalar-native-patch-scoped-required",
+        "scalar-milestone-packet",
+        "scalar-milestone-packet-adaptive",
+        "scalar-milestone-packet-patch",
     }
 
 
@@ -427,7 +441,29 @@ def _repair_tool_label(experiment: str) -> str:
 
 
 def _milestone_bundle_experiment(experiment: str) -> bool:
-    return experiment == "scalar-milestone-bundle"
+    return experiment in {
+        "scalar-milestone-bundle",
+        "scalar-milestone-packet",
+        "scalar-milestone-packet-adaptive",
+        "scalar-milestone-packet-patch",
+    }
+
+
+def _milestone_packet_experiment(experiment: str) -> bool:
+    """Return whether active milestone work packets own model context and scope."""
+    return experiment in {
+        "scalar-milestone-packet",
+        "scalar-milestone-packet-adaptive",
+        "scalar-milestone-packet-patch",
+    }
+
+
+def _adaptive_required_experiment(experiment: str) -> bool:
+    """Require a tool for one recovery turn, never for the whole agent loop."""
+    return experiment in {
+        "scalar-milestone-packet-adaptive",
+        "scalar-milestone-packet-patch",
+    }
 
 
 def _validator_authority_experiment(experiment: str) -> bool:
@@ -918,6 +954,17 @@ def _focused_validator_repair_progress(task: BenchTask, failures: list[str]) -> 
     )
 
 
+def _focused_validator_repair_paths(task: BenchTask, failures: list[str]) -> list[str]:
+    """Return the stable path scope for the active public-validator failure."""
+    return list(
+        dict.fromkeys(
+            path
+            for _source, boundary_paths in _focused_validator_repair_boundaries(task, failures)
+            for path in boundary_paths
+        )
+    )
+
+
 def _build_run_validator_tool(task: BenchTask) -> dict | None:
     commands = _validator_commands_for_task(task)
     patterns = _validator_patterns_for_task(task)
@@ -1005,7 +1052,8 @@ def _build_active_tools(
                 [
                     tool
                     for tool in scalar_tools
-                    if tool["function"]["name"] in {"write_file", "patch_file", "done"}
+                    if tool["function"]["name"]
+                    in {"write_file", "write_milestone", "patch_file", "done"}
                 ]
             )
         if _native_patch_experiment(_controller_experiment()):
@@ -1270,17 +1318,64 @@ def _scope_contract(task: BenchTask) -> str:
 
 def _milestone_progress(task: BenchTask, files_written: list[str]) -> str:
     """Return the next incomplete milestone without exposing evaluator evidence."""
+    active = _active_milestone(task, files_written)
+    if active is not None:
+        index, milestone, remaining = active
+        name = str(milestone.get("name") or f"milestone {index}")
+        return f"Active milestone {index}/{len(task.milestones)} ({name}); remaining: " + ", ".join(
+            remaining
+        )
+    return "All declared milestone files have implementation evidence; call done for validation."
+
+
+def _active_milestone(
+    task: BenchTask,
+    files_written: list[str],
+) -> tuple[int, dict[str, object], list[str]] | None:
+    """Return the first incomplete milestone and its remaining file boundary."""
     written = {_normalized_history_path(path) for path in files_written}
     for index, milestone in enumerate(task.milestones, start=1):
-        name = str(milestone.get("name") or f"milestone {index}")
         files = [str(path) for path in (milestone.get("files") or [])]
         remaining = [path for path in files if _normalized_history_path(path) not in written]
         if remaining:
-            return (
-                f"Active milestone {index}/{len(task.milestones)} ({name}); remaining: "
-                + ", ".join(remaining)
-            )
-    return "All declared milestone files have implementation evidence; call done for validation."
+            return index, milestone, remaining
+    return None
+
+
+def _completed_milestone_count(task: BenchTask, files_written: list[str]) -> int:
+    """Count coherent milestone boundaries with write evidence for every file."""
+    written = {_normalized_history_path(path) for path in files_written}
+    return sum(
+        1
+        for milestone in task.milestones
+        if milestone.get("files")
+        and {_normalized_history_path(path) for path in (milestone.get("files") or [])}.issubset(
+            written
+        )
+    )
+
+
+def _milestone_work_packet(task: BenchTask, files_written: list[str]) -> str:
+    """Compile one concise executable packet from public milestone metadata."""
+    active = _active_milestone(task, files_written)
+    if active is None:
+        return "Active work packet: all milestone files are written; call done for validation."
+    index, milestone, remaining = active
+    name = str(milestone.get("name") or f"milestone {index}")
+    criteria = [str(item) for item in (milestone.get("criteria") or []) if str(item).strip()]
+    validators = [str(item) for item in (milestone.get("validators") or []) if str(item).strip()]
+    lines = [
+        f"Active work packet {index}/{len(task.milestones)}: {name}",
+        f"Allowed write paths: {', '.join(remaining)}",
+        "Public completion criteria:",
+        *(f"- {criterion}" for criterion in criteria),
+        "Execution contract: implement this milestone now in one write_milestone call. "
+        "The controller owns validation; do not run or inspect validators and do not write "
+        "outside the allowed paths.",
+    ]
+    if validators:
+        lines.append("Controller-owned checks after the write: " + ", ".join(validators))
+    return "\n".join(lines)
 
 
 def _scope_progress(task: BenchTask, files_written: list[str]) -> str:
@@ -1323,6 +1418,7 @@ def _boundary_context_packet(
     *,
     turn: int,
     replaceable: bool = False,
+    work_packet: str = "",
 ) -> str:
     """Return one bounded controller-owned packet for the active boundary."""
     chunks: list[str] = []
@@ -1347,7 +1443,9 @@ def _boundary_context_packet(
     if not chunks:
         return ""
     packet = (
-        "Controller-provided current content for the active requirement boundary. Treat it as the "
+        (f"{work_packet.strip()}\n\n" if work_packet.strip() else "")
+        + "Controller-provided current content for the active requirement boundary. "
+        "Treat it as the "
         "authoritative read result and implement now without rereading these paths:\n\n"
         + "\n\n".join(chunks)
     )
@@ -2188,6 +2286,8 @@ def _exec_write_milestone(
     project_root: Path,
     args: dict[str, Any],
     files_written: list[str],
+    *,
+    allowed_paths: list[str] | None = None,
 ) -> tuple[str, list[str]]:
     """Execute fixed scalar path/content pairs after validating the whole payload."""
     items = _milestone_file_items(args)
@@ -2206,12 +2306,32 @@ def _exec_write_milestone(
         if normalized in normalized_paths:
             return f"ERROR: duplicate milestone path: {path}", []
         normalized_paths.append(normalized)
+        if allowed_paths is not None and normalized not in {
+            _normalized_history_path(allowed) for allowed in allowed_paths
+        }:
+            return (
+                f"ERROR: path {path!r} is outside the active milestone boundary; "
+                f"allowed paths: {', '.join(allowed_paths)}",
+                [],
+            )
         resolved, error = _resolve_project_path(project_root, path)
         if resolved is None:
             return error, []
         if _model_hidden_path(project_root, resolved):
             return "ERROR: controller governance state cannot be changed by model file tools", []
     return _exec_write_files(project_root, items, files_written)
+
+
+def _active_write_scope_error(path: str, allowed_paths: list[str]) -> str:
+    """Fail closed when a packet experiment attempts a cross-boundary write."""
+    normalized = _normalized_history_path(path)
+    allowed = {_normalized_history_path(item) for item in allowed_paths}
+    if normalized and normalized in allowed:
+        return ""
+    return (
+        f"ERROR: path {path!r} is outside the active milestone boundary; "
+        f"allowed paths: {', '.join(allowed_paths)}"
+    )
 
 
 def _exec_list_files(project_root: Path, directory: str = ".") -> str:
@@ -3341,6 +3461,9 @@ def _run_agent_loop(
     del specsmith_dir  # governance state is isolated inside project_root
     controller_experiment = _controller_experiment()
     compact_context = _compact_context_experiment(controller_experiment)
+    milestone_packets = condition.id == "SPECSMITH_FULL" and _milestone_packet_experiment(
+        controller_experiment
+    )
     tool_choice = _controller_tool_choice(condition.id, controller_experiment)
     diagnostics_required = False
     read_evidence: dict[str, tuple[str, int]] = {}
@@ -3435,6 +3558,7 @@ def _run_agent_loop(
             read_evidence,
             turn=0,
             replaceable=compact_context,
+            work_packet=_milestone_work_packet(task, []) if milestone_packets else "",
         )
         if boundary_context and all(
             _normalized_history_path(path) in read_evidence for path in initial_context_paths
@@ -3475,6 +3599,7 @@ def _run_agent_loop(
     total_cached_tokens = 0
     total_cache_write_tokens = 0
     files_written: list[str] = []
+    active_write_paths = _next_incomplete_boundary_paths(task, files_written)
     # One means the initial implementation attempt. Increment only for an
     # actual recovery/correction cycle, never once per validator command.
     rework_turns = 1
@@ -3498,6 +3623,7 @@ def _run_agent_loop(
     active_repair_evidence_signature = ""
     last_repair_evidence_signature = ""
     invalid_composite_write_count = 0
+    force_tool_call_next_turn = False
     stop_reason = "max_turns"
 
     for turn in range(max_turns):
@@ -3525,6 +3651,14 @@ def _run_agent_loop(
                 governance_decision=governance_decision,
             )
         turn_timeout_s = min(request_timeout_s, remaining_s)
+        request_tool_choice = (
+            "required"
+            if force_tool_call_next_turn
+            and condition.id == "SPECSMITH_FULL"
+            and _adaptive_required_experiment(controller_experiment)
+            else tool_choice
+        )
+        force_tool_call_next_turn = False
         try:
             response = _call_llm(
                 provider=provider,
@@ -3532,7 +3666,7 @@ def _run_agent_loop(
                 model=model,
                 messages=messages,
                 tools=tools,
-                tool_choice=tool_choice,
+                tool_choice=request_tool_choice,
                 timeout_s=turn_timeout_s,
             )
         except Exception as exc:  # noqa: BLE001  # surface as run error
@@ -3573,7 +3707,7 @@ def _run_agent_loop(
                 "finish_reason": response.finish_reason,
                 "tool_schema_hash": _tool_schema_hash(tools),
                 "controller_experiment": controller_experiment,
-                "tool_choice": tool_choice,
+                "tool_choice": request_tool_choice,
             }
         )
 
@@ -3653,6 +3787,7 @@ def _run_agent_loop(
                 agent_transcript.append(
                     {"turn": turn + 1, "role": "controller", "recovery": recovery}
                 )
+                force_tool_call_next_turn = True
                 continue
             if (
                 content
@@ -3682,6 +3817,7 @@ def _run_agent_loop(
                         "nonterminal_narration": True,
                     }
                 )
+                force_tool_call_next_turn = True
                 continue
             if (
                 content
@@ -3707,6 +3843,7 @@ def _run_agent_loop(
                         "focused_repair_continuation": True,
                     }
                 )
+                force_tool_call_next_turn = True
                 continue
             # A non-empty pure text response is an intentional model stop. A
             # second empty response fails closed rather than spending the budget.
@@ -3768,11 +3905,14 @@ def _run_agent_loop(
                 suppressed_unchanged_reads.extend(suppressed_paths)
 
             elif fn_name == "write_file":
-                out = _exec_write_file(
-                    project_root, args.get("path", ""), args.get("content", ""), files_written
+                path = str(args.get("path") or "")
+                scope_error = (
+                    _active_write_scope_error(path, active_write_paths) if milestone_packets else ""
+                )
+                out = scope_error or _exec_write_file(
+                    project_root, path, args.get("content", ""), files_written
                 )
                 if out.startswith("OK:"):
-                    path = str(args.get("path") or "")
                     successful_write_paths.append(path)
                     lint_verified, tests_verified, validator_verified = (
                         _invalidate_validation_evidence(
@@ -3785,15 +3925,18 @@ def _run_agent_loop(
                     )
 
             elif fn_name == "edit_file":
-                out = _exec_edit_file(
+                path = str(args.get("path") or "")
+                scope_error = (
+                    _active_write_scope_error(path, active_write_paths) if milestone_packets else ""
+                )
+                out = scope_error or _exec_edit_file(
                     project_root,
-                    args.get("path", ""),
+                    path,
                     args.get("old_text", ""),
                     args.get("new_text", ""),
                     files_written,
                 )
                 if out.startswith("OK:"):
-                    path = str(args.get("path") or "")
                     successful_write_paths.append(path)
                     lint_verified, tests_verified, validator_verified = (
                         _invalidate_validation_evidence(
@@ -3807,7 +3950,10 @@ def _run_agent_loop(
 
             elif fn_name == "patch_file":
                 path = str(args.get("path") or "")
-                out = _exec_patch_file(
+                scope_error = (
+                    _active_write_scope_error(path, active_write_paths) if milestone_packets else ""
+                )
+                out = scope_error or _exec_patch_file(
                     project_root,
                     path,
                     args,
@@ -3830,6 +3976,7 @@ def _run_agent_loop(
                     project_root,
                     args,
                     files_written,
+                    allowed_paths=active_write_paths if milestone_packets else None,
                 )
                 if milestone_write_paths:
                     successful_write_paths.extend(milestone_write_paths)
@@ -3957,6 +4104,10 @@ def _run_agent_loop(
                             task,
                             repair_failures,
                         )
+                        active_write_paths = _focused_validator_repair_paths(
+                            task,
+                            repair_failures,
+                        )
                         repair_context = _single_repair_context(
                             project_root,
                             task,
@@ -4060,6 +4211,7 @@ def _run_agent_loop(
                 validation_failed = True
                 repair_failures = _focused_validator_failures(task, milestone_failures)
                 active_repair_evidence_signature = _repair_failure_signature(repair_failures)
+                active_write_paths = _focused_validator_repair_paths(task, repair_failures)
                 repair_focus = _focused_validator_repair_progress(
                     task,
                     repair_failures,
@@ -4103,6 +4255,9 @@ def _run_agent_loop(
                         },
                     }
                 )
+
+        if successful_write_paths and not validation_failed and task.is_long_horizon:
+            active_write_paths = _next_incomplete_boundary_paths(task, files_written)
 
         if successful_write_paths:
             _record_written_evidence(
@@ -4206,6 +4361,9 @@ def _run_agent_loop(
                     read_evidence,
                     turn=turn + 1,
                     replaceable=compact_context,
+                    work_packet=(
+                        _milestone_work_packet(task, files_written) if milestone_packets else ""
+                    ),
                 )
                 if next_boundary_context:
                     agent_transcript.append(
@@ -4664,6 +4822,8 @@ def _run_agent_loop(
         llm_turns=llm_turns,
         wall_clock_s=wall_elapsed,
         stop_reason=stop_reason,
+        milestones_completed=_completed_milestone_count(task, files_written),
+        milestones_total=len(task.milestones),
         agent_transcript=agent_transcript,
         call_usage=call_usage,
         files_written=files_written,
