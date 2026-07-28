@@ -38,6 +38,7 @@ on:
           - scalar-parallel-edit
           - scalar-native-patch
           - scalar-native-patch-scoped
+          - scalar-native-patch-scoped-required
           - scalar-parallel-write-only
           - scalar-parallel-validator-authority
           - scalar-milestone-bundle

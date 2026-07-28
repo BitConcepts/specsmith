@@ -85,6 +85,7 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-parallel-edit",
         "scalar-native-patch",
         "scalar-native-patch-scoped",
+        "scalar-native-patch-scoped-required",
         "scalar-parallel-write-only",
         "scalar-parallel-validator-authority",
         "scalar-milestone-bundle",
@@ -297,6 +298,7 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-parallel-edit",
         "scalar-native-patch",
         "scalar-native-patch-scoped",
+        "scalar-native-patch-scoped-required",
         "scalar-parallel-write-only",
         "scalar-parallel-validator-authority",
         "scalar-milestone-bundle",
@@ -308,6 +310,7 @@ def _required_tools_experiment(experiment: str) -> bool:
         "required-tools",
         "scalar-parallel-required",
         "scalar-parallel-compact",
+        "scalar-native-patch-scoped-required",
     }
 
 
@@ -327,16 +330,24 @@ def _native_edit_experiment(experiment: str) -> bool:
         "scalar-parallel-edit",
         "scalar-native-patch",
         "scalar-native-patch-scoped",
+        "scalar-native-patch-scoped-required",
     }
 
 
 def _native_patch_experiment(experiment: str) -> bool:
-    return experiment in {"scalar-native-patch", "scalar-native-patch-scoped"}
+    return experiment in {
+        "scalar-native-patch",
+        "scalar-native-patch-scoped",
+        "scalar-native-patch-scoped-required",
+    }
 
 
 def _scoped_read_experiment(experiment: str) -> bool:
     """Return whether controller-provided boundary context is authoritative."""
-    return experiment == "scalar-native-patch-scoped"
+    return experiment in {
+        "scalar-native-patch-scoped",
+        "scalar-native-patch-scoped-required",
+    }
 
 
 def _strict_tool_schemas(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:

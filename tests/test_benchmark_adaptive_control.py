@@ -261,6 +261,11 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
             ["write_file", "patch_file", "done"],
             "auto",
         ),
+        (
+            "scalar-native-patch-scoped-required",
+            ["write_file", "patch_file", "done"],
+            "required",
+        ),
         ("scalar-parallel-write-only", ["write_file", "done"], "auto"),
         ("scalar-parallel-validator-authority", ["read_file", "write_file", "done"], "auto"),
         (
@@ -329,6 +334,7 @@ def test_benchmark_workflow_exposes_scoped_native_patch_experiment() -> None:
         encoding="utf-8"
     )
     assert "scalar-native-patch-scoped" in workflow
+    assert "scalar-native-patch-scoped-required" in workflow
 
 
 def test_benchmark_deadlines_and_retry_policy_are_bounded(
