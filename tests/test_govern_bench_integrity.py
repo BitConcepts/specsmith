@@ -326,6 +326,49 @@ def test_completed_composite_write_history_omits_every_file_body() -> None:
     assert "write_files" not in serialized
 
 
+def test_completed_atomic_patch_history_omits_old_and_new_bodies() -> None:
+    old_body = "VERY_OLD_PRIVATE_BODY"
+    new_body = "VERY_NEW_PRIVATE_BODY"
+    arguments = json.dumps(
+        {
+            "path": "main.py",
+            "old_text_1": old_body,
+            "new_text_1": new_body,
+            "old_text_2": "SECOND_OLD_BODY",
+            "new_text_2": "SECOND_NEW_BODY",
+        }
+    )
+    assistant = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+            {
+                "id": "patch-1",
+                "type": "function",
+                "function": {"name": "patch_file", "arguments": arguments},
+            }
+        ],
+    }
+    calls = [NormalizedToolCall(id="patch-1", name="patch_file", arguments=arguments)]
+    results = [
+        {
+            "role": "tool",
+            "tool_call_id": "patch-1",
+            "content": "OK: applied 2 atomic replacements to main.py",
+        }
+    ]
+
+    history = _compact_completed_tool_exchange(assistant, calls, results)
+    serialized = str(history)
+
+    assert old_body not in serialized
+    assert new_body not in serialized
+    assert "SECOND_OLD_BODY" not in serialized
+    assert "SECOND_NEW_BODY" not in serialized
+    assert "main.py" in serialized
+    assert "patch_file" not in serialized
+
+
 def test_superseded_read_compaction_preserves_other_tool_linkage() -> None:
     messages = [
         {"role": "system", "content": "stable prefix"},
@@ -450,10 +493,12 @@ def test_gpt56_openai_call_uses_stable_cache_key_and_records_cache_usage(
         [{"role": "user", "content": "repair"}],
         [],
         tool_choice="required",
+        timeout_s=42,
     )
 
     assert captured["prompt_cache_key"] == "governancebench:test"
     assert captured["tool_choice"] == "required"
+    assert captured["timeout"] == 42
     assert response.usage.cached_tokens == 80
     assert response.usage.cache_write_tokens == 10
 
@@ -1341,6 +1386,36 @@ def test_agent_loop_recovers_once_from_empty_provider_response(
     assert result.stop_reason == "done"
     assert result.rework_turns == 2
     assert any("recovery" in event for event in result.agent_transcript)
+
+
+def test_agent_loop_classifies_bounded_request_timeout(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task = get_task("T1")
+    project = tmp_path / "project"
+    _copy_project_fixture(_get_project_dir(task.project), project)
+
+    def time_out(**_kwargs: object) -> NormalizedLLMResponse:
+        raise TimeoutError("request exceeded 12 seconds")
+
+    monkeypatch.setenv("BENCH_REQUEST_TIMEOUT_S", "12")
+    monkeypatch.setattr(harness_module, "_call_llm", time_out)
+
+    result = _run_agent_loop(
+        provider="openai",
+        client=object(),
+        model="test-model",
+        task=task,
+        condition=get_condition("UNGOVERNED"),
+        project_root=project,
+        specsmith_dir=tmp_path,
+        max_turns=3,
+    )
+
+    assert result.skipped
+    assert result.stop_reason == "provider_timeout"
+    assert result.error == "request exceeded 12 seconds"
 
 
 def test_agent_loop_applies_and_records_required_scalar_protocol(

@@ -1,0 +1,147 @@
+name: Native Qwen Governance Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      experiment_set:
+        description: "Atomic patch alone, or matched atomic + boundary-scoped read control."
+        required: true
+        type: choice
+        options:
+          - atomic-and-scoped
+          - atomic-only
+        default: atomic-and-scoped
+      deploy_timeout_seconds:
+        description: "Hard deployment deadline."
+        required: false
+        default: "1200"
+      request_timeout_seconds:
+        description: "Hard deadline for each model request."
+        required: false
+        default: "120"
+      cell_timeout_seconds:
+        description: "Hard deadline for each benchmark cell."
+        required: false
+        default: "900"
+
+permissions: {}
+
+env:
+  SPECSMITH_NO_AUTO_UPDATE: "1"
+  SPECSMITH_PYPI_CHECKED: "1"
+  SPECSMITH_ALLOW_NON_PIPX: "1"
+  NATIVE_QWEN_MODEL: "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8"
+  NATIVE_QWEN_IMAGE: "vllm/vllm-openai:v0.24.0"
+  NATIVE_QWEN_TOOL_PARSER: "qwen3_xml"
+
+jobs:
+  native-qwen:
+    name: Qwen 30B FP8 / native qwen3_xml
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install pinned endpoint and benchmark dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install "huggingface_hub==1.25.1" openai
+
+      - name: Install demo-project dependencies
+        run: python scripts/govern_bench/install_demo_deps.py
+
+      - name: Deploy and prove the native Qwen parser
+        id: endpoint
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          ENDPOINT_NAME="specsmith-qwen-native-${{ github.run_id }}"
+          python scripts/govern_bench/native_endpoint.py deploy \
+            --name "$ENDPOINT_NAME" \
+            --output native-endpoint.json \
+            --model "$NATIVE_QWEN_MODEL" \
+            --image "$NATIVE_QWEN_IMAGE" \
+            --tool-parser "$NATIVE_QWEN_TOOL_PARSER" \
+            --deploy-timeout-s "${{ inputs.deploy_timeout_seconds }}" \
+            --probe-timeout-s "${{ inputs.request_timeout_seconds }}"
+          echo "name=$ENDPOINT_NAME" >> "$GITHUB_OUTPUT"
+          echo "base_url=$(jq -r '.base_url' native-endpoint.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Run bounded native-parser controller experiments
+        id: benchmark
+        continue-on-error: true
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          BENCH_OPENAI_COMPAT_API_KEY: ${{ secrets.HF_TOKEN }}
+          BENCH_OPENAI_BASE_URL: ${{ steps.endpoint.outputs.base_url }}
+          BENCH_REQUEST_TIMEOUT_S: ${{ inputs.request_timeout_seconds }}
+          BENCH_CELL_TIMEOUT_S: ${{ inputs.cell_timeout_seconds }}
+          BENCH_PROVIDER_MAX_RETRIES: "0"
+          BENCH_MAX_TURNS: "12"
+        run: |
+          EXPERIMENTS="scalar-native-patch"
+          if [ "${{ inputs.experiment_set }}" = "atomic-and-scoped" ]; then
+            EXPERIMENTS="$EXPERIMENTS scalar-native-patch-scoped"
+          fi
+
+          overall=0
+          : > native-run-status.tsv
+          for experiment in $EXPERIMENTS; do
+            set +e
+            timeout --signal=TERM 17m env BENCH_CONTROLLER_EXPERIMENT="$experiment" \
+              python scripts/govern_bench/run_bench.py \
+                --profile custom \
+                --task T28 \
+                --condition SPECSMITH_FULL \
+                --reps 1 \
+                --provider openai-compat \
+                --base-url "$BENCH_OPENAI_BASE_URL" \
+                --model "$NATIVE_QWEN_MODEL" \
+                --output "bench-report-$experiment.md" \
+                --json-output "bench-results-$experiment.json"
+            status=$?
+            set -e
+            printf '%s\t%s\n' "$experiment" "$status" >> native-run-status.tsv
+            if [ "$status" -ne 0 ]; then
+              overall=1
+            fi
+          done
+          exit "$overall"
+
+      - name: Pause and delete the ephemeral endpoint
+        if: always()
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python scripts/govern_bench/native_endpoint.py cleanup \
+            --name "specsmith-qwen-native-${{ github.run_id }}" \
+            --deployment-receipt native-endpoint.json \
+            --output native-endpoint-cleanup.json
+
+      - name: Upload native parser evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-qwen-${{ github.run_id }}
+          path: |
+            native-endpoint.json
+            native-endpoint-cleanup.json
+            native-run-status.tsv
+            bench-report-*.md
+            bench-results-*.json
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Fail closed on benchmark errors
+        if: always() && steps.endpoint.outcome == 'success' && steps.benchmark.outcome != 'success'
+        run: |
+          echo "::error::One or more native Qwen benchmark cells failed or timed out."
+          exit 1

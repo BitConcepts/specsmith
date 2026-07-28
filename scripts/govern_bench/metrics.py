@@ -92,6 +92,10 @@ MODEL_PRICING_PER_1M: dict[str, tuple[float, float]] = {
     "meta-llama/llama-3.1-8b-instruct": (0.05, 0.08),
     "Qwen/Qwen3-Coder-30B-A3B-Instruct": (0.10, 0.30),
     "qwen/qwen3-coder-30b-a3b-instruct": (0.10, 0.30),
+    # Dedicated native-parser endpoint compute is receipted by the endpoint
+    # lifecycle workflow rather than represented as per-token API pricing.
+    "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8": (0.0, 0.0),
+    "qwen/qwen3-coder-30b-a3b-instruct-fp8": (0.0, 0.0),
     "Qwen/Qwen3.6-27B": (0.32, 3.20),
     "qwen/qwen3.6-27b": (0.32, 3.20),
     "Qwen/Qwen3-32B": (0.08, 0.28),

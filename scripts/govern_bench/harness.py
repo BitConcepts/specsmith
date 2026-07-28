@@ -27,6 +27,9 @@ Environment variables:
     BENCH_OPENAI_BASE_URL      required for provider=openai-compat unless --base-url is set
     BENCH_OPENAI_COMPAT_API_KEY optional auth key for provider=openai-compat
     BENCH_MAX_TURNS            max agent turns per run (default: 12)
+    BENCH_REQUEST_TIMEOUT_S    provider request deadline in seconds (default: 120)
+    BENCH_CELL_TIMEOUT_S       total agent-loop deadline in seconds (default: 900)
+    BENCH_PROVIDER_MAX_RETRIES provider SDK retry cap (default: 0)
     SPECSMITH_DIR              path to specsmith project root for preflight (default: auto-detect)
 """
 
@@ -35,6 +38,7 @@ from __future__ import annotations
 import difflib
 import hashlib
 import json
+import math
 import os
 import re
 import shlex
@@ -80,6 +84,7 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-parallel-compact-auto",
         "scalar-parallel-edit",
         "scalar-native-patch",
+        "scalar-native-patch-scoped",
         "scalar-parallel-write-only",
         "scalar-parallel-validator-authority",
         "scalar-milestone-bundle",
@@ -291,6 +296,7 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-parallel-compact-auto",
         "scalar-parallel-edit",
         "scalar-native-patch",
+        "scalar-native-patch-scoped",
         "scalar-parallel-write-only",
         "scalar-parallel-validator-authority",
         "scalar-milestone-bundle",
@@ -317,11 +323,88 @@ def _write_only_experiment(experiment: str) -> bool:
 
 
 def _native_edit_experiment(experiment: str) -> bool:
-    return experiment in {"scalar-parallel-edit", "scalar-native-patch"}
+    return experiment in {
+        "scalar-parallel-edit",
+        "scalar-native-patch",
+        "scalar-native-patch-scoped",
+    }
 
 
 def _native_patch_experiment(experiment: str) -> bool:
-    return experiment == "scalar-native-patch"
+    return experiment in {"scalar-native-patch", "scalar-native-patch-scoped"}
+
+
+def _scoped_read_experiment(experiment: str) -> bool:
+    """Return whether controller-provided boundary context is authoritative."""
+    return experiment == "scalar-native-patch-scoped"
+
+
+def _strict_tool_schemas(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Copy tool schemas and request provider-side argument constraints."""
+    strict_tools = json.loads(json.dumps(tools))
+    for tool in strict_tools:
+        function = tool.get("function")
+        if isinstance(function, dict):
+            function["strict"] = True
+    return strict_tools
+
+
+def _bounded_env_float(
+    name: str,
+    default: float,
+    *,
+    minimum: float,
+    maximum: float,
+) -> float:
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    try:
+        value = float(raw)
+    except ValueError as exc:
+        raise RuntimeError(f"{name} must be a number, got {raw!r}") from exc
+    if not math.isfinite(value) or not minimum <= value <= maximum:
+        raise RuntimeError(f"{name} must be between {minimum:g} and {maximum:g} seconds")
+    return value
+
+
+def _request_timeout_seconds() -> float:
+    return _bounded_env_float(
+        "BENCH_REQUEST_TIMEOUT_S",
+        120.0,
+        minimum=5.0,
+        maximum=600.0,
+    )
+
+
+def _cell_timeout_seconds() -> float:
+    return _bounded_env_float(
+        "BENCH_CELL_TIMEOUT_S",
+        900.0,
+        minimum=30.0,
+        maximum=3_600.0,
+    )
+
+
+def _provider_max_retries() -> int:
+    raw = os.environ.get("BENCH_PROVIDER_MAX_RETRIES", "0").strip()
+    try:
+        retries = int(raw)
+    except ValueError as exc:
+        raise RuntimeError(f"BENCH_PROVIDER_MAX_RETRIES must be an integer, got {raw!r}") from exc
+    if not 0 <= retries <= 2:
+        raise RuntimeError("BENCH_PROVIDER_MAX_RETRIES must be between 0 and 2")
+    return retries
+
+
+def _is_timeout_exception(exc: BaseException) -> bool:
+    """Recognize SDK and transport timeout failures without provider imports."""
+    class_name = type(exc).__name__.casefold()
+    return (
+        isinstance(exc, TimeoutError)
+        or "timeout" in class_name
+        or "timed out" in str(exc).casefold()
+    )
 
 
 def _repair_tool_label(experiment: str) -> str:
@@ -363,6 +446,7 @@ _BASE_TOOLS: list[dict] = [
                     "path": {"type": "string", "description": "File path relative to project root"}
                 },
                 "required": ["path"],
+                "additionalProperties": False,
             },
         },
     },
@@ -382,6 +466,7 @@ _BASE_TOOLS: list[dict] = [
                     "content": {"type": "string", "description": "Complete file content to write"},
                 },
                 "required": ["path", "content"],
+                "additionalProperties": False,
             },
         },
     },
@@ -473,6 +558,7 @@ _BASE_TOOLS: list[dict] = [
                     },
                 },
                 "required": ["explanation"],
+                "additionalProperties": False,
             },
         },
     },
@@ -501,6 +587,7 @@ _EDIT_FILE_TOOL: dict[str, Any] = {
                 },
             },
             "required": ["path", "old_text", "new_text"],
+            "additionalProperties": False,
         },
     },
 }
@@ -543,6 +630,7 @@ _PATCH_FILE_TOOL: dict[str, Any] = {
                 },
             },
             "required": ["path", "old_text_1", "new_text_1"],
+            "additionalProperties": False,
         },
     },
 }
@@ -899,6 +987,16 @@ def _build_active_tools(
             return [
                 tool for tool in scalar_tools if tool["function"]["name"] in {"write_file", "done"}
             ]
+        if _scoped_read_experiment(_controller_experiment()):
+            return _strict_tool_schemas(
+                [
+                    tool
+                    for tool in scalar_tools
+                    if tool["function"]["name"] in {"write_file", "patch_file", "done"}
+                ]
+            )
+        if _native_patch_experiment(_controller_experiment()):
+            return _strict_tool_schemas(scalar_tools)
         return scalar_tools
     return [*_COMPOSITE_FILE_TOOLS, *scalar_tools]
 
@@ -1428,6 +1526,7 @@ _SERIAL_ACTION_TOOLS = frozenset(
         "read_file",
         "write_file",
         "edit_file",
+        "patch_file",
         "write_milestone",
         "list_files",
         "run_command",
@@ -1460,7 +1559,13 @@ def _compact_completed_tool_exchange(
 
     for call, serialized in zip(tool_calls, serialized_calls, strict=True):
         result = results_by_id.get(call.id)
-        if call.name not in {"write_file", "write_files", "edit_file", "write_milestone"}:
+        if call.name not in {
+            "write_file",
+            "write_files",
+            "edit_file",
+            "patch_file",
+            "write_milestone",
+        }:
             retained_calls.append(serialized)
             if result is not None:
                 retained_results.append(result)
@@ -1469,7 +1574,7 @@ def _compact_completed_tool_exchange(
         parsed = _json_loads_maybe(call.arguments)
         args = parsed if isinstance(parsed, dict) else {}
         outcome = str((result or {}).get("content") or "no tool result").replace("\n", " ")
-        if call.name in {"write_file", "edit_file"}:
+        if call.name in {"write_file", "edit_file", "patch_file"}:
             file_args = [args]
         elif call.name == "write_milestone":
             file_args = _milestone_file_items(args)
@@ -1479,7 +1584,14 @@ def _compact_completed_tool_exchange(
             file_args = [{"path": "(missing path)", "content": ""}]
         for item in file_args:
             path = str(item.get("path") or "(missing path)")
-            content = item.get("new_text") if call.name == "edit_file" else item.get("content")
+            if call.name == "edit_file":
+                content = item.get("new_text")
+            elif call.name == "patch_file":
+                content = "\n".join(
+                    str(item.get(f"new_text_{index}") or "") for index in range(1, 4)
+                )
+            else:
+                content = item.get("content")
             body = content if isinstance(content, str) else ""
             digest = hashlib.sha256(body.encode("utf-8")).hexdigest()[:16]
             write_summaries.append(
@@ -2302,7 +2414,7 @@ def _tool_call_target(tool_call: NormalizedToolCall) -> str:
     """Return a content-free target label for transcript and loop diagnostics."""
     parsed = _json_loads_maybe(tool_call.arguments)
     args = parsed if isinstance(parsed, dict) else {}
-    if tool_call.name in {"read_file", "write_file", "edit_file"}:
+    if tool_call.name in {"read_file", "write_file", "edit_file", "patch_file"}:
         target = str(args.get("path") or "")
     elif tool_call.name == "read_files":
         target = ",".join(str(path) for path in (args.get("paths") or [])[:MAX_COMPOSITE_FILE_OPS])
@@ -2344,7 +2456,11 @@ def _build_provider_client(provider: str, base_url: str | None = None) -> tuple[
                 raise RuntimeError(
                     "OPENAI_API_KEY environment variable not set for provider=openai"
                 )
-            return provider_key, openai.OpenAI(api_key=api_key)
+            return provider_key, openai.OpenAI(
+                api_key=api_key,
+                timeout=_request_timeout_seconds(),
+                max_retries=_provider_max_retries(),
+            )
 
         resolved_base_url = (base_url or os.environ.get("BENCH_OPENAI_BASE_URL", "")).strip()
         if not resolved_base_url:
@@ -2356,7 +2472,12 @@ def _build_provider_client(provider: str, base_url: str | None = None) -> tuple[
             or os.environ.get("OPENAI_API_KEY")
             or "bench-openai-compat"
         )
-        return provider_key, openai.OpenAI(api_key=compat_key, base_url=resolved_base_url)
+        return provider_key, openai.OpenAI(
+            api_key=compat_key,
+            base_url=resolved_base_url,
+            timeout=_request_timeout_seconds(),
+            max_retries=_provider_max_retries(),
+        )
 
     if provider_key == "anthropic":
         try:
@@ -2370,7 +2491,11 @@ def _build_provider_client(provider: str, base_url: str | None = None) -> tuple[
             raise RuntimeError(
                 "ANTHROPIC_API_KEY environment variable not set for provider=anthropic"
             )
-        return provider_key, anthropic.Anthropic(api_key=api_key)
+        return provider_key, anthropic.Anthropic(
+            api_key=api_key,
+            timeout=_request_timeout_seconds(),
+            max_retries=_provider_max_retries(),
+        )
 
     if provider_key == "google":
         api_key = os.environ.get("GOOGLE_API_KEY", "")
@@ -2395,6 +2520,8 @@ def _build_provider_client(provider: str, base_url: str | None = None) -> tuple[
         return "openai-compat", openai.OpenAI(
             api_key=hf_token,
             base_url=_HF_INFERENCE_BASE_URL,
+            timeout=_request_timeout_seconds(),
+            max_retries=_provider_max_retries(),
         )
 
     raise RuntimeError(f"Unsupported provider: {provider_key}")
@@ -2405,7 +2532,7 @@ def _http_post_json(
     *,
     body: dict[str, Any],
     headers: dict[str, str] | None = None,
-    timeout_s: int = 120,
+    timeout_s: float = 120,
 ) -> dict[str, Any]:
     payload = json.dumps(body).encode("utf-8")
     req_headers = {"Content-Type": "application/json", "Accept": "application/json"}
@@ -2604,6 +2731,7 @@ def _call_openai_provider(
     tools: list[dict[str, Any]],
     *,
     tool_choice: str = "auto",
+    timeout_s: float | None = None,
 ) -> NormalizedLLMResponse:
     request: dict[str, Any] = dict(
         model=model,
@@ -2618,6 +2746,8 @@ def _call_openai_provider(
         request["prompt_cache_key"] = os.environ.get(
             "BENCH_PROMPT_CACHE_KEY", f"governancebench:{model.casefold()}"
         )
+    if timeout_s is not None:
+        request["timeout"] = timeout_s
     response = client.chat.completions.create(**request)
     usage = getattr(response, "usage", None)
     msg = response.choices[0].message
@@ -2658,6 +2788,7 @@ def _call_anthropic_provider(
     tools: list[dict[str, Any]],
     *,
     tool_choice: str = "auto",
+    timeout_s: float | None = None,
 ) -> NormalizedLLMResponse:
     system_text, anthropic_messages = _to_anthropic_messages(messages)
     request: dict[str, Any] = {
@@ -2671,6 +2802,8 @@ def _call_anthropic_provider(
         request["system"] = system_text
     if tool_choice == "required":
         request["tool_choice"] = {"type": "any"}
+    if timeout_s is not None:
+        request["timeout"] = timeout_s
     response = client.messages.create(**request)
 
     text_chunks: list[str] = []
@@ -2713,6 +2846,7 @@ def _call_google_provider(
     tools: list[dict[str, Any]],
     *,
     tool_choice: str = "auto",
+    timeout_s: float | None = None,
 ) -> NormalizedLLMResponse:
     api_key = str(client.get("api_key") or "")
     system_text, google_contents = _to_google_contents(messages)
@@ -2740,7 +2874,11 @@ def _call_google_provider(
         "https://generativelanguage.googleapis.com/v1beta/models/"
         f"{model_path}:generateContent?key={urllib.parse.quote(api_key, safe='')}"
     )
-    data = _http_post_json(url, body=payload)
+    data = _http_post_json(
+        url,
+        body=payload,
+        timeout_s=timeout_s if timeout_s is not None else _request_timeout_seconds(),
+    )
 
     candidates = data.get("candidates") or []
     first_candidate = candidates[0] if candidates else {}
@@ -2794,6 +2932,7 @@ def _call_llm(
     tools: list[dict[str, Any]],
     *,
     tool_choice: str = "auto",
+    timeout_s: float | None = None,
 ) -> NormalizedLLMResponse:
     # huggingface is normalised to "openai-compat" by _build_provider_client;
     # both route through the same OpenAI-compatible call path.
@@ -2805,6 +2944,7 @@ def _call_llm(
             messages,
             tools,
             tool_choice=tool_choice,
+            timeout_s=timeout_s,
         )
     if provider == "anthropic":
         return _call_anthropic_provider(
@@ -2813,6 +2953,7 @@ def _call_llm(
             messages,
             tools,
             tool_choice=tool_choice,
+            timeout_s=timeout_s,
         )
     if provider == "google":
         return _call_google_provider(
@@ -2821,6 +2962,7 @@ def _call_llm(
             messages,
             tools,
             tool_choice=tool_choice,
+            timeout_s=timeout_s,
         )
     raise RuntimeError(f"Unsupported provider: {provider}")
 
@@ -3180,6 +3322,9 @@ def _run_agent_loop(
     verify_result: dict[str, Any] = {}
     governance_turns = 0
     wall_start = time.monotonic()
+    request_timeout_s = _request_timeout_seconds()
+    cell_timeout_s = _cell_timeout_seconds()
+    cell_deadline = wall_start + cell_timeout_s
     agent_transcript: list[dict] = []
     if _is_specsmith_condition(condition.id):
         governance_decision = _run_governance_controller(task, project_root)
@@ -3191,6 +3336,11 @@ def _run_agent_loop(
                 "role": "controller",
                 "controller_experiment": controller_experiment,
                 "tool_choice": tool_choice,
+                "timeout_policy": {
+                    "request_timeout_s": request_timeout_s,
+                    "cell_timeout_s": cell_timeout_s,
+                    "provider_max_retries": _provider_max_retries(),
+                },
             }
         )
         if governance_decision.get("decision") != "accepted":
@@ -3308,6 +3458,30 @@ def _run_agent_loop(
     stop_reason = "max_turns"
 
     for turn in range(max_turns):
+        remaining_s = cell_deadline - time.monotonic()
+        if remaining_s <= 0:
+            return RunResult(
+                task_id=task.id,
+                condition_id=condition.id,
+                rep=1,
+                model=model,
+                input_tokens=total_input_tokens,
+                output_tokens=total_output_tokens,
+                cached_input_tokens=total_cached_tokens,
+                cache_write_tokens=total_cache_write_tokens,
+                rework_turns=rework_turns,
+                governance_turns=governance_turns,
+                llm_turns=llm_turns,
+                wall_clock_s=time.monotonic() - wall_start,
+                stop_reason="cell_timeout",
+                error=f"benchmark cell exceeded its {cell_timeout_s:g}s deadline",
+                skipped=True,
+                files_written=files_written,
+                call_usage=call_usage,
+                agent_transcript=agent_transcript,
+                governance_decision=governance_decision,
+            )
+        turn_timeout_s = min(request_timeout_s, remaining_s)
         try:
             response = _call_llm(
                 provider=provider,
@@ -3316,6 +3490,7 @@ def _run_agent_loop(
                 messages=messages,
                 tools=tools,
                 tool_choice=tool_choice,
+                timeout_s=turn_timeout_s,
             )
         except Exception as exc:  # noqa: BLE001  # surface as run error
             return RunResult(
@@ -3331,7 +3506,7 @@ def _run_agent_loop(
                 governance_turns=governance_turns,
                 llm_turns=llm_turns,
                 wall_clock_s=time.monotonic() - wall_start,
-                stop_reason="provider_error",
+                stop_reason="provider_timeout" if _is_timeout_exception(exc) else "provider_error",
                 error=str(exc),
                 skipped=True,
                 files_written=files_written,

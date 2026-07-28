@@ -20,6 +20,7 @@ from govern_bench.harness import (  # noqa: E402
     _build_active_tools,
     _build_focused_repair_tools,
     _can_recover_nonterminal_narration,
+    _cell_timeout_seconds,
     _compact_completed_boundary_context,
     _consolidate_write_receipts,
     _controller_experiment,
@@ -38,10 +39,12 @@ from govern_bench.harness import (  # noqa: E402
     _milestone_progress,
     _next_incomplete_boundary_paths,
     _openai_sampling_params,
+    _provider_max_retries,
     _read_paths_from_calls,
     _record_written_evidence,
     _repair_failure_signature,
     _replace_adaptive_progress_message,
+    _request_timeout_seconds,
     _run_missing_completion_validators,
     _scope_contract,
     _scope_progress,
@@ -253,6 +256,11 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
             ["read_file", "write_file", "patch_file", "done"],
             "auto",
         ),
+        (
+            "scalar-native-patch-scoped",
+            ["write_file", "patch_file", "done"],
+            "auto",
+        ),
         ("scalar-parallel-write-only", ["write_file", "done"], "auto"),
         ("scalar-parallel-validator-authority", ["read_file", "write_file", "done"], "auto"),
         (
@@ -288,12 +296,12 @@ def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
         )
         properties = milestone_tool["function"]["parameters"]["properties"]
         assert not any(spec.get("type") == "array" for spec in properties.values())
-    elif experiment.startswith("scalar-parallel") or experiment == "scalar-native-patch":
+    elif experiment.startswith("scalar-parallel") or experiment.startswith("scalar-native-patch"):
         assert "Issue independent write_file calls together" in contract
         assert "use write_files" not in contract
         if experiment == "scalar-parallel-edit":
             assert "prefer edit_file" in contract
-        elif experiment == "scalar-native-patch":
+        elif experiment.startswith("scalar-native-patch"):
             assert "prefer one atomic patch_file call" in contract
             patch_tool = next(
                 tool
@@ -302,6 +310,7 @@ def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
             )
             properties = patch_tool["function"]["parameters"]["properties"]
             assert not any(spec.get("type") == "array" for spec in properties.values())
+            assert patch_tool["function"]["strict"] is True
     else:
         assert "use write_files" in contract
 
@@ -312,6 +321,42 @@ def test_unknown_controller_experiment_fails_loudly(
     monkeypatch.setenv("BENCH_CONTROLLER_EXPERIMENT", "mystery")
     with pytest.raises(RuntimeError, match="Unsupported BENCH_CONTROLLER_EXPERIMENT"):
         _controller_experiment()
+
+
+def test_benchmark_deadlines_and_retry_policy_are_bounded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("BENCH_REQUEST_TIMEOUT_S", raising=False)
+    monkeypatch.delenv("BENCH_CELL_TIMEOUT_S", raising=False)
+    monkeypatch.delenv("BENCH_PROVIDER_MAX_RETRIES", raising=False)
+    assert _request_timeout_seconds() == 120
+    assert _cell_timeout_seconds() == 900
+    assert _provider_max_retries() == 0
+
+    monkeypatch.setenv("BENCH_REQUEST_TIMEOUT_S", "45.5")
+    monkeypatch.setenv("BENCH_CELL_TIMEOUT_S", "300")
+    monkeypatch.setenv("BENCH_PROVIDER_MAX_RETRIES", "1")
+    assert _request_timeout_seconds() == 45.5
+    assert _cell_timeout_seconds() == 300
+    assert _provider_max_retries() == 1
+
+    monkeypatch.setenv("BENCH_REQUEST_TIMEOUT_S", "inf")
+    with pytest.raises(RuntimeError, match="between 5 and 600"):
+        _request_timeout_seconds()
+    monkeypatch.setenv("BENCH_PROVIDER_MAX_RETRIES", "3")
+    with pytest.raises(RuntimeError, match="between 0 and 2"):
+        _provider_max_retries()
+
+
+def test_native_endpoint_compute_is_not_double_counted_as_api_token_cost() -> None:
+    assert (
+        estimate_cost(
+            "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8",
+            1_000_000,
+            1_000_000,
+        )
+        == 0
+    )
 
 
 def test_compact_experiment_evicts_completed_boundary_bodies_and_write_history(
