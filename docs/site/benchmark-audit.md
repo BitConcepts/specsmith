@@ -436,10 +436,20 @@ deterministic trace counterfactual, not a new live token measurement.
 
 Literal-parser workflow
 [30317300977](https://github.com/layer1labs/specsmith/actions/runs/30317300977)
-was rejected by HF before endpoint provisioning because the token lacked
-`inference.endpoints.write`. The cleanup receipt records the same permission
-failure, but there was no created endpoint to delete. The audit classifies this
-as censored infrastructure rather than provider, model, or cleanup leakage.
+was correctly classified as censored infrastructure. Corrected workflows then
+produced three valid diagnostic rows:
+
+| Workflow | Policy | Tokens | Stop | Audit diagnosis |
+|---|---|---:|---|---|
+| [30358919239](https://github.com/layer1labs/specsmith/actions/runs/30358919239) | atomic patch | 34,146 | `text_response` | premature narration and serialized tool actions |
+| [30358919239](https://github.com/layer1labs/specsmith/actions/runs/30358919239) | scoped atomic patch | 53,451 | `text_response` | premature narration, repeated tool loop, no scoping gain |
+| [30359943752](https://github.com/layer1labs/specsmith/actions/runs/30359943752) | scoped + required tools | 181,884 | `max_turns` | truncation, milestone fragmentation, and a guarded blank overwrite |
+
+All three failed the unchanged independent oracle. The comparison isolates the
+tradeoff cleanly: automatic tool choice risks premature prose stops; global
+required choice prevents that stop but amplifies serial work until the turn
+budget is exhausted. The audit therefore rejects repetition and selects
+controller-owned milestone batching or a stronger tool-serving model.
 
 The final scorer now reruns public task validators before installing the hidden
 oracle, applies at most one FULL default-safe Ruff repair, and executes the

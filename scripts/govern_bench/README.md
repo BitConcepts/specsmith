@@ -14,13 +14,15 @@ Scoping reduced failure tokens from 123,384 to 34,892, while required tool
 choice regressed to 81,648 and exposed a repeated action-batch loop. No row is
 promotion evidence.
 
-Workflow `30317300977` pins a dedicated FP8 vLLM route with
+Workflow `30317300977` first pinned a dedicated FP8 vLLM route with
 `--enable-auto-tool-choice --tool-call-parser qwen3_xml`, bounded deployment,
 request, and cell deadlines, zero provider retries, an exact tool probe, and
-cleanup. HF rejected endpoint creation because the secret lacked
-`inference.endpoints.write`; no endpoint compute was incurred. After fixing
-that permission, rerun only the one-cell T28/FULL admission before any
-repetition.
+cleanup, but was censored by missing endpoint-write permission. After that
+permission was corrected, workflows `30358919239` and `30359943752` proved the
+literal parser and clean deletion. Atomic, scoped, and globally required-tool
+T28/FULL cells all failed at 34,146, 53,451, and 181,884 tokens. The native
+parser is therefore compatible, but none of these controller policies is ready
+for repetition or a substitution claim.
 
 ---
 

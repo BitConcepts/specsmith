@@ -342,13 +342,17 @@ observed sequence after its fourth identical batch.
 
 We separately preregistered an ephemeral endpoint for the official FP8
 checkpoint, vLLM 0.24.0, and the native \texttt{qwen3\_xml} parser
-\citep{qwen3coder30b,vllmtoolcalling,hfendpoints}. Endpoint creation was
-rejected before provisioning because the credential lacked
-\texttt{inference.endpoints.write}; no model request or endpoint compute
-occurred. This censored infrastructure attempt is archived separately and is
-not evidence about model behavior. The hosted provider does not disclose its
-server-side parser, so successful structured-tool probes on that route are
-not described as literal \texttt{qwen3\_xml} evidence.
+\citep{qwen3coder30b,vllmtoolcalling,hfendpoints}. The first attempt was
+censored before provisioning because the credential lacked endpoint-write
+permission. After correcting that permission, two endpoint runs passed an exact
+required-tool probe and confirmed pause and deletion. Atomic and scoped
+automatic-tool cells still failed at 34,146 and 53,451 tokens. A scoped
+required-tool cell failed at 181,884 tokens and 20 turns after changing the
+failure mode from premature narration to completion truncation and milestone
+fragmentation. The two endpoint receipts report approximately \$0.430977
+combined infrastructure cost. Thus native parser compatibility removes a
+serving-stack ambiguity but is insufficient for correctness, and globally
+required tool choice is rejected for this model and task.
 
 \section{Threats to Validity}
 

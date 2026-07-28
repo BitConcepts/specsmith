@@ -154,9 +154,10 @@ milestone bundle independently restored correctness at 71.1k tokens; exact-edit
 and alternate managed Qwen routes failed. On a hosted Qwen3-Coder-30B
 native-tool route, scoped atomic patching cut a failed T28 attempt from 123.4k
 to 34.9k tokens, but did not make it correct; forcing tool use regressed to
-81.6k. The literal vLLM `qwen3_xml` endpoint attempt was censored before
-provisioning by missing endpoint-write permission. Specsmith therefore does
-not claim that small models generally replace frontier models.
+81.6k. A later literal vLLM `qwen3_xml` run proved native parser compatibility,
+but its atomic, scoped, and required-tool cells still failed at 34.1k, 53.5k,
+and 181.9k tokens. Specsmith therefore does not claim that small models
+generally replace frontier models.
 
 See the
 [full benchmark report](https://specsmith.readthedocs.io/stable/efficiency-benchmark/),

@@ -645,15 +645,28 @@ earned a deterministic repeated-batch guard: an identical multi-file action
 batch receives bounded recovery and stops on its fourth occurrence, using only
 content-free target and argument digests.
 
-The literal parser lane is
-[workflow 30317300977](https://github.com/layer1labs/specsmith/actions/runs/30317300977).
-It pins `Qwen3-Coder-30B-A3B-Instruct-FP8`, vLLM `v0.24.0`, `qwen3_xml`,
-one L40S GPU, a 32k context, zero provider retries, a 120-second request
-timeout, a 15-minute cell timeout, and guaranteed cleanup steps. Endpoint
-creation was rejected before provisioning because the HF secret lacked
-`inference.endpoints.write`; therefore no endpoint, model request, or compute
-charge existed. This censored attempt is not included in correctness or
-efficiency denominators. Rerun it only after correcting that secret scope.
+The literal parser lane initially produced censored infrastructure workflow
+[30317300977](https://github.com/layer1labs/specsmith/actions/runs/30317300977).
+After the endpoint-write permission was corrected,
+[30358919239](https://github.com/layer1labs/specsmith/actions/runs/30358919239)
+and
+[30359943752](https://github.com/layer1labs/specsmith/actions/runs/30359943752)
+successfully provisioned `Qwen3-Coder-30B-A3B-Instruct-FP8` on vLLM `v0.24.0`
+with `qwen3_xml`, one L40S GPU, a 32k context, zero provider retries, and exact
+required-tool probes. Both endpoint receipts confirm pause and deletion.
+
+| Workflow · literal-parser policy | Correct | Tokens | Turns | Wall time | Finding |
+|---|---:|---:|---:|---:|---|
+| [30358919239](https://github.com/layer1labs/specsmith/actions/runs/30358919239) · atomic patch | no | 34,146 | 9 | 29.15 s | 3/10 files; promised a repair but stopped on prose |
+| [30358919239](https://github.com/layer1labs/specsmith/actions/runs/30358919239) · scoped atomic patch | no | 53,451 | 11 | 74.89 s | 3/10 files; scoped context increased failure spend |
+| [30359943752](https://github.com/layer1labs/specsmith/actions/runs/30359943752) · scoped + required tools | no | 181,884 | 20 | 372.75 s | 5/10 files; truncation and milestone fragmentation exhausted the cap |
+
+The two ephemeral endpoint receipts report approximately `$0.166508` and
+`$0.264469`, or `$0.430977` total. Native parsing removed the hosted route
+ambiguity but did not produce correctness. Global required-tool forcing removed
+premature prose stops at more than five times the best literal-parser failure
+tokens, so it is rejected. No literal-parser row has defined TPCA, and none is
+eligible for paid repetition.
 
 ### Research-aligned next improvements
 

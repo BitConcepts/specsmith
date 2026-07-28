@@ -18,6 +18,10 @@ consolidated into the next published release.
 - Archive compact evidence for hosted Qwen3-Coder-30B atomic-patch workflows
   `30317439173`, `30317963475`, and `30318295306`, plus a separate censored
   infrastructure receipt for native-parser workflow `30317300977`.
+- Complete literal vLLM `qwen3_xml` workflows `30358919239` and `30359943752`,
+  prove the native parser and endpoint lifecycle, archive three compact
+  diagnostic cells, and reject atomic, scoped, and globally required-tool
+  policies after all three failed the unchanged T28 oracle.
 - Stop an identical multi-file action batch after three repeated recoveries
   using content-free argument digests. This converts the required-tool trace's
   11-batch repair loop into a bounded deterministic failure.

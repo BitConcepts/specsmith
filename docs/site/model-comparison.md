@@ -333,13 +333,17 @@ oracle. The required variant repeated one three-action batch and motivated a
 deterministic batch-loop guard. The provider does not disclose whether its
 backend used `qwen3_xml`, so these are hosted structured-tool results.
 
-The literal vLLM `qwen3_xml` lane in
-[workflow 30317300977](https://github.com/layer1labs/specsmith/actions/runs/30317300977)
-was censored before endpoint creation because the HF token lacked
-`inference.endpoints.write`. It incurred no endpoint compute and says nothing
-about model correctness. Once that permission is present, the already pinned
-FP8 checkpoint, vLLM image, parser, hardware, probe, and timeouts provide the
-clean next route comparison.
+The literal vLLM `qwen3_xml` lane was initially censored in
+[workflow 30317300977](https://github.com/layer1labs/specsmith/actions/runs/30317300977).
+With corrected endpoint permission,
+[workflow 30358919239](https://github.com/layer1labs/specsmith/actions/runs/30358919239)
+proved the parser but failed atomic and scoped T28 cells at 34,146 and 53,451
+tokens. A native required-tool follow-up in
+[workflow 30359943752](https://github.com/layer1labs/specsmith/actions/runs/30359943752)
+also failed at 181,884 tokens and 20 turns. Native serving removes parser
+uncertainty; it does not rescue this 30B checkpoint under the tested policies.
+The clean next comparison is a stronger tool-serving model or controller-owned
+milestone decomposition, not more repetitions of these failed cells.
 
 ## Historical open-frontier admissions
 

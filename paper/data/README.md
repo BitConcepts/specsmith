@@ -31,6 +31,9 @@ fields.
 | `qwen-native-tools-30317439173` | 30317439173 | Hosted Qwen3-Coder-30B atomic-patch baseline; failed at 123,384 tokens |
 | `qwen-native-tools-scoped-30317963475` | 30317963475 | Scoped atomic-patch diagnostic; failed at 34,892 tokens after cutting failure spend |
 | `qwen-native-tools-required-30318295306` | 30318295306 | Required-tool diagnostic; failed at 81,648 tokens in a repeated action-batch loop |
+| `qwen-literal-native-atomic-30358919239` | 30358919239 | Literal vLLM `qwen3_xml` atomic-patch cell; failed at 34,146 tokens |
+| `qwen-literal-native-scoped-30358919239` | 30358919239 | Literal vLLM `qwen3_xml` scoped cell; failed at 53,451 tokens |
+| `qwen-literal-native-required-30359943752` | 30359943752 | Literal vLLM `qwen3_xml` required-tool cell; failed at 181,884 tokens and the turn cap |
 
 Full raw rows, traces, diffs, and validator output remain in the cited GitHub
 Actions artifacts for the configured retention period. They are not copied

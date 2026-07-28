@@ -133,15 +133,25 @@ Requiring a tool on every turn in
 regressed to 81,648 tokens and repeated the same three-action batch; that
 variant is rejected.
 
-The separately preregistered literal parser
-[workflow 30317300977](https://github.com/layer1labs/specsmith/actions/runs/30317300977)
-would have served the FP8 checkpoint on vLLM with `qwen3_xml`, but Hugging
-Face rejected endpoint creation because the workflow token lacked
-`inference.endpoints.write`. No endpoint or model request was created and no
-endpoint compute was billed. This is censored infrastructure evidence, not a
-Qwen result. The next valid run requires only the corrected secret permission;
-the model, parser, image, hardware class, probes, and time bounds are already
-locked.
+The separately preregistered literal parser first produced censored workflow
+[30317300977](https://github.com/layer1labs/specsmith/actions/runs/30317300977).
+After correcting the endpoint permission,
+[workflow 30358919239](https://github.com/layer1labs/specsmith/actions/runs/30358919239)
+served the official FP8 checkpoint on vLLM `0.24.0`, passed the exact native
+`qwen3_xml` tool probe, and then failed atomic and scoped T28 cells at 34,146
+and 53,451 tokens. The scoped cell was slower and more expensive in tokens,
+contrary to the hosted route result. Native required-tool workflow
+[30359943752](https://github.com/layer1labs/specsmith/actions/runs/30359943752)
+failed at 181,884 tokens, 20 turns, and five of ten files. It exchanged
+premature prose stops for truncation and milestone fragmentation. Both
+ephemeral endpoints were confirmed paused and deleted; their combined receipt
+cost was approximately `$0.430977`.
+
+These runs resolve the parser uncertainty but strengthen the negative
+conclusion: native `qwen3_xml` compatibility is necessary, not sufficient, and
+globally required tool choice is actively inefficient for this model/task.
+None of the three rows is eligible for repetition or a frontier-substitution
+claim.
 
 ## Reproduction
 
