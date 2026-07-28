@@ -579,6 +579,7 @@ _EDIT_FILE_TOOL: dict[str, Any] = {
                 "path": {"type": "string", "description": "File path relative to project root"},
                 "old_text": {
                     "type": "string",
+                    "minLength": 1,
                     "description": "Exact non-empty text currently present exactly once",
                 },
                 "new_text": {
@@ -614,6 +615,7 @@ _PATCH_FILE_TOOL: dict[str, Any] = {
                             f"old_text_{index}",
                             {
                                 "type": "string",
+                                "minLength": 1,
                                 "description": (
                                     f"Exact non-empty current text for replacement {index}"
                                 ),

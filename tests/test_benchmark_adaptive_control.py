@@ -310,6 +310,7 @@ def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
             )
             properties = patch_tool["function"]["parameters"]["properties"]
             assert not any(spec.get("type") == "array" for spec in properties.values())
+            assert properties["old_text_1"]["minLength"] == 1
             assert patch_tool["function"]["strict"] is True
     else:
         assert "use write_files" in contract
@@ -321,6 +322,13 @@ def test_unknown_controller_experiment_fails_loudly(
     monkeypatch.setenv("BENCH_CONTROLLER_EXPERIMENT", "mystery")
     with pytest.raises(RuntimeError, match="Unsupported BENCH_CONTROLLER_EXPERIMENT"):
         _controller_experiment()
+
+
+def test_benchmark_workflow_exposes_scoped_native_patch_experiment() -> None:
+    workflow = (Path(__file__).parent.parent / ".github" / "workflows" / "bench.yml").read_text(
+        encoding="utf-8"
+    )
+    assert "scalar-native-patch-scoped" in workflow
 
 
 def test_benchmark_deadlines_and_retry_policy_are_bounded(
