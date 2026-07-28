@@ -1479,6 +1479,7 @@ def test_agent_loop_applies_and_records_required_scalar_protocol(
     [
         ("scalar-milestone-packet", ["auto", "auto", "auto"]),
         ("scalar-milestone-packet-adaptive", ["auto", "required", "auto"]),
+        ("scalar-milestone-packet-authority", ["auto", "required", "auto"]),
     ],
 )
 def test_milestone_packet_requires_a_tool_for_only_one_recovery_turn(

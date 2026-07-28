@@ -92,6 +92,7 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-milestone-packet",
         "scalar-milestone-packet-adaptive",
         "scalar-milestone-packet-patch",
+        "scalar-milestone-packet-authority",
     }
 )
 
@@ -308,6 +309,7 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-milestone-packet",
         "scalar-milestone-packet-adaptive",
         "scalar-milestone-packet-patch",
+        "scalar-milestone-packet-authority",
     }
 
 
@@ -327,6 +329,7 @@ def _compact_context_experiment(experiment: str) -> bool:
         "scalar-milestone-packet",
         "scalar-milestone-packet-adaptive",
         "scalar-milestone-packet-patch",
+        "scalar-milestone-packet-authority",
     }
 
 
@@ -341,6 +344,7 @@ def _native_edit_experiment(experiment: str) -> bool:
         "scalar-native-patch-scoped",
         "scalar-native-patch-scoped-required",
         "scalar-milestone-packet-patch",
+        "scalar-milestone-packet-authority",
     }
 
 
@@ -350,6 +354,7 @@ def _native_patch_experiment(experiment: str) -> bool:
         "scalar-native-patch-scoped",
         "scalar-native-patch-scoped-required",
         "scalar-milestone-packet-patch",
+        "scalar-milestone-packet-authority",
     }
 
 
@@ -361,6 +366,7 @@ def _scoped_read_experiment(experiment: str) -> bool:
         "scalar-milestone-packet",
         "scalar-milestone-packet-adaptive",
         "scalar-milestone-packet-patch",
+        "scalar-milestone-packet-authority",
     }
 
 
@@ -433,6 +439,8 @@ def _is_timeout_exception(exc: BaseException) -> bool:
 
 
 def _repair_tool_label(experiment: str) -> str:
+    if _repair_patch_only_experiment(experiment):
+        return "patch_file"
     if _native_patch_experiment(experiment):
         return "patch_file or write_file"
     if _native_edit_experiment(experiment):
@@ -446,6 +454,7 @@ def _milestone_bundle_experiment(experiment: str) -> bool:
         "scalar-milestone-packet",
         "scalar-milestone-packet-adaptive",
         "scalar-milestone-packet-patch",
+        "scalar-milestone-packet-authority",
     }
 
 
@@ -455,6 +464,7 @@ def _milestone_packet_experiment(experiment: str) -> bool:
         "scalar-milestone-packet",
         "scalar-milestone-packet-adaptive",
         "scalar-milestone-packet-patch",
+        "scalar-milestone-packet-authority",
     }
 
 
@@ -463,11 +473,20 @@ def _adaptive_required_experiment(experiment: str) -> bool:
     return experiment in {
         "scalar-milestone-packet-adaptive",
         "scalar-milestone-packet-patch",
+        "scalar-milestone-packet-authority",
     }
 
 
+def _repair_patch_only_experiment(experiment: str) -> bool:
+    """Expose only atomic repair and completion after authority identifies a path."""
+    return experiment == "scalar-milestone-packet-authority"
+
+
 def _validator_authority_experiment(experiment: str) -> bool:
-    return experiment == "scalar-parallel-validator-authority"
+    return experiment in {
+        "scalar-parallel-validator-authority",
+        "scalar-milestone-packet-authority",
+    }
 
 
 def _controller_tool_choice(condition_id: str, experiment: str) -> str:
@@ -1142,15 +1161,18 @@ def _build_focused_repair_tools(
     composite_reads: bool = False,
     repair_written: bool = False,
 ) -> list[dict]:
-    """Retain the fixed FULL schema during one controller-identified repair."""
+    """Build the bounded tool phase for one controller-identified repair."""
     del repair_written
-    return _build_active_tools(
+    tools = _build_active_tools(
         condition_id,
         task,
         diagnostics_required=False,
         composite_files=composite_files,
         composite_reads=composite_reads,
     )
+    if _repair_patch_only_experiment(_controller_experiment()):
+        return [tool for tool in tools if tool["function"]["name"] in {"patch_file", "done"}]
+    return tools
 
 
 def _updated_unchanged_read_only_streak(

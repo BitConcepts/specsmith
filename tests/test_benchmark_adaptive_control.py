@@ -334,6 +334,11 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
             ["write_file", "write_milestone", "patch_file", "done"],
             "auto",
         ),
+        (
+            "scalar-milestone-packet-authority",
+            ["write_file", "write_milestone", "patch_file", "done"],
+            "auto",
+        ),
     ],
 )
 def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
@@ -404,8 +409,10 @@ def test_benchmark_workflow_exposes_scoped_native_patch_experiment() -> None:
         Path(__file__).parent.parent / ".github" / "workflows" / "qwen-native-bench.yml"
     ).read_text(encoding="utf-8")
     assert "milestone-packets" in native_workflow
+    assert "milestone-authority-only" in native_workflow
     assert "scalar-milestone-packet-adaptive" in native_workflow
     assert "scalar-milestone-packet-patch" in native_workflow
+    assert "scalar-milestone-packet-authority" in native_workflow
 
 
 def test_benchmark_deadlines_and_retry_policy_are_bounded(
@@ -838,6 +845,27 @@ def test_validator_authority_prioritizes_independent_boundary(
 
     assert _focused_validator_repair_boundaries(task, failures) == [
         ("python tools/validate_api.py", ["backend/main.py"])
+    ]
+    assert _focused_validator_failures(task, failures) == [failures[1]]
+
+
+def test_milestone_authority_repair_surface_is_atomic_and_path_focused(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("BENCH_CONTROLLER_EXPERIMENT", "scalar-milestone-packet-authority")
+    task = get_task("T28")
+    repair_tools = _build_focused_repair_tools(
+        "SPECSMITH_FULL",
+        task,
+        composite_files=True,
+        repair_written=True,
+    )
+
+    assert [tool["function"]["name"] for tool in repair_tools] == ["patch_file", "done"]
+    assert all(tool["function"]["strict"] is True for tool in repair_tools)
+    failures = [
+        "pytest FAILED:\nself-authored tests expect HTTP 200",
+        "python tools/validate_api.py FAILED:\nPOST must return HTTP 201",
     ]
     assert _focused_validator_failures(task, failures) == [failures[1]]
 

@@ -13,6 +13,7 @@ on:
           - required-only
           - milestone-packets
           - milestone-patch-only
+          - milestone-authority-only
         default: atomic-and-scoped
       deploy_timeout_seconds:
         description: "Hard deployment deadline."
@@ -92,6 +93,8 @@ jobs:
         run: |
           if [ "${{ inputs.experiment_set }}" = "milestone-packets" ]; then
             EXPERIMENTS="scalar-milestone-packet scalar-milestone-packet-adaptive"
+          elif [ "${{ inputs.experiment_set }}" = "milestone-authority-only" ]; then
+            EXPERIMENTS="scalar-milestone-packet-authority"
           elif [ "${{ inputs.experiment_set }}" = "milestone-patch-only" ]; then
             EXPERIMENTS="scalar-milestone-packet-patch"
           elif [ "${{ inputs.experiment_set }}" = "required-only" ]; then
