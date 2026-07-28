@@ -3579,7 +3579,7 @@
     "id": "TEST-338",
     "version": 1,
     "title": "specsmith_run Tool Normalises Slash-Command and Verb Shortcut Forms",
-    "description": "specsmith_run('/specsmith save') MUST execute `specsmith save`. specsmith_run('save') MUST execute `specsmith save`. specsmith_run('specsmith audit --strict') MUST execute `specsmith audit --strict`. specsmith_run('') MUST execute `specsmith --help`. specsmith_run MUST appear in AVAILABLE_TOOLS and build_tool_registry() and carry epistemic_claims listing side-effect categories.",
+    "description": "specsmith_run('/specsmith save') MUST execute `specsmith save`. specsmith_run('save') MUST execute `specsmith save`. specsmith_run('specsmith audit') MUST execute `specsmith audit`. specsmith_run('') MUST execute `specsmith --help`. specsmith_run MUST appear in AVAILABLE_TOOLS and build_tool_registry() and carry epistemic_claims listing side-effect categories.",
     "requirement_id": "REQ-338",
     "type": "unit",
     "verification_method": "pytest",
