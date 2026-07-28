@@ -60,12 +60,19 @@ def main() -> int:
             return _fail("GET filters must compose severity and status and still return a list")
 
         acknowledged = client.patch(f"/api/incidents/{created['id']}/ack")
+        if acknowledged.status_code != 200:
+            return _fail("PATCH acknowledge must return HTTP 200 for a known incident")
+        acknowledged_payload = acknowledged.json()
+        if not isinstance(acknowledged_payload, dict):
+            return _fail("PATCH acknowledge must return the updated incident object")
         if (
-            acknowledged.status_code != 200
-            or acknowledged.json().get("status") != "acknowledged"
-            or acknowledged.json().get("acknowledged_at") is None
+            acknowledged_payload.get("status") != "acknowledged"
+            or acknowledged_payload.get("acknowledged_at") is None
         ):
-            return _fail("PATCH acknowledge must persist status and acknowledged_at")
+            return _fail(
+                "PATCH acknowledge must return the incident with status=acknowledged "
+                "and a non-null acknowledged_at"
+            )
         if client.patch("/api/incidents/unknown/ack").status_code != 404:
             return _fail("PATCH acknowledge must return 404 for an unknown incident")
         invalid = client.post(

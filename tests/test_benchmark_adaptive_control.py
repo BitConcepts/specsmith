@@ -46,6 +46,7 @@ from govern_bench.harness import (  # noqa: E402
     _read_paths_from_calls,
     _record_written_evidence,
     _repair_failure_signature,
+    _repeated_write_recovery,
     _replace_adaptive_progress_message,
     _request_timeout_seconds,
     _run_missing_completion_validators,
@@ -339,6 +340,11 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
             ["write_file", "write_milestone", "patch_file", "done"],
             "auto",
         ),
+        (
+            "scalar-milestone-packet-authority-v2",
+            ["write_file", "write_milestone", "patch_file", "done"],
+            "auto",
+        ),
     ],
 )
 def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
@@ -410,9 +416,11 @@ def test_benchmark_workflow_exposes_scoped_native_patch_experiment() -> None:
     ).read_text(encoding="utf-8")
     assert "milestone-packets" in native_workflow
     assert "milestone-authority-only" in native_workflow
+    assert "milestone-authority-v2-only" in native_workflow
     assert "scalar-milestone-packet-adaptive" in native_workflow
     assert "scalar-milestone-packet-patch" in native_workflow
     assert "scalar-milestone-packet-authority" in native_workflow
+    assert "scalar-milestone-packet-authority-v2" in native_workflow
 
 
 def test_benchmark_deadlines_and_retry_policy_are_bounded(
@@ -869,6 +877,17 @@ def test_milestone_authority_repair_surface_is_atomic_and_path_focused(
     ]
     assert _focused_validator_failures(task, failures) == [failures[1]]
 
+    monkeypatch.setenv("BENCH_CONTROLLER_EXPERIMENT", "scalar-milestone-packet-authority-v2")
+    assert [
+        tool["function"]["name"]
+        for tool in _build_focused_repair_tools(
+            "SPECSMITH_FULL",
+            task,
+            composite_files=True,
+            repair_written=True,
+        )
+    ] == ["patch_file", "done"]
+
 
 def test_full_completion_applies_one_bounded_ruff_safe_fix(
     tmp_path: Path,
@@ -968,6 +987,13 @@ def test_second_narration_recovery_requires_new_write_scope_progress() -> None:
         files_written=[],
         write_count_at_last_recovery=0,
     )
+    assert _can_recover_nonterminal_narration(
+        narration,
+        recovery_count=1,
+        files_written=["backend/main.py"],
+        write_count_at_last_recovery=1,
+        write_revision_count=2,
+    )
     assert not _can_recover_nonterminal_narration(
         narration,
         recovery_count=1,
@@ -986,6 +1012,19 @@ def test_second_narration_recovery_requires_new_write_scope_progress() -> None:
         files_written=["backend/main.py", "worker/main.go"],
         write_count_at_last_recovery=1,
     )
+
+
+def test_repeated_repair_loop_never_advances_past_failed_authority() -> None:
+    recovery = _repeated_write_recovery(
+        "backend/main.py",
+        1,
+        ["worker/main.go"],
+        active_repair=True,
+    )
+
+    assert "authoritative validator still fails" in recovery
+    assert "Do not advance to another milestone" in recovery
+    assert "worker/main.go" not in recovery
 
 
 def test_serialized_done_recovery_requires_exact_schema_and_complete_scope() -> None:

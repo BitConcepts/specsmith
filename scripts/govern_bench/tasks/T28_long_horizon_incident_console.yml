@@ -18,7 +18,7 @@ milestones:
   - name: shared contract and API
     criteria:
       - "Schema declares exactly the seven incident fields, both enums, nullable acknowledged_at, required fields, and rejects additional properties."
-      - "One resettable in-memory store powers create (201), composable list filters, acknowledge (404 when absent), and the unchanged health route."
+      - "One resettable in-memory store powers create (201), composable list filters, acknowledge returning the updated incident (404 when absent), and the unchanged health route."
       - "Public backend tests cover create, filtering, acknowledgement, missing IDs, and isolated store state."
     files:
       - contracts/incident.schema.json
@@ -73,7 +73,7 @@ task_prompt: |
   Python API:
   - POST /api/incidents creates an incident and returns HTTP 201
   - GET /api/incidents lists incidents and supports optional severity and status filters
-  - PATCH /api/incidents/{id}/ack acknowledges an incident and returns 404 for an unknown id
+  - PATCH /api/incidents/{id}/ack returns the updated acknowledged incident and returns 404 for an unknown id
   - preserve GET /health and keep state deterministic and testable
   - public tests and API routes must exercise the same resettable in-memory incident store
   - keep query-filter defaults lint-safe; do not call Query(...) directly in a function default

@@ -686,6 +686,16 @@ def test_long_horizon_task_has_polyglot_ui_scope_and_extended_turn_budget() -> N
     assert task.milestones[1]["validators"] == ["go -C worker test ./..."]
 
 
+def test_t28_visible_api_validator_reports_null_acknowledgement_actionably() -> None:
+    validator = (_get_project_dir(get_task("T28").project) / "tools" / "validate_api.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "acknowledged.json().get" not in validator
+    assert "PATCH acknowledge must return the updated incident object" in validator
+    assert "status=acknowledged" in validator
+
+
 def test_t28_validation_evidence_is_invalidated_by_declared_boundary() -> None:
     task = get_task("T28")
     validators = set(task.allowed_validator_commands)
@@ -1480,6 +1490,7 @@ def test_agent_loop_applies_and_records_required_scalar_protocol(
         ("scalar-milestone-packet", ["auto", "auto", "auto"]),
         ("scalar-milestone-packet-adaptive", ["auto", "required", "auto"]),
         ("scalar-milestone-packet-authority", ["auto", "required", "auto"]),
+        ("scalar-milestone-packet-authority-v2", ["auto", "required", "auto"]),
     ],
 )
 def test_milestone_packet_requires_a_tool_for_only_one_recovery_turn(

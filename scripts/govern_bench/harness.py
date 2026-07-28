@@ -93,6 +93,7 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-milestone-packet-adaptive",
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
+        "scalar-milestone-packet-authority-v2",
     }
 )
 
@@ -310,6 +311,7 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-adaptive",
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
+        "scalar-milestone-packet-authority-v2",
     }
 
 
@@ -330,6 +332,7 @@ def _compact_context_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-adaptive",
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
+        "scalar-milestone-packet-authority-v2",
     }
 
 
@@ -345,6 +348,7 @@ def _native_edit_experiment(experiment: str) -> bool:
         "scalar-native-patch-scoped-required",
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
+        "scalar-milestone-packet-authority-v2",
     }
 
 
@@ -355,6 +359,7 @@ def _native_patch_experiment(experiment: str) -> bool:
         "scalar-native-patch-scoped-required",
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
+        "scalar-milestone-packet-authority-v2",
     }
 
 
@@ -367,6 +372,7 @@ def _scoped_read_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-adaptive",
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
+        "scalar-milestone-packet-authority-v2",
     }
 
 
@@ -455,6 +461,7 @@ def _milestone_bundle_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-adaptive",
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
+        "scalar-milestone-packet-authority-v2",
     }
 
 
@@ -465,6 +472,7 @@ def _milestone_packet_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-adaptive",
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
+        "scalar-milestone-packet-authority-v2",
     }
 
 
@@ -474,18 +482,23 @@ def _adaptive_required_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-adaptive",
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
+        "scalar-milestone-packet-authority-v2",
     }
 
 
 def _repair_patch_only_experiment(experiment: str) -> bool:
     """Expose only atomic repair and completion after authority identifies a path."""
-    return experiment == "scalar-milestone-packet-authority"
+    return experiment in {
+        "scalar-milestone-packet-authority",
+        "scalar-milestone-packet-authority-v2",
+    }
 
 
 def _validator_authority_experiment(experiment: str) -> bool:
     return experiment in {
         "scalar-parallel-validator-authority",
         "scalar-milestone-packet-authority",
+        "scalar-milestone-packet-authority-v2",
     }
 
 
@@ -1219,6 +1232,29 @@ def _updated_repeated_write_streak(
     return 0
 
 
+def _repeated_write_recovery(
+    boundary_label: str,
+    repeated_write_streak: int,
+    remaining: list[str],
+    *,
+    active_repair: bool,
+) -> str:
+    """Keep loop recovery inside an unresolved authoritative repair boundary."""
+    if active_repair:
+        return (
+            f"Loop guard: the same repair boundary ({boundary_label}) was selected in "
+            f"{repeated_write_streak + 1} consecutive turns and its authoritative "
+            "validator still fails. Do not advance to another milestone. Apply a "
+            "materially different exact patch from the latest failure and current content."
+        )
+    return (
+        f"Loop guard: the same write boundary ({boundary_label}) was selected in "
+        f"{repeated_write_streak + 1} consecutive turns. Do not rewrite that boundary "
+        "until validation identifies a new defect. Continue with a different incomplete "
+        f"boundary{': ' + ', '.join(remaining[:6]) if remaining else ''}."
+    )
+
+
 def _is_specsmith_condition(condition_id: str) -> bool:
     return condition_id in {"SPECSMITH_LIGHT", "SPECSMITH_FULL"}
 
@@ -1584,11 +1620,13 @@ def _can_recover_nonterminal_narration(
     recovery_count: int,
     files_written: list[str],
     write_count_at_last_recovery: int,
+    write_revision_count: int | None = None,
 ) -> bool:
     """Allow one initial narration repair and one more only after write progress."""
     if not _looks_like_nonterminal_narration(content) or recovery_count >= 2:
         return False
-    return recovery_count == 0 or len(files_written) > write_count_at_last_recovery
+    write_progress = len(files_written) if write_revision_count is None else write_revision_count
+    return recovery_count == 0 or write_progress > write_count_at_last_recovery
 
 
 def _serialized_done_tool_call(
@@ -3634,6 +3672,7 @@ def _run_agent_loop(
     empty_response_retries = 0
     text_continuation_retries = 0
     text_continuation_write_count = 0
+    successful_write_revision_count = 0
     verification_retries = 0
     serialized_action_count = 0
     last_write_boundary: tuple[str, ...] = ()
@@ -3819,11 +3858,12 @@ def _run_agent_loop(
                     recovery_count=text_continuation_retries,
                     files_written=files_written,
                     write_count_at_last_recovery=text_continuation_write_count,
+                    write_revision_count=successful_write_revision_count,
                 )
                 and turn + 1 < max_turns
             ):
                 text_continuation_retries += 1
-                text_continuation_write_count = len(files_written)
+                text_continuation_write_count = successful_write_revision_count
                 rework_turns += 1
                 recovery = (
                     "The response described a future action but issued no tool call. "
@@ -4282,6 +4322,7 @@ def _run_agent_loop(
             active_write_paths = _next_incomplete_boundary_paths(task, files_written)
 
         if successful_write_paths:
+            successful_write_revision_count += len(successful_write_paths)
             _record_written_evidence(
                 project_root,
                 successful_write_paths,
@@ -4693,11 +4734,11 @@ def _run_agent_loop(
         if repeated_write_streak and not finished:
             remaining = [path for path in task.expected_files_changed if path not in files_written]
             boundary_label = ", ".join(current_write_boundary)
-            recovery = (
-                f"Loop guard: the same write boundary ({boundary_label}) was selected in "
-                f"{repeated_write_streak + 1} consecutive turns. Do not rewrite that boundary "
-                "until validation identifies a new defect. Continue with a different incomplete "
-                f"boundary{': ' + ', '.join(remaining[:6]) if remaining else ''}."
+            recovery = _repeated_write_recovery(
+                boundary_label,
+                repeated_write_streak,
+                remaining,
+                active_repair=bool(active_repair_focus),
             )
             messages.append({"role": "user", "content": recovery})
             agent_transcript.append(
@@ -4709,6 +4750,7 @@ def _run_agent_loop(
                 }
             )
             rework_turns += 1
+            force_tool_call_next_turn = True
             if repeated_write_streak >= 3:
                 stop_reason = "repeated_tool_loop"
                 break
