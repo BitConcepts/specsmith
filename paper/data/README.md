@@ -34,6 +34,9 @@ fields.
 | `qwen-literal-native-atomic-30358919239` | 30358919239 | Literal vLLM `qwen3_xml` atomic-patch cell; failed at 34,146 tokens |
 | `qwen-literal-native-scoped-30358919239` | 30358919239 | Literal vLLM `qwen3_xml` scoped cell; failed at 53,451 tokens |
 | `qwen-literal-native-required-30359943752` | 30359943752 | Literal vLLM `qwen3_xml` required-tool cell; failed at 181,884 tokens and the turn cap |
+| `native-sol-structured-v4-admission-30417839826` | 30417839826 | GPT-5.6 Sol native structured milestone admission; correct at 17,844 tokens |
+| `native-sol-structured-v4-n5-30418033123` | 30418033123 | Five-row native structured milestone promotion; 5/5 correct at 17,912 mean TPCA |
+| `native-sol-structured-v4-n10-30418513274` | 30418513274 | Independent native structured milestone confirmation; 10/10 correct at 17,907 mean TPCA |
 
 Full raw rows, traces, diffs, and validator output remain in the cited GitHub
 Actions artifacts for the configured retention period. They are not copied

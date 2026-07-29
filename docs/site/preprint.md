@@ -33,7 +33,7 @@ favorable point estimate.
 | Published 8B or mini models replace frontier models | A small-model admission, matched n=5 screen, and n=10 release gate all pass | Rejected for current routes: Llama 3.1 8B and GPT-4o mini T28 admissions failed |
 | A reasoning-capable 20B–32B model can complete governed T28 | Correct public checks and independent oracle in admission | Supported at n=1 for Qwen3.6-27B/DeepInfra; the best controller diagnostic used 26,850 tokens and 6 turns |
 | A 20B–32B governed model replaces frontier Sol efficiently | Correct admission inside the versioned Sol envelope, then matched n=5 and n=10 gates | Not supported: the best correct 27B cell still used 1.53× the Sol token envelope and has no matched n=5 confirmation |
-| Native Responses tools improve the governed T28 model/cost frontier | Same-controller route admission followed by matched n=5 and n=10 confirmation | Screening only: Terra passed 5/5 at 17,213 TPCA and $0.1176 per pass; strict-schema Luna passed 5/5 but regressed to 31,685 TPCA and 40% first-pass; no n=10 native claim |
+| Native Responses tools improve the governed T28 model/cost frontier | Same-controller route admission followed by matched n=5 and n=10 confirmation | Route-specific support: structured-schema Sol passed an independent 10/10 confirmation at 17,907 TPCA and 1.77% CV; Terra's separate fixed-schema n=5 remains lower-cost at 17,213 TPCA; no cross-task native claim |
 | Small models universally replace frontier models | Broad external replication across fresh repositories, languages, providers, and task distributions | Not claimed |
 
 The decisive
@@ -202,6 +202,16 @@ was correct with one tool hash and no repairs, but used 19,288 tokens—1.10× t
 release anchor. The result rejects repetition and isolates provider-schema
 overhead as the next systems variable; it is negative screening evidence, not
 an improved frontier.
+
+Structured milestone v4 then replaced eight fixed/null fields with one strict
+bounded object array while retaining the same task, milestone order,
+validators, oracle, timeouts, and turn ceiling. Admission and n=5 passed before
+the independent
+[n=10 confirmation 30418513274](https://github.com/layer1labs/specsmith/actions/runs/30418513274)
+passed 10/10 at 17,907 mean TPCA, five turns, 100% first-pass completion, and
+1.77% CV. This is 7.2% below v3 and establishes a release-sized Sol/T28 route
+result. It does not establish a universal native-interface or cross-repository
+effect.
 
 ## Reproduction
 

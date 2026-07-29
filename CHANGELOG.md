@@ -40,6 +40,10 @@ consolidated into the next published release.
 - Add structured-milestone v4 with a provider-strict bounded object array and
   atomic local validation, reducing fixed/null schema overhead without changing
   task, milestone, validator, oracle, timeout, or turn controls.
+- Complete v4 admission `30417839826`, n=5 screen `30418033123`, and
+  independent n=10 confirmation `30418513274`. The final sample passed 10/10
+  and first-pass 10/10 at 17,907 mean TPCA, five turns, 1.77% CV, and one
+  schema hash per row; the audit reports no correctness or efficiency blocker.
 - Exclude authoritative milestone-packet paths from optional generic preload
   context so the model never receives a duplicate or stale copy of an active
   file while preserving the default just-in-time context policy.

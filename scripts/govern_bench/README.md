@@ -56,11 +56,12 @@ provider-strict: every slot is present, unused slots are null, and used content
 must be text. The isolated v3 admission `30416984775` stayed correct at 19,288
 tokens and five turns with one provider-visible schema hash, but regressed 10%
 above the release anchor and was blocked from repetition. Its trace showed
-strict fixed/null slots adding input overhead on every turn. The preregistered
-v4 admission keeps the same local atomicity and provider strictness while
-replacing those eight slots with one bounded array of strict `{path, content}`
-objects. It restores the byte-identical T28 task control and starts with one
-GPT-5.6 Sol native cell.
+strict fixed/null slots adding input overhead on every turn. Structured v4
+replaced those eight slots with one bounded strict `{path, content}` array and
+passed admission `30417839826`, n=5 screen `30418033123`, and independent n=10
+confirmation `30418513274`. The final ten rows were 10/10 correct and
+first-pass at 17,907 mean TPCA, five turns, 1.77% CV, and one schema hash per
+row. The audit reports no correctness or efficiency blocker.
 
 ---
 

@@ -424,3 +424,9 @@
 - **Type**: wi_close
 - **Status**: complete
 - **Chain hash**: `29c8d63cc8d3f03b...`
+
+## 2026-07-28T23:31 — wi_close WI-772FD14732DA: Published and verified v4 native structured admission, n=5, and independent n=10 evidence with synchronized README, RTD, changelog, audit, and preprint.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `95022a89f828c784...`

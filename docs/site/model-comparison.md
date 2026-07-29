@@ -39,6 +39,9 @@ task-conditional substitution—not general small-model replacement.
 | [30413249488](https://github.com/layer1labs/specsmith/actions/runs/30413249488) | GPT-5.6 Terra / native Responses | 5 T28 FULL | 5/5 correct at 17.2k TPCA, $0.1176 mean cost, five turns, clean audit |
 | [30415451446](https://github.com/layer1labs/specsmith/actions/runs/30415451446) | GPT-5.6 Luna / strict native Responses | 5 T28 FULL | 5/5 correct, but 31.7k TPCA, 6.2 turns, 40% first-pass, and large variance; rejected |
 | [30416984775](https://github.com/layer1labs/specsmith/actions/runs/30416984775) | GPT-5.6 Sol / stable-schema native Responses v3 | 1 T28 FULL | Correct at 19.3k TPCA and five turns; 1.10× release anchor, so repetition rejected |
+| [30418513274](https://github.com/layer1labs/specsmith/actions/runs/30418513274) | GPT-5.6 Sol / structured native Responses v4 | 10 T28 FULL | 10/10 correct and first-pass at 17.9k TPCA, five turns, 1.77% CV; release-sized audit clear |
+| [30418033123](https://github.com/layer1labs/specsmith/actions/runs/30418033123) | GPT-5.6 Sol / structured native Responses v4 | 5 T28 FULL | 5/5 correct at 17.9k TPCA; promoted to independent n=10 |
+| [30417839826](https://github.com/layer1labs/specsmith/actions/runs/30417839826) | GPT-5.6 Sol / structured native Responses v4 | 1 T28 FULL | Correct at 17.8k TPCA; structured schema admitted |
 | [30415300896](https://github.com/layer1labs/specsmith/actions/runs/30415300896) | GPT-5.6 Luna / strict native Responses | 1 T28 FULL | Correct at 18.8k TPCA after provider-strict schema repair; promoted to n=5 |
 | [30412913235](https://github.com/layer1labs/specsmith/actions/runs/30412913235) | GPT-5.6 Terra / native Responses | 1 T28 FULL | Correct at 17.0k TPCA; promoted to n=5 |
 | [30412677765](https://github.com/layer1labs/specsmith/actions/runs/30412677765) | GPT-5.6 Sol / native Responses | 1 T28 FULL | Correct at 18.5k TPCA; native tool/continuation route admitted |
@@ -422,15 +425,11 @@ rejected.
 
 The next managed admissions should remain bounded:
 
-1. **GPT-5.6 Sol structured-milestone native admission** — screen controller
-   v4 once on T28/FULL. Replace v3's eight fixed/null milestone slots with one
-   provider-strict bounded object array while retaining atomic local
-   validation, stable repair tools, effort, verbosity, timeouts, validators,
-   oracle, milestone sequencing, and turn ceiling. Do not repeat unless the
-   audit clears the current Sol envelope.
-2. **GPT-5.6 Terra native release confirmation** — expand the identical T28
-   cell from five to ten repetitions before making a release-quality native
-   route claim. Do not pool the earlier n=1 admission.
+1. **GPT-5.6 Terra structured-schema admission** — apply the now release-sized
+   v4 controller to one Terra T28/FULL cell. This is a new controller path for
+   Terra, so start at n=1 and do not pool the earlier fixed-schema n=5 screen.
+2. **Fresh-repository replication** — keep v4 frozen and test a new
+   long-horizon repository/task family before generalizing the T28 result.
 3. **Qwen3-Coder-Next with its native `qwen3_coder` parser** — provision a
    multi-GPU or hosted endpoint with bounded request timeouts and begin with one
    T28 FULL atomic-patch cell; do not substitute the measured Novita route.

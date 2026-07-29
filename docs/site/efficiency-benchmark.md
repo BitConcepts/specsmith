@@ -744,6 +744,9 @@ Chat Completions compatibility mode to native Responses function tools.
 | [30415300896](https://github.com/layer1labs/specsmith/actions/runs/30415300896) | GPT-5.6 Luna, strict schema | 1/1 | 18,798 | $0.0532 | 5 | correct repair admission; repeat eligible |
 | [30415451446](https://github.com/layer1labs/specsmith/actions/runs/30415451446) | GPT-5.6 Luna, strict schema | 5/5 | 31,685 | $0.1137 | 6.2 | correct but token/first-pass regression; reject repetition |
 | [30416984775](https://github.com/layer1labs/specsmith/actions/runs/30416984775) | GPT-5.6 Sol, stable-schema v3 | 1/1 | 19,288 | $0.2597 | 5 | correct; 1.10× release anchor; reject repetition |
+| [30417839826](https://github.com/layer1labs/specsmith/actions/runs/30417839826) | GPT-5.6 Sol, structured v4 | 1/1 | 17,844 | $0.2582 | 5 | correct; promote to n=5 |
+| [30418033123](https://github.com/layer1labs/specsmith/actions/runs/30418033123) | GPT-5.6 Sol, structured v4 | 5/5 | 17,912 | $0.2540 | 5 | clean screen; promote to n=10 |
+| [30418513274](https://github.com/layer1labs/specsmith/actions/runs/30418513274) | GPT-5.6 Sol, structured v4 | 10/10 | 17,907 | $0.2501 | 5 | release-sized; publish or expand |
 
 Every successful Sol and Terra row passed public validators and the hidden
 oracle, completed all four milestones, and used one implementation attempt
@@ -782,14 +785,24 @@ above the 17,502-token release anchor, so the audit returned
 fixed/null schemas added roughly 120–160 input tokens per turn without a repair
 benefit.
 
-The preregistered v4 diagnostic changes only that serialization boundary. It
-uses one provider-strict bounded array of `{path, content}` objects for
-multi-file milestones and retains `write_file` for the single-file milestone.
-Local execution still validates the complete payload before an atomic write.
-The T28 task file is restored byte-for-byte; hidden oracle, validators,
-milestone sequencing, 20-turn ceiling, low effort/verbosity, request deadlines,
-and zero provider retries remain unchanged. Start with one Sol cell and do not
-repeat unless the audit clears it.
+Structured v4 changed only that serialization boundary. It uses one
+provider-strict bounded array of `{path, content}` objects for multi-file
+milestones and retains `write_file` for the single-file milestone. Local
+execution validates the complete payload before an atomic write. The T28 task
+file, hidden oracle, validators, milestone sequencing, 20-turn ceiling, low
+effort/verbosity, request deadlines, and zero provider retries remained
+unchanged.
+
+Admission passed at 17,844 tokens. The earned n=5 screen passed 5/5 at 17,912
+mean TPCA, then an independent n=10 confirmation passed 10/10 at 17,907 mean
+TPCA (17,436–18,356), $0.2501 mean cost, five turns, 100% first-pass, and 1.77%
+CV. Every row completed all four milestones and retained one tool-schema hash.
+Relative to v3, the release-sized mean is 7.2% lower; it is 3.1% below the
+earlier native Sol admission and 2.3% above the established 17,502-token
+release anchor. The audit returned `publish_or_expand` with no correctness or
+efficiency blocker. Its only low-severity note was provider cache
+discontinuity; preserving server history would retain stale source bodies, so
+this cycle keeps bounded epistemic compression and freezes v4.
 
 ## Benchmark-driven optimization loop
 

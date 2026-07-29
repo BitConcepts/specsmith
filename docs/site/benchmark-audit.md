@@ -48,6 +48,30 @@ then separated two correct weaker models by efficiency: Luna was rejected at
 43,112 tokens and eleven turns, while Terra advanced at 17,655 tokens and five
 turns. This demonstrates why correctness alone is not an admission decision.
 
+## Native structured-schema audit
+
+The native Responses controller followed the same fail-closed ladder. Stable
+fixed/null schemas first passed Sol admission in
+[workflow 30416984775](https://github.com/layer1labs/specsmith/actions/runs/30416984775)
+at 19,288 tokens, but the audit measured a 1.10× controller regression and
+blocked repetition. The trace showed provider-schema overhead on every turn.
+
+Structured v4 replaced only that milestone argument shape with one strict,
+bounded object array. Admission and n=5 cleared their gates before the
+independent
+[n=10 confirmation 30418513274](https://github.com/layer1labs/specsmith/actions/runs/30418513274)
+passed 10/10 at 17,907 mean TPCA, five turns, 100% first-pass completion, and
+1.77% CV. Every row passed the hidden oracle, completed all four milestones,
+and retained one schema hash. The audit returned `publish_or_expand` with no
+correctness or efficiency blocker.
+
+One low-severity cache note remains: milestone compaction intentionally
+invalidates server-side continuation so completed source bodies can be evicted.
+Keeping an append-only provider history might improve cache receipts but would
+retain stale epistemic context. Because the release-sized token envelope is
+stable, v4 freezes bounded context rather than trading it for an unmeasured
+cache optimization.
+
 ## Current broad audit
 
 [Workflow 30206398622](https://github.com/layer1labs/specsmith/actions/runs/30206398622)

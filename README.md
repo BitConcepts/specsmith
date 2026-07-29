@@ -143,24 +143,17 @@ Cursor-style condition passed 70/80 at 24.8k. On coding-only tasks both passed
 
 The preregistered matched n=10 substitution run found that GPT-5.6 Terra +
 FULL passed 80/80 mixed-suite cells at 11.7k TPCA, while frontier Sol raw
-passed 65/80 at 28.0k. Both mixed-suite confidence gates passed. The
-prespecified coding-only slice favored Terra + FULL (60/60 at 15.6k versus
-55/60 at 30.3k), but its correctness interval missed the non-inferiority
-margin by 0.7 percentage points. A governed Qwen3.6-27B cell has now passed
-the full long-horizon admission. A later n=1 controller diagnostic reduced
-that correct cell from 72.3k to 26.9k tokens, but it remains 1.53× the 17.5k
-GPT-5.6 Sol envelope and has not passed repeated promotion gates. A fixed-scalar
-milestone bundle independently restored correctness at 71.1k tokens; exact-edit
-and alternate managed Qwen routes failed. On a hosted Qwen3-Coder-30B
-native-tool route, scoped atomic patching cut a failed T28 attempt from 123.4k
-to 34.9k tokens, but did not make it correct; forcing tool use regressed to
-81.6k. A later literal vLLM `qwen3_xml` run proved native parser compatibility,
-but its atomic, scoped, and required-tool cells still failed at 34.1k, 53.5k,
-and 181.9k tokens. Milestone packets also failed; independent-validator
-authority plus atomic repair cut one failed diagnostic to 18.6k tokens, but it
-completed only one of four milestones. Forcing repeated repairs regressed to
-98.7k. Specsmith therefore does not claim that small models generally replace
-frontier models.
+passed 65/80 at 28.0k. Both mixed-suite confidence gates passed; the separate
+coding-only confidence gate remained inconclusive.
+
+For the long-horizon polyglot task, native structured milestone tools with
+GPT-5.6 Sol passed an independent 10/10 confirmation at 17.9k TPCA, five turns,
+and 1.77% coefficient of variation. The schema change reduced TPCA by 7.2%
+from the immediately preceding native controller diagnostic. These results are
+task- and route-specific. Managed 20B–32B and Qwen native-tool candidates have
+useful correct diagnostics but have not passed the repeated replacement gates,
+so Specsmith does not claim that small models generally replace frontier
+models.
 
 See the
 [full benchmark report](https://specsmith.readthedocs.io/stable/efficiency-benchmark/),
