@@ -1357,6 +1357,35 @@ def test_open_frontier_candidates_have_verified_routes_pricing_and_tiers() -> No
         assert model_tier(model) == "open-xl"
 
 
+def test_openai_native_registry_keeps_family_routes_evidence_separated() -> None:
+    registry = load_registry(_SCRIPTS_DIR / "govern_bench" / "models.yml")
+    candidates = select(registry, groups={"openai-native"})
+
+    assert candidates == [
+        {
+            "label": "gpt-5.6-sol-responses",
+            "provider": "openai-responses",
+            "model": "gpt-5.6-sol",
+            "group": "openai-native",
+            "tier": "frontier",
+        },
+        {
+            "label": "gpt-5.6-terra-responses",
+            "provider": "openai-responses",
+            "model": "gpt-5.6-terra",
+            "group": "openai-native",
+            "tier": "mid",
+        },
+        {
+            "label": "gpt-5.6-luna-responses",
+            "provider": "openai-responses",
+            "model": "gpt-5.6-luna",
+            "group": "openai-native",
+            "tier": "mini",
+        },
+    ]
+
+
 def test_gpt_oss_admission_uses_pinned_tool_route_and_exact_pricing() -> None:
     registry = load_registry(_SCRIPTS_DIR / "govern_bench" / "models.yml")
     candidates = select(registry, groups={"open"}, model_ids={"gpt-oss-120b"})

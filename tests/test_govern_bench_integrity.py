@@ -242,6 +242,23 @@ def test_file_bodies_are_just_in_time_by_default(
     assert "SECRET_EAGER_CONTEXT" in _build_file_context(tmp_path, "main.py")
 
 
+def test_eager_context_excludes_authoritative_boundary_paths(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "main.py").write_text("STALE_DUPLICATE_BODY\n", encoding="utf-8")
+    (tmp_path / "pyproject.toml").write_text("CURRENT_PROJECT_METADATA\n", encoding="utf-8")
+    monkeypatch.setenv("BENCH_CONTEXT_BYTES", "4000")
+
+    context = _build_file_context(
+        tmp_path,
+        "main.py\npyproject.toml",
+        exclude_paths=["main.py"],
+    )
+
+    assert "STALE_DUPLICATE_BODY" not in context
+    assert "CURRENT_PROJECT_METADATA" in context
+
+
 def test_completed_write_compaction_keeps_tool_history_schema_valid() -> None:
     body = "VERY_SECRET_FILE_BODY\n"
     assistant = {
@@ -1769,6 +1786,62 @@ def test_agent_loop_applies_and_records_required_scalar_protocol(
     ] == ["read_file", "write_file", "done"]
     assert result.call_usage[0]["controller_experiment"] == "scalar-parallel-required"
     assert result.call_usage[0]["tool_choice"] == "required"
+
+
+def test_milestone_packet_does_not_duplicate_optional_eager_context(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task = get_task("T28")
+    project = tmp_path / "project"
+    _copy_project_fixture(_get_project_dir(task.project), project)
+    captured: dict[str, object] = {}
+
+    def fake_call(**kwargs: object) -> NormalizedLLMResponse:
+        captured.update(kwargs)
+        return NormalizedLLMResponse(
+            message=NormalizedAssistantMessage(content="Intentional stop."),
+            usage=NormalizedUsage(prompt_tokens=10, completion_tokens=2),
+        )
+
+    monkeypatch.setenv("BENCH_CONTEXT_BYTES", "12000")
+    monkeypatch.setenv(
+        "BENCH_CONTROLLER_EXPERIMENT",
+        "scalar-milestone-packet-authority",
+    )
+    monkeypatch.setattr(harness_module, "_call_llm", fake_call)
+    monkeypatch.setattr(
+        harness_module,
+        "_run_governance_controller",
+        lambda *_args: {
+            "decision": "accepted",
+            "work_item_id": "WI-BENCH",
+            "requirement_ids": ["REQ-BENCH-001"],
+            "test_case_ids": ["TEST-BENCH-001"],
+            "confidence_target": 0.8,
+        },
+    )
+    monkeypatch.setattr(
+        harness_module,
+        "_run_standard_validation",
+        lambda *_args: (False, "", False, "", False, "expected incomplete fixture"),
+    )
+
+    result = _run_agent_loop(
+        provider="openai",
+        client=object(),
+        model="test-model",
+        task=task,
+        condition=get_condition("SPECSMITH_FULL"),
+        project_root=project,
+        specsmith_dir=tmp_path,
+        max_turns=1,
+    )
+
+    provider_history = json.dumps(captured["messages"])
+    assert result.stop_reason == "text_response"
+    assert provider_history.count("T28 intentionally starts without the incident model") == 1
+    assert "Long-horizon GovernanceBench polyglot product fixture" in provider_history
 
 
 @pytest.mark.parametrize(

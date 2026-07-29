@@ -36,6 +36,9 @@ task-conditional substitution—not general small-model replacement.
 | Evidence | Model/routes | Repetitions | Treatment |
 |---|---|---:|---|
 | [30210886840](https://github.com/layer1labs/specsmith/actions/runs/30210886840) | GPT-5.6 Terra + Sol | 10 per eight tasks × raw/FULL | 320 valid; mixed-suite substitution gates pass; coding-only gate is inconclusive |
+| [30413249488](https://github.com/layer1labs/specsmith/actions/runs/30413249488) | GPT-5.6 Terra / native Responses | 5 T28 FULL | 5/5 correct at 17.2k TPCA, $0.1176 mean cost, five turns, clean audit |
+| [30412913235](https://github.com/layer1labs/specsmith/actions/runs/30412913235) | GPT-5.6 Terra / native Responses | 1 T28 FULL | Correct at 17.0k TPCA; promoted to n=5 |
+| [30412677765](https://github.com/layer1labs/specsmith/actions/runs/30412677765) | GPT-5.6 Sol / native Responses | 1 T28 FULL | Correct at 18.5k TPCA; native tool/continuation route admitted |
 | [30209142281](https://github.com/layer1labs/specsmith/actions/runs/30209142281) | GPT-5.6 Sol | 1 per T1/T10/T11/T13/T28 FULL | Post-broad admission: T11 improved to 11.2k/2 turns; T13 preload regressed and was removed |
 | [30206398622](https://github.com/layer1labs/specsmith/actions/runs/30206398622) | GPT-5.6 Sol | 10 per eight tasks × Cursor/FULL | 160 valid; FULL 80/80 at 10.7k, Cursor 70/80 at 24.8k TPCA |
 | [30206394966](https://github.com/layer1labs/specsmith/actions/runs/30206394966) | GPT-5.6 Terra + Sol | 5 per T1/T10/T13/T28 × raw/FULL | Terra+FULL 20/20 at 19.1k; Sol raw 20/20 at 29.2k TPCA |
@@ -413,15 +416,18 @@ rejected.
 
 ## Next infrastructure queue
 
-The next managed admissions should remain one-cell diagnostics:
+The next managed admissions should remain bounded:
 
-1. **GPT-5.6 Sol on native Responses tools** — retain
-   `scalar-milestone-packet-authority` and run one T28/FULL cell through the
-   separately labeled `openai-responses` route. The admission must prove a
-   required native function call before the paid cell and must preserve bounded
-   request/cell deadlines. If correct, repeat with Terra to test the
-   capability/cost tradeoff.
-2. **Qwen3-Coder-Next with its native `qwen3_coder` parser** — provision a
+1. **GPT-5.6 Luna on native Responses tools** — the Sol and Terra route
+   admissions succeeded, and Terra's matched T28/FULL n=5 screen passed 5/5 at
+   17.2k TPCA and $0.1176 mean cost. Run Luna once under the identical
+   `scalar-milestone-packet-authority` controls. It receives repetition budget
+   only if the public validators and hidden oracle pass and its efficiency
+   improves on Terra.
+2. **GPT-5.6 Terra native release confirmation** — expand the identical T28
+   cell from five to ten repetitions before making a release-quality native
+   route claim. Do not pool the earlier n=1 admission.
+3. **Qwen3-Coder-Next with its native `qwen3_coder` parser** — provision a
    multi-GPU or hosted endpoint with bounded request timeouts and begin with one
    T28 FULL atomic-patch cell; do not substitute the measured Novita route.
 Kimi, GPT-OSS, GLM, DeepSeek, MiniMax, Flash, and Nemotron receive no further

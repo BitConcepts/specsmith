@@ -11,11 +11,18 @@ consolidated into the next published release.
 ## [Unreleased]
 
 ### Added
-- Add a separately labeled OpenAI Responses benchmark lane for GPT-5.6 Sol
-  and Terra with native function tools, low-effort/low-verbosity controls,
+- Add separately labeled OpenAI Responses benchmark lanes for GPT-5.6 Sol,
+  Terra, and Luna with native function tools, low-effort/low-verbosity controls,
   bounded requests, exact-prefix state continuation, provider-visible schema
   telemetry, strict-schema compatibility guards, and a two-step tool-call plus
   continuation admission probe.
+- Complete native Responses admissions `30412677765` and `30412913235`, then
+  the matched Terra screen `30413249488`: Terra passed 5/5 T28/FULL cells at
+  17,213 mean tokens, $0.1176 mean cost, five turns, all four milestones, and
+  no deterministic audit weakness.
+- Exclude authoritative milestone-packet paths from optional generic preload
+  context so the model never receives a duplicate or stale copy of an active
+  file while preserving the default just-in-time context policy.
 - Add a guarded ephemeral Hugging Face endpoint lane for
   `Qwen3-Coder-30B-A3B-Instruct-FP8` on vLLM with the native `qwen3_xml`
   parser, explicit deployment/request/cell deadlines, zero provider retries,

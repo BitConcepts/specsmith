@@ -729,15 +729,35 @@ made native Qwen 30B correct. A new candidate must change the model or serving
 capability, not merely repeat forcing. It must beat the current exact-route cell
 without weakening tests, hidden oracles, or stop bounds.
 
-The next registered candidate is `gpt-5.6-sol-responses`: the accepted
-validator-authority, milestone-packet, repair-only atomic controller is held
-constant while only the serving interface changes from Chat Completions
-compatibility mode to the Responses API's native function tools. The route
-defaults to low reasoning effort and low verbosity, has separate provenance,
-fails closed unless a two-step live probe emits the required function call and
-then continues after its output, and reuses server-side state only across an
-exact history prefix. This section records the protocol before execution; no
-efficiency claim will be added until a correct T28/FULL n=1 artifact exists.
+### Native Responses route screen
+
+The accepted validator-authority, milestone-packet, repair-only atomic
+controller was held constant while only the serving interface changed from
+Chat Completions compatibility mode to native Responses function tools.
+
+| Workflow | Model | Correct | TPCA | Mean cost | Turns | Audit |
+|---|---|---:|---:|---:|---:|---|
+| [30412677765](https://github.com/layer1labs/specsmith/actions/runs/30412677765) | GPT-5.6 Sol | 1/1 | 18,474 | $0.2590 | 5 | n=1 diagnostic; repeat eligible |
+| [30412913235](https://github.com/layer1labs/specsmith/actions/runs/30412913235) | GPT-5.6 Terra | 1/1 | 17,014 | $0.1147 | 5 | n=1 diagnostic; repeat eligible |
+| [30413249488](https://github.com/layer1labs/specsmith/actions/runs/30413249488) | GPT-5.6 Terra | 5/5 | 17,213 | $0.1176 | 5 | clean screen; expand to n=10 |
+
+Every row passed public validators and the hidden oracle, completed all four
+milestones, and used one implementation attempt with no repair cycle. The Terra
+n=5 range was 16,777–17,411 tokens; mean wall time was 45.9 seconds. Relative
+to the Sol native diagnostic, Terra's screen used 6.8% fewer mean tokens and
+54.6% lower mean cost. The separately measured July 25 Sol release envelope
+remains the release-quality comparator: this one-task n=5 screen does not
+replace a matched n=10 claim.
+
+The route defaults to low reasoning effort and low verbosity, has separate
+provenance, fails closed unless a two-step live probe emits the required
+function call and then continues after its output, and reuses server-side state
+only across an exact history prefix. Controller compaction intentionally
+invalidated continuation in these cells; implicit prompt caching still reached
+5,886 mean cached input tokens in the five-run screen. The next causal
+admission is the separately labeled Luna route. Optional generic preload now
+excludes files already supplied by an authoritative milestone packet, preventing
+duplicate or stale file bodies without changing the default zero-byte preload.
 
 ## Benchmark-driven optimization loop
 

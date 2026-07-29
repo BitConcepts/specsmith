@@ -394,3 +394,15 @@
 - **Type**: wi_close
 - **Status**: complete
 - **Chain hash**: `6b8fd17be097543d...`
+
+## 2026-07-28T21:32 — wi_close WI-0F225DB32C4B: Native Terra n=5 screen completed 5/5 with clean audit in workflow 30413249488.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `9f60028dcad13872...`
+
+## 2026-07-28T21:33 — wi_close WI-D63D7575F083: Implementation verified: 2482 tests passed, benchmark/docs suite passed, Ruff clean.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `c10af9a3b5cfd66f...`

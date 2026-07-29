@@ -33,14 +33,21 @@ repeated repairs regressed to 98,679 tokens. The controller now records
 milestone yield and stops an identical single-action no-op after one recovery;
 no additional paid repetition is admitted.
 
-The next controlled admission changes only the model-serving surface:
-`gpt-5.6-sol-responses` runs the same validator-authority, milestone-packet,
-repair-only atomic-patch controller through OpenAI's native Responses function
-tools. It uses low reasoning effort and low text verbosity, bounded requests,
-and prefix-checked `previous_response_id` continuation. History compaction
-invalidates continuation and forces a full, auditable request. This is a
-protocol-under-test, not a positive result; Sol must pass T28/FULL at n=1 before
-Terra or repeated cells are admitted.
+The native Responses admission is now complete. Sol passed T28/FULL at n=1 in
+workflow `30412677765` using 18,474 tokens and $0.2590. Terra then passed at
+n=1 in `30412913235` and earned the matched n=5 screen `30413249488`: 5/5
+correct, 17,213 mean tokens, $0.1176 mean cost, five turns, all four milestones,
+and no deterministic audit weakness. These are route-screening results, not a
+release claim. Luna is registered as the next cost-sensitive n=1 admission;
+Terra must expand to n=10 before this route supports release-quality claims.
+
+All native cells retain the validator-authority, milestone-packet, repair-only
+atomic-patch controller, low reasoning effort, low text verbosity, bounded
+requests, zero provider retries, and a two-step live tool/continuation probe.
+History compaction invalidates `previous_response_id` continuation and forces a
+full auditable request. Authoritative packet paths are excluded from optional
+generic preload context so a file body cannot be duplicated or retained after
+the active milestone advances.
 
 ---
 
@@ -223,8 +230,9 @@ GovernanceBench is designed for multi-provider runs and tier-to-tier comparisons
 
 - **OpenAI Chat Completions**: `gpt-4o-mini`, `gpt-5.6-luna`,
   `gpt-5.6-terra`, `gpt-5.6-sol`
-- **OpenAI Responses**: explicit `gpt-5.6-sol-responses` and
-  `gpt-5.6-terra-responses` registry lanes with native flat function schemas
+- **OpenAI Responses**: explicit `gpt-5.6-sol-responses`,
+  `gpt-5.6-terra-responses`, and `gpt-5.6-luna-responses` registry lanes with
+  native flat function schemas
 - **Anthropic**: `claude-haiku-4-5`, `claude-sonnet-4-5`, `claude-opus-4-5`
 - **Google**: `gemini-3.5-flash`, `gemini-3.1-pro`
 - **Qwen diagnostics**: `Qwen3.6-35B-A3B:deepinfra`,

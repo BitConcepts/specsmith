@@ -221,8 +221,8 @@ models:
 
   # ── OpenAI native tool route — controlled Responses API experiment ────
   # Keep separate labels and a separate group so results cannot be mixed with
-  # the Chat Completions compatibility route above. Start with Sol/T28/FULL;
-  # admit Terra only after the stronger route completes correctly.
+  # the Chat Completions compatibility route above. Each family member must
+  # pass T28/FULL admission before receiving repetition budget.
   - label: gpt-5.6-sol-responses
     provider: openai-responses
     model: gpt-5.6-sol
@@ -233,6 +233,11 @@ models:
     model: gpt-5.6-terra
     group: openai-native
     tier: mid
+  - label: gpt-5.6-luna-responses
+    provider: openai-responses
+    model: gpt-5.6-luna
+    group: openai-native
+    tier: mini
 
   # ── Anthropic — toggle on later with groups=anthropic ──────────────────
   - label: claude-haiku-4-5

@@ -3897,7 +3897,6 @@ def _run_agent_loop(
 
     # Preload a bounded task-relevant context; the agent can read more on demand.
     file_listing = _exec_list_files(project_root)
-    file_context = _build_file_context(project_root, file_listing)
     boundary_context = ""
     initial_context_paths: list[str] = []
     if condition.id == "SPECSMITH_FULL":
@@ -3933,6 +3932,12 @@ def _run_agent_loop(
                     },
                 }
             )
+
+    file_context = _build_file_context(
+        project_root,
+        file_listing,
+        exclude_paths=(initial_context_paths if milestone_packets and boundary_context else None),
+    )
 
     prompt_parts = [f"# Task: {task.title}", task.task_prompt]
     if visible_criteria:
@@ -5244,9 +5249,17 @@ def _run_agent_loop(
     )
 
 
-def _build_file_context(project_root: Path, file_listing: str) -> str:
-    """Pre-load key source files into the initial message to save agent read_file turns."""
+def _build_file_context(
+    project_root: Path,
+    file_listing: str,
+    *,
+    exclude_paths: list[str] | None = None,
+) -> str:
+    """Pre-load key files without duplicating authoritative boundary context."""
     lines = []
+    excluded = {
+        _normalized_history_path(path) for path in (exclude_paths or []) if str(path).strip()
+    }
     priority_patterns = [
         "main.py",
         "models.py",
@@ -5265,6 +5278,8 @@ def _build_file_context(project_root: Path, file_listing: str) -> str:
     for fname in file_listing.splitlines():
         if loaded_bytes >= max_context_bytes:
             break
+        if _normalized_history_path(fname) in excluded:
+            continue
         if any(fname.endswith(p) for p in priority_patterns):
             content = _exec_read_file(project_root, fname)
             if not content.startswith("ERROR"):
