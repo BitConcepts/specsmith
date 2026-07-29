@@ -11,6 +11,11 @@ consolidated into the next published release.
 ## [Unreleased]
 
 ### Added
+- Add a separately labeled OpenAI Responses benchmark lane for GPT-5.6 Sol
+  and Terra with native function tools, low-effort/low-verbosity controls,
+  bounded requests, exact-prefix state continuation, provider-visible schema
+  telemetry, strict-schema compatibility guards, and a two-step tool-call plus
+  continuation admission probe.
 - Add a guarded ephemeral Hugging Face endpoint lane for
   `Qwen3-Coder-30B-A3B-Instruct-FP8` on vLLM with the native `qwen3_xml`
   parser, explicit deployment/request/cell deadlines, zero provider retries,

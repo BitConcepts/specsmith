@@ -31,12 +31,14 @@ from govern_bench.harness import (  # noqa: E402
     NormalizedLLMResponse,
     NormalizedToolCall,
     NormalizedUsage,
+    OpenAIResponsesState,
     _active_boundary_has_current_evidence,
     _boundary_context_packet,
     _build_file_context,
     _build_project_diff,
     _build_tools,
     _call_openai_provider,
+    _call_openai_responses_provider,
     _compact_completed_tool_exchange,
     _compact_superseded_read_history,
     _completion_gate,
@@ -51,6 +53,7 @@ from govern_bench.harness import (  # noqa: E402
     _invalidate_validation_evidence,
     _openai_completion_token_param,
     _openai_reasoning_params,
+    _openai_tools_to_responses,
     _run_agent_loop,
     _run_governance_controller,
     _run_missing_completion_validators,
@@ -64,6 +67,8 @@ from govern_bench.probe_models import (  # noqa: E402
     _chat_probe_payload,
     _http_error_message,
     _probe_chat_endpoint,
+    _probe_responses_endpoint,
+    _responses_probe_payload,
 )
 from govern_bench.profiles import PROFILES, resolve_profile  # noqa: E402
 from govern_bench.report import _task_list_label  # noqa: E402
@@ -503,6 +508,212 @@ def test_gpt56_openai_call_uses_stable_cache_key_and_records_cache_usage(
     assert response.usage.cache_write_tokens == 10
 
 
+def test_responses_route_reuses_only_an_exact_history_prefix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    requests: list[dict] = []
+    responses = [
+        SimpleNamespace(
+            id="resp-1",
+            status="completed",
+            output_text="",
+            output=[
+                SimpleNamespace(
+                    type="function_call",
+                    call_id="call-1",
+                    name="patch_file",
+                    arguments='{"path":"app.py","patch":"@@ -1 +1 @@\\n-old\\n+new"}',
+                )
+            ],
+            usage=SimpleNamespace(
+                input_tokens=80,
+                output_tokens=12,
+                input_tokens_details=SimpleNamespace(cached_tokens=40),
+            ),
+        ),
+        SimpleNamespace(
+            id="resp-2",
+            status="completed",
+            output_text="done",
+            output=[],
+            usage=SimpleNamespace(
+                input_tokens=15,
+                output_tokens=3,
+                input_tokens_details=SimpleNamespace(cached_tokens=10),
+            ),
+        ),
+        SimpleNamespace(
+            id="resp-3",
+            status="completed",
+            output_text="reset",
+            output=[],
+            usage=SimpleNamespace(
+                input_tokens=20,
+                output_tokens=2,
+                input_tokens_details=SimpleNamespace(cached_tokens=0),
+            ),
+        ),
+    ]
+
+    def create(**kwargs):
+        requests.append(kwargs)
+        return responses.pop(0)
+
+    state = OpenAIResponsesState(client=SimpleNamespace(responses=SimpleNamespace(create=create)))
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "patch_file",
+                "description": "Apply one patch.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "path": {"type": "string"},
+                        "patch": {"type": "string"},
+                    },
+                    "required": ["path", "patch"],
+                    "additionalProperties": False,
+                },
+                "strict": True,
+            },
+        }
+    ]
+    first_messages = [
+        {"role": "system", "content": "Use tools."},
+        {"role": "user", "content": "Repair app.py."},
+    ]
+    monkeypatch.setenv("BENCH_OPENAI_REASONING_EFFORT", "low")
+    monkeypatch.setenv("BENCH_OPENAI_TEXT_VERBOSITY", "low")
+
+    first = _call_openai_responses_provider(
+        state,
+        "gpt-5.6-sol",
+        first_messages,
+        tools,
+        tool_choice="required",
+        timeout_s=30,
+    )
+    assistant = {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+            {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                    "name": "patch_file",
+                    "arguments": ('{"path":"app.py","patch":"@@ -1 +1 @@\\n-old\\n+new"}'),
+                },
+            }
+        ],
+    }
+    second_messages = [
+        *first_messages,
+        assistant,
+        {"role": "tool", "tool_call_id": "call-1", "content": "patched"},
+    ]
+    second = _call_openai_responses_provider(
+        state,
+        "gpt-5.6-sol",
+        second_messages,
+        tools,
+    )
+    _call_openai_responses_provider(
+        state,
+        "gpt-5.6-sol",
+        [{"role": "user", "content": "Compacted replacement history."}],
+        tools,
+    )
+
+    assert first.message.tool_calls[0].name == "patch_file"
+    assert first.usage.cached_tokens == 40
+    assert second.message.content == "done"
+    assert requests[0]["reasoning"] == {"effort": "low"}
+    assert requests[0]["text"] == {"verbosity": "low"}
+    assert requests[0]["tool_choice"] == "required"
+    assert requests[0]["timeout"] == 30
+    assert "previous_response_id" not in requests[0]
+    assert requests[1]["previous_response_id"] == "resp-1"
+    assert requests[1]["input"] == [
+        {
+            "type": "function_call_output",
+            "call_id": "call-1",
+            "output": "patched",
+        }
+    ]
+    assert "previous_response_id" not in requests[2]
+    assert requests[2]["input"] == [{"role": "user", "content": "Compacted replacement history."}]
+    assert first.provider_metadata == {
+        "state_reused": False,
+        "response_input_items": 1,
+        "provider_tool_schema_hash": first.provider_metadata["provider_tool_schema_hash"],
+    }
+    assert second.provider_metadata == {
+        "state_reused": True,
+        "response_input_items": 1,
+        "provider_tool_schema_hash": first.provider_metadata["provider_tool_schema_hash"],
+    }
+
+
+def test_responses_tools_use_flat_native_function_schema() -> None:
+    converted = _openai_tools_to_responses(
+        [
+            {
+                "type": "function",
+                "function": {
+                    "name": "done",
+                    "description": "Finish.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {"explanation": {"type": "string"}},
+                        "required": ["explanation"],
+                        "additionalProperties": False,
+                    },
+                    "strict": True,
+                },
+            }
+        ]
+    )
+    assert converted == [
+        {
+            "type": "function",
+            "name": "done",
+            "description": "Finish.",
+            "parameters": {
+                "type": "object",
+                "properties": {"explanation": {"type": "string"}},
+                "required": ["explanation"],
+                "additionalProperties": False,
+            },
+            "strict": True,
+        }
+    ]
+
+    optional = _openai_tools_to_responses(
+        [
+            {
+                "type": "function",
+                "function": {
+                    "name": "patch_file",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "path": {"type": "string"},
+                            "old_text_1": {"type": "string"},
+                            "old_text_2": {"type": "string"},
+                        },
+                        "required": ["path", "old_text_1"],
+                        "additionalProperties": False,
+                    },
+                    "strict": True,
+                },
+            }
+        ]
+    )
+    assert optional[0]["strict"] is False
+
+
 def test_complete_results_return_cell_signature() -> None:
     rows = [
         _row(condition="UNGOVERNED", rep=1),
@@ -619,6 +830,82 @@ def test_probe_payload_matches_reasoning_and_tool_surfaces() -> None:
     assert (kimi["temperature"], kimi["top_p"]) == (1.0, 0.95)
     assert (glm["temperature"], glm["top_p"]) == (1.0, 1.0)
     assert regular["tools"][0]["function"]["name"] == "ping"
+
+
+def test_responses_probe_requires_native_ping_call(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: list[dict] = []
+    responses = [
+        {
+            "id": "resp_probe",
+            "output": [
+                {
+                    "type": "function_call",
+                    "name": "ping",
+                    "call_id": "call_probe",
+                    "arguments": "{}",
+                }
+            ],
+            "usage": {"input_tokens": 10, "output_tokens": 2},
+        },
+        {
+            "output": [
+                {
+                    "type": "message",
+                    "content": [{"type": "output_text", "text": "OK"}],
+                }
+            ],
+            "usage": {"input_tokens": 5, "output_tokens": 1},
+        },
+    ]
+
+    class Response:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def read(self) -> bytes:
+            return json.dumps(self.payload).encode()
+
+    def urlopen(request, timeout):
+        captured.append(
+            {
+                "body": json.loads(request.data.decode()),
+                "timeout": timeout,
+            }
+        )
+        return Response(responses.pop(0))
+
+    monkeypatch.setattr("urllib.request.urlopen", urlopen)
+    result = _probe_responses_endpoint(
+        "gpt-5.6-sol",
+        "secret",
+        "https://api.openai.com/v1/responses",
+        12.0,
+    )
+
+    assert result["ok"]
+    assert len(captured) == 2
+    assert captured[0]["timeout"] == 12.0
+    assert captured[0]["body"] == _responses_probe_payload("gpt-5.6-sol")
+    assert captured[0]["body"]["tools"][0]["name"] == "ping"
+    assert "function" not in captured[0]["body"]["tools"][0]
+    assert captured[1]["body"]["previous_response_id"] == "resp_probe"
+    assert captured[1]["body"]["input"] == [
+        {
+            "type": "function_call_output",
+            "call_id": "call_probe",
+            "output": '{"status":"pong"}',
+        }
+    ]
+    assert captured[1]["body"]["tool_choice"] == "none"
+    assert result["usage"]["continuation"]["output_tokens"] == 1
 
 
 def test_probe_http_error_reports_only_bounded_provider_message() -> None:

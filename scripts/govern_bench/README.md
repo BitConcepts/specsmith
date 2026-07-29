@@ -33,6 +33,15 @@ repeated repairs regressed to 98,679 tokens. The controller now records
 milestone yield and stops an identical single-action no-op after one recovery;
 no additional paid repetition is admitted.
 
+The next controlled admission changes only the model-serving surface:
+`gpt-5.6-sol-responses` runs the same validator-authority, milestone-packet,
+repair-only atomic-patch controller through OpenAI's native Responses function
+tools. It uses low reasoning effort and low text verbosity, bounded requests,
+and prefix-checked `previous_response_id` continuation. History compaction
+invalidates continuation and forces a full, auditable request. This is a
+protocol-under-test, not a positive result; Sol must pass T28/FULL at n=1 before
+Terra or repeated cells are admitted.
+
 ---
 
 ## Quick Start
@@ -50,6 +59,11 @@ python -m govern_bench.run_bench --dry-run --reps 5
 # Admit a model cheaply before any repeated spend
 python -m govern_bench.run_bench --profile admission \
   --provider openai --model gpt-5.6-sol
+
+# Admit the native Responses tool route without changing controller policy
+BENCH_CONTROLLER_EXPERIMENT=scalar-milestone-packet-authority \
+python -m govern_bench.run_bench --profile admission \
+  --provider openai-responses --model gpt-5.6-sol
 
 # Admit controller/tool-schema changes on the affected paths
 python -m govern_bench.run_bench --profile controller-admission \
@@ -207,7 +221,10 @@ GovernanceBench is designed for multi-provider runs and tier-to-tier comparisons
 
 ### Registry candidates
 
-- **OpenAI**: `gpt-4o-mini`, `gpt-5.6-luna`, `gpt-5.6-terra`, `gpt-5.6-sol`
+- **OpenAI Chat Completions**: `gpt-4o-mini`, `gpt-5.6-luna`,
+  `gpt-5.6-terra`, `gpt-5.6-sol`
+- **OpenAI Responses**: explicit `gpt-5.6-sol-responses` and
+  `gpt-5.6-terra-responses` registry lanes with native flat function schemas
 - **Anthropic**: `claude-haiku-4-5`, `claude-sonnet-4-5`, `claude-opus-4-5`
 - **Google**: `gemini-3.5-flash`, `gemini-3.1-pro`
 - **Qwen diagnostics**: `Qwen3.6-35B-A3B:deepinfra`,
@@ -225,9 +242,9 @@ GovernanceBench is designed for multi-provider runs and tier-to-tier comparisons
 | Open-source | Infra-dependent | `Qwen/Qwen3.6-35B-A3B`, `Llama-3.3-70B`, `gpt-oss-120b` |
 
 Registry entries are candidates, not availability claims. The GitHub workflow
-live-probes exact model access, billing, and tool-call compatibility before any
-paid matrix begins. Final model ids must be recorded in run metadata and report
-headers.
+live-probes exact model access, billing, native tool calls, and post-tool
+continuation before any paid matrix begins. Final model ids must be recorded in
+run metadata and report headers.
 
 Use the workflow's `probe_only` input for a low-cost credential/model check. It
 makes one tiny tool-enabled request per OpenAI or Hugging Face model and does not

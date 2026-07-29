@@ -729,6 +729,16 @@ made native Qwen 30B correct. A new candidate must change the model or serving
 capability, not merely repeat forcing. It must beat the current exact-route cell
 without weakening tests, hidden oracles, or stop bounds.
 
+The next registered candidate is `gpt-5.6-sol-responses`: the accepted
+validator-authority, milestone-packet, repair-only atomic controller is held
+constant while only the serving interface changes from Chat Completions
+compatibility mode to the Responses API's native function tools. The route
+defaults to low reasoning effort and low verbosity, has separate provenance,
+fails closed unless a two-step live probe emits the required function call and
+then continues after its output, and reuses server-side state only across an
+exact history prefix. This section records the protocol before execution; no
+efficiency claim will be added until a correct T28/FULL n=1 artifact exists.
+
 ## Benchmark-driven optimization loop
 
 1. Run one matched diagnostic and fail closed on provider errors or missing

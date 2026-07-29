@@ -368,3 +368,29 @@
 - **Status**: complete
 - **Epistemic status**: high
 - **Chain hash**: `e00fe2ce3d0fb925...`
+
+## 2026-07-28T20:03 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `56d1ceefc961cbf5...`
+
+## 2026-07-28T20:06 — wi_close WI-79DC5E52C1B3: Completed in f00b622; TEST-338 and 50 passing governance/REPL tests verify the supported audit command.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `ccc510a9982e3ede...`
+
+## 2026-07-28T20:07 — wi_close WI-CC82E6ED96F7: Completed in 81da851; TEST-003 and TEST-300 cover machine-state derivation and sync --check.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `0dccfc98284376f5...`
+
+## 2026-07-28T20:51 — wi_close WI-1888BEA9B12A: Implemented REQ-491 with TEST-517 through TEST-519; 263 benchmark-focused and 2479 full-suite tests passed, with fail-closed native tool and continuation admission.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `6b8fd17be097543d...`

@@ -415,7 +415,13 @@ rejected.
 
 The next managed admissions should remain one-cell diagnostics:
 
-1. **Qwen3-Coder-Next with its native `qwen3_coder` parser** — provision a
+1. **GPT-5.6 Sol on native Responses tools** — retain
+   `scalar-milestone-packet-authority` and run one T28/FULL cell through the
+   separately labeled `openai-responses` route. The admission must prove a
+   required native function call before the paid cell and must preserve bounded
+   request/cell deadlines. If correct, repeat with Terra to test the
+   capability/cost tradeoff.
+2. **Qwen3-Coder-Next with its native `qwen3_coder` parser** — provision a
    multi-GPU or hosted endpoint with bounded request timeouts and begin with one
    T28 FULL atomic-patch cell; do not substitute the measured Novita route.
 Kimi, GPT-OSS, GLM, DeepSeek, MiniMax, Flash, and Nemotron receive no further

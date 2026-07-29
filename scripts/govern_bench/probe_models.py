@@ -3,8 +3,8 @@
 Hugging Face selections are checked against the Inference Providers metadata
 router. OpenAI selections are checked against the model endpoint. With
 ``--live-call``, every supported provider also receives one tiny tool-enabled
-chat request, catching exhausted credits and runtime incompatibilities before
-an expensive matrix starts.
+request on its configured API surface, catching exhausted credits and runtime
+incompatibilities before an expensive matrix starts.
 
     GET https://router.huggingface.co/v1/models/<repo_id>   (Bearer HF_TOKEN)
 
@@ -42,6 +42,7 @@ _ROUTER_MODEL_URL = "https://router.huggingface.co/v1/models/"
 _HF_CHAT_URL = "https://router.huggingface.co/v1/chat/completions"
 _OPENAI_MODEL_URL = "https://api.openai.com/v1/models/"
 _OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions"
+_OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 _HF_PROVIDER = "huggingface"
 DEFAULT_PROBE_TIMEOUT_SECONDS = 60.0
 
@@ -227,6 +228,52 @@ def _chat_probe_payload(model_id: str, *, tool_choice: str | None = None) -> dic
     return payload
 
 
+def _responses_probe_payload(model_id: str) -> dict:
+    """Build the first half of a native call-and-continuation probe."""
+    return {
+        "model": model_id,
+        "input": (
+            "Call the ping function once with no arguments. "
+            "After its output arrives, reply exactly OK."
+        ),
+        "tools": [
+            {
+                "type": "function",
+                "name": "ping",
+                "description": "Return a health-check value.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "additionalProperties": False,
+                },
+                "strict": True,
+            }
+        ],
+        "tool_choice": "required",
+        "parallel_tool_calls": True,
+        "reasoning": {
+            "effort": os.environ.get(
+                "BENCH_OPENAI_REASONING_EFFORT",
+                "low",
+            )
+            .strip()
+            .casefold()
+            or "low"
+        },
+        "text": {
+            "verbosity": os.environ.get(
+                "BENCH_OPENAI_TEXT_VERBOSITY",
+                "low",
+            )
+            .strip()
+            .casefold()
+            or "low"
+        },
+        "max_output_tokens": 128,
+        "store": True,
+    }
+
+
 def _probe_chat_endpoint(
     model_id: str,
     token: str | None,
@@ -261,6 +308,109 @@ def _probe_chat_endpoint(
         "ok": isinstance(choices, list) and bool(choices),
         "usage": usage if isinstance(usage, dict) else {},
         "error": None if isinstance(choices, list) and choices else "response had no choices",
+    }
+
+
+def _probe_responses_endpoint(
+    model_id: str,
+    token: str | None,
+    endpoint: str,
+    timeout: float,
+) -> dict:
+    """Require a native function call and a valid post-tool continuation."""
+    if not token:
+        return {"model": model_id, "ok": False, "error": "API credential is not set"}
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+    def post(payload: dict) -> dict:
+        request = urllib.request.Request(
+            endpoint,
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            parsed = json.loads(response.read().decode("utf-8"))
+        return parsed if isinstance(parsed, dict) else {}
+
+    first_request = _responses_probe_payload(model_id)
+    try:
+        payload = post(first_request)
+    except urllib.error.HTTPError as exc:
+        return {"model": model_id, "ok": False, "error": _http_error_message(exc)}
+    except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+        return {"model": model_id, "ok": False, "error": str(exc)}
+    output = payload.get("output") if isinstance(payload, dict) else None
+    usage = payload.get("usage", {}) if isinstance(payload, dict) else {}
+    function_calls = [
+        item
+        for item in (output or [])
+        if isinstance(item, dict)
+        and item.get("type") == "function_call"
+        and item.get("name") == "ping"
+        and item.get("call_id")
+    ]
+    response_id = str(payload.get("id") or "")
+    if not function_calls or not response_id:
+        return {
+            "model": model_id,
+            "ok": False,
+            "usage": usage if isinstance(usage, dict) else {},
+            "error": (
+                "response emitted no ping function call"
+                if not function_calls
+                else "response omitted the continuation id"
+            ),
+        }
+
+    call_id = str(function_calls[0]["call_id"])
+    continuation_payload = {
+        "model": model_id,
+        "previous_response_id": response_id,
+        "input": [
+            {
+                "type": "function_call_output",
+                "call_id": call_id,
+                "output": '{"status":"pong"}',
+            }
+        ],
+        "tools": first_request["tools"],
+        "tool_choice": "none",
+        "reasoning": first_request["reasoning"],
+        "text": first_request["text"],
+        "max_output_tokens": 128,
+        "store": False,
+    }
+    try:
+        continuation = post(continuation_payload)
+    except urllib.error.HTTPError as exc:
+        return {"model": model_id, "ok": False, "error": _http_error_message(exc)}
+    except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+        return {"model": model_id, "ok": False, "error": str(exc)}
+
+    continuation_text = str(continuation.get("output_text") or "").strip()
+    if not continuation_text:
+        for item in continuation.get("output") or []:
+            if not isinstance(item, dict) or item.get("type") != "message":
+                continue
+            for content in item.get("content") or []:
+                if isinstance(content, dict) and content.get("type") == "output_text":
+                    continuation_text += str(content.get("text") or "")
+    continuation_usage = continuation.get("usage", {})
+    return {
+        "model": model_id,
+        "ok": bool(continuation_text.strip()),
+        "usage": {
+            "tool_call": usage if isinstance(usage, dict) else {},
+            "continuation": (continuation_usage if isinstance(continuation_usage, dict) else {}),
+        },
+        "error": (
+            None if continuation_text.strip() else "response emitted no post-tool continuation text"
+        ),
     }
 
 
@@ -371,18 +521,26 @@ def main() -> int:
                     )
             if result["ok"] and args.live_call:
                 print("    live tool call: OK")
-        elif provider == "openai":
+        elif provider in {"openai", "openai-responses"}:
             token = os.environ.get("OPENAI_API_KEY")
             result = _probe_openai_model(model_id, token, args.timeout)
             if result["ok"]:
                 print(f"OK {provider}/{model_id} (model access)")
                 if args.live_call:
-                    result = _probe_chat_endpoint(
-                        model_id,
-                        token,
-                        _OPENAI_CHAT_URL,
-                        args.timeout,
-                    )
+                    if provider == "openai-responses":
+                        result = _probe_responses_endpoint(
+                            model_id,
+                            token,
+                            _OPENAI_RESPONSES_URL,
+                            args.timeout,
+                        )
+                    else:
+                        result = _probe_chat_endpoint(
+                            model_id,
+                            token,
+                            _OPENAI_CHAT_URL,
+                            args.timeout,
+                        )
             if result["ok"] and args.live_call:
                 print("    live tool call: OK")
         elif provider == "openai-compat" and args.live_call:

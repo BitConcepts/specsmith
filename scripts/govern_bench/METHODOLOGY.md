@@ -224,6 +224,25 @@ Do not publish comparative claims when intervals overlap substantially without c
 - Record model-specific compatibility parameters. GPT-5.6 Chat Completions
   runs use `reasoning_effort=none` because that is the function-tool mode
   supported by the provider; every condition for that model uses the same mode.
+- Treat OpenAI Responses as a distinct provider route, never an invisible
+  switch beneath a Chat Completions label. Responses admissions default to
+  low reasoning effort, low text verbosity, native flat function schemas,
+  bounded requests, and stored per-cell continuation. Reuse
+  `previous_response_id` only when the current normalized history has the exact
+  expected prefix; controller compaction or rewriting resets state and sends a
+  complete request. Record provider, API surface, reasoning effort, verbosity,
+  cached tokens, normalized and provider-visible schema hashes, and tool choice
+  for every call. Request strict argument enforcement only when every declared
+  property is required and nested schemas satisfy the same constraint;
+  optional atomic-patch fields remain locally fail-closed.
+- Admit the Responses route only after a two-step live probe: the first response
+  must emit the required native function call, and the same stored response must
+  accept `function_call_output` and produce continuation text. A parser-only
+  success does not establish a usable agent loop.
+- The first Responses cell keeps the accepted controller fixed at
+  `scalar-milestone-packet-authority`. Admit Sol on T28/FULL at n=1, then Terra
+  only if Sol is correct. Do not attribute a difference to governance when
+  model, reasoning effort, or controller policy changed in the same cell.
 - Unless an experiment overrides them, use model-card sampling defaults for
   Qwen routes: Coder Next `temperature=1.0, top_p=0.95`; Coder 480B-A35B
   `0.7/0.8`; Qwen3.6 coding `0.6/0.95`. Record the exact hosted route because

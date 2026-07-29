@@ -5650,5 +5650,41 @@
     "input": "T28 fixture plus complete, incomplete, and verification-disagreement result artifacts",
     "expected_behavior": "No-op long-horizon work fails and post-run reports expose actionable weaknesses without an LLM judge",
     "confidence": 1.0
+  },
+  {
+    "id": "TEST-517",
+    "version": 1,
+    "title": "Responses route safely reuses exact history prefixes",
+    "description": "Verifies native Responses tool parsing, low-effort and low-verbosity controls, bounded timeout forwarding, cached-token accounting, exact-prefix previous_response_id reuse, compaction reset, and route telemetry.",
+    "requirement_id": "REQ-491",
+    "type": "unit",
+    "verification_method": "pytest tests/test_govern_bench_integrity.py -k test_responses_route_reuses_only_an_exact_history_prefix",
+    "input": {},
+    "expected_behavior": {},
+    "confidence": 1.0
+  },
+  {
+    "id": "TEST-518",
+    "version": 1,
+    "title": "Responses tools use native flat schemas",
+    "description": "Verifies Chat-shaped function definitions are flattened without losing parameters or strictness.",
+    "requirement_id": "REQ-491",
+    "type": "unit",
+    "verification_method": "pytest tests/test_govern_bench_integrity.py -k test_responses_tools_use_flat_native_function_schema",
+    "input": {},
+    "expected_behavior": {},
+    "confidence": 1.0
+  },
+  {
+    "id": "TEST-519",
+    "version": 1,
+    "title": "Responses live probe requires tool call and continuation",
+    "description": "Verifies the exact Responses endpoint probe requires a native ping function call and a valid post-tool continuation before a paid benchmark matrix can start.",
+    "requirement_id": "REQ-491",
+    "type": "integration",
+    "verification_method": "pytest tests/test_govern_bench_integrity.py -k test_responses_probe_requires_native_ping_call",
+    "input": {},
+    "expected_behavior": {},
+    "confidence": 1.0
   }
 ]

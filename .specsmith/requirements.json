@@ -4949,5 +4949,18 @@
     "test_ids": [
       "TEST-516"
     ]
+  },
+  {
+    "id": "REQ-491",
+    "version": 1,
+    "title": "Native Responses benchmark route",
+    "description": "GovernanceBench shall run the unchanged validator-authority atomic-patch controller through an explicit OpenAI Responses API route with native function tools, bounded request timeouts, persisted reasoning context when history remains compatible, low-verbosity output, fail-closed live probing, and route/token telemetry sufficient to compare tokens per correct T28 completion.",
+    "source": "User-directed benchmark optimization experiment 2026-07-28",
+    "status": "implemented",
+    "test_ids": [
+      "TEST-517",
+      "TEST-518",
+      "TEST-519"
+    ]
   }
 ]

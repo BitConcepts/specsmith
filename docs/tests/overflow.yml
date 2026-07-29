@@ -933,3 +933,45 @@
     the report lists the exact IDs instead of an inferred contiguous range.
   description: Prevents a seven-task T1,T2,T6,T7,T10,T11,T13 run from being mislabeled
     as T1-T7.
+- id: TEST-516
+  title: Long-horizon polyglot task and benchmark weakness audit
+  description: Tests verify T28 has a 20-turn polyglot UI scope and an evaluator-only
+    oracle that rejects the clean starter; benchmark artifacts automatically produce
+    a deterministic weakness audit; and specsmith audit combines project health with
+    correctness, verification, efficiency, and completeness weaknesses. A failed governed
+    cell is a correctness blocker even without a baseline condition. The audit selects
+    a machine-readable reject, repair, optimize, advance-candidate, repeat, or publish
+    action from the same evidence and validates any frontier envelope before using
+    it.
+  requirement_id: REQ-490
+  type: integration
+  verification_method: pytest tests/test_benchmark_audit.py tests/test_govern_bench_integrity.py
+    tests/test_benchmark_harness.py
+  input: T28 fixture plus complete, incomplete, and verification-disagreement result
+    artifacts
+  expected_behavior: No-op long-horizon work fails and post-run reports expose actionable
+    weaknesses without an LLM judge
+  confidence: 1.0
+- id: TEST-517
+  title: Responses route safely reuses exact history prefixes
+  requirement_id: REQ-491
+  type: unit
+  verification_method: pytest tests/test_govern_bench_integrity.py -k test_responses_route_reuses_only_an_exact_history_prefix
+  description: Verifies native Responses tool parsing, low-effort and low-verbosity
+    controls, bounded timeout forwarding, cached-token accounting, exact-prefix previous_response_id
+    reuse, compaction reset, and route telemetry.
+- id: TEST-518
+  title: Responses tools use native flat schemas
+  requirement_id: REQ-491
+  type: unit
+  verification_method: pytest tests/test_govern_bench_integrity.py -k test_responses_tools_use_flat_native_function_schema
+  description: Verifies Chat-shaped function definitions are flattened without losing
+    parameters or strictness.
+- id: TEST-519
+  title: Responses live probe requires tool call and continuation
+  requirement_id: REQ-491
+  type: integration
+  verification_method: pytest tests/test_govern_bench_integrity.py -k test_responses_probe_requires_native_ping_call
+  description: Verifies the exact Responses endpoint probe requires a native ping
+    function call and a valid post-tool continuation before a paid benchmark matrix
+    can start.

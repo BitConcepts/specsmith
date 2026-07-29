@@ -219,6 +219,21 @@ models:
     group: openai
     tier: frontier
 
+  # ── OpenAI native tool route — controlled Responses API experiment ────
+  # Keep separate labels and a separate group so results cannot be mixed with
+  # the Chat Completions compatibility route above. Start with Sol/T28/FULL;
+  # admit Terra only after the stronger route completes correctly.
+  - label: gpt-5.6-sol-responses
+    provider: openai-responses
+    model: gpt-5.6-sol
+    group: openai-native
+    tier: frontier
+  - label: gpt-5.6-terra-responses
+    provider: openai-responses
+    model: gpt-5.6-terra
+    group: openai-native
+    tier: mid
+
   # ── Anthropic — toggle on later with groups=anthropic ──────────────────
   - label: claude-haiku-4-5
     provider: anthropic

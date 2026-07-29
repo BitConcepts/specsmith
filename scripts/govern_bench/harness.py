@@ -20,7 +20,7 @@ Usage:
     result = run_task(task, condition, rep=1, model="gpt-4o-mini")
 
 Environment variables:
-    OPENAI_API_KEY             required for provider=openai
+    OPENAI_API_KEY             required for provider=openai or openai-responses
     ANTHROPIC_API_KEY          required for provider=anthropic
     GOOGLE_API_KEY             required for provider=google
     HF_TOKEN                   required for provider=huggingface (Inference API token)
@@ -73,7 +73,14 @@ MAX_BOUNDARY_CONTEXT_CHARS = 12_000
 # that agents re-read eagerly injected files, multiplying the same context on
 # every turn. BENCH_CONTEXT_BYTES remains an opt-in diagnostic control.
 DEFAULT_CONTEXT_BYTES = 0
-SUPPORTED_PROVIDERS = ("openai", "anthropic", "google", "openai-compat", "huggingface")
+SUPPORTED_PROVIDERS = (
+    "openai",
+    "openai-responses",
+    "anthropic",
+    "google",
+    "openai-compat",
+    "huggingface",
+)
 CONTROLLER_EXPERIMENTS = frozenset(
     {
         "control",
@@ -146,6 +153,16 @@ class NormalizedLLMResponse:
     message: NormalizedAssistantMessage
     usage: NormalizedUsage
     finish_reason: str = ""
+    provider_metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class OpenAIResponsesState:
+    """Per-cell Responses API state with safe, prefix-checked continuation."""
+
+    client: Any
+    previous_response_id: str = ""
+    expected_prefix: list[dict[str, Any]] = field(default_factory=list)
 
 
 def _safe_int(value: Any) -> int:
@@ -279,6 +296,28 @@ def _openai_reasoning_params(model: str) -> dict[str, str]:
     if model.startswith("gpt-5.6"):
         return {"reasoning_effort": "none"}
     return {}
+
+
+def _responses_reasoning_effort() -> str:
+    """Return the explicit GPT-5.6 Responses reasoning control."""
+    effort = os.environ.get("BENCH_OPENAI_REASONING_EFFORT", "low").strip().casefold()
+    if effort not in {"low", "medium", "high"}:
+        raise RuntimeError("BENCH_OPENAI_REASONING_EFFORT must be one of: low, medium, high")
+    return effort
+
+
+def _responses_text_verbosity() -> str:
+    """Return the bounded Responses prose control used by the benchmark."""
+    verbosity = os.environ.get("BENCH_OPENAI_TEXT_VERBOSITY", "low").strip().casefold()
+    if verbosity not in {"low", "medium", "high"}:
+        raise RuntimeError("BENCH_OPENAI_TEXT_VERBOSITY must be one of: low, medium, high")
+    return verbosity
+
+
+def _responses_output_token_budget() -> int:
+    """Share the bounded reasoning-model output budget with Chat Completions."""
+    params = _openai_completion_token_param("gpt-5")
+    return _safe_int(params.get("max_completion_tokens", 16_384))
 
 
 def _controller_experiment() -> str:
@@ -2697,7 +2736,7 @@ def _build_provider_client(provider: str, base_url: str | None = None) -> tuple[
             f"Unsupported provider {provider!r}; expected one of {', '.join(SUPPORTED_PROVIDERS)}"
         )
 
-    if provider_key in ("openai", "openai-compat"):
+    if provider_key in ("openai", "openai-responses", "openai-compat"):
         try:
             import openai  # noqa: PLC0415
         except ImportError as exc:
@@ -2705,17 +2744,20 @@ def _build_provider_client(provider: str, base_url: str | None = None) -> tuple[
                 "openai package not installed; pip install openai to use this provider"
             ) from exc
 
-        if provider_key == "openai":
+        if provider_key in ("openai", "openai-responses"):
             api_key = os.environ.get("OPENAI_API_KEY", "")
             if not api_key:
                 raise RuntimeError(
-                    "OPENAI_API_KEY environment variable not set for provider=openai"
+                    f"OPENAI_API_KEY environment variable not set for provider={provider_key}"
                 )
-            return provider_key, openai.OpenAI(
+            openai_client = openai.OpenAI(
                 api_key=api_key,
                 timeout=_request_timeout_seconds(),
                 max_retries=_provider_max_retries(),
             )
+            if provider_key == "openai-responses":
+                return provider_key, OpenAIResponsesState(client=openai_client)
+            return provider_key, openai_client
 
         resolved_base_url = (base_url or os.environ.get("BENCH_OPENAI_BASE_URL", "")).strip()
         if not resolved_base_url:
@@ -3036,6 +3078,218 @@ def _call_openai_provider(
     )
 
 
+def _openai_tools_to_responses(tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Flatten Chat Completions function tools for the Responses API."""
+    converted: list[dict[str, Any]] = []
+    for tool in tools:
+        function = tool.get("function") or {}
+        name = str(function.get("name") or "").strip()
+        if not name:
+            continue
+        parameters = function.get("parameters") or {"type": "object", "properties": {}}
+        converted.append(
+            {
+                "type": "function",
+                "name": name,
+                "description": str(function.get("description") or ""),
+                "parameters": parameters,
+                "strict": bool(function.get("strict", False))
+                and _responses_schema_supports_strict(parameters),
+            }
+        )
+    return converted
+
+
+def _responses_schema_supports_strict(schema: Any) -> bool:
+    """Return whether a JSON schema satisfies OpenAI strict-tool constraints."""
+    if not isinstance(schema, dict):
+        return False
+    schema_type = schema.get("type")
+    if schema_type == "object":
+        properties = schema.get("properties") or {}
+        if not isinstance(properties, dict) or schema.get("additionalProperties") is not False:
+            return False
+        required = schema.get("required") or []
+        if not isinstance(required, list) or set(required) != set(properties):
+            return False
+        return all(_responses_schema_supports_strict(value) for value in properties.values())
+    if schema_type == "array":
+        return _responses_schema_supports_strict(schema.get("items"))
+    for keyword in ("anyOf", "oneOf", "allOf"):
+        variants = schema.get(keyword)
+        if variants is not None:
+            return (
+                isinstance(variants, list)
+                and bool(variants)
+                and all(_responses_schema_supports_strict(variant) for variant in variants)
+            )
+    return schema_type in {"string", "number", "integer", "boolean", "null"}
+
+
+def _messages_to_responses_input(
+    messages: list[dict[str, Any]],
+) -> tuple[str, list[dict[str, Any]]]:
+    """Convert normalized chat history into typed Responses input items."""
+    instructions: list[str] = []
+    items: list[dict[str, Any]] = []
+    for message in messages:
+        role = str(message.get("role") or "")
+        if role == "system":
+            content = _stringify_content(message.get("content"))
+            if content:
+                instructions.append(content)
+            continue
+        if role == "tool":
+            call_id = str(message.get("tool_call_id") or "")
+            if call_id:
+                items.append(
+                    {
+                        "type": "function_call_output",
+                        "call_id": call_id,
+                        "output": _stringify_content(message.get("content")),
+                    }
+                )
+            continue
+        if role == "assistant":
+            content = _stringify_content(message.get("content"))
+            if content:
+                items.append({"role": "assistant", "content": content})
+            for tool_call in message.get("tool_calls") or []:
+                if not isinstance(tool_call, dict):
+                    continue
+                function = tool_call.get("function") or {}
+                name = str(function.get("name") or "").strip()
+                if not name:
+                    continue
+                items.append(
+                    {
+                        "type": "function_call",
+                        "call_id": str(tool_call.get("id") or f"tool_{uuid4().hex}"),
+                        "name": name,
+                        "arguments": str(function.get("arguments") or "{}"),
+                    }
+                )
+            continue
+        items.append(
+            {
+                "role": "user",
+                "content": _stringify_content(message.get("content")),
+            }
+        )
+    if not items:
+        items = [{"role": "user", "content": ""}]
+    return "\n\n".join(instructions), items
+
+
+def _history_starts_with(
+    messages: list[dict[str, Any]],
+    prefix: list[dict[str, Any]],
+) -> bool:
+    """Compare the exact provider-visible history before reusing server state."""
+    return bool(prefix) and len(messages) >= len(prefix) and messages[: len(prefix)] == prefix
+
+
+def _call_openai_responses_provider(
+    state: OpenAIResponsesState,
+    model: str,
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]],
+    *,
+    tool_choice: str = "auto",
+    timeout_s: float | None = None,
+) -> NormalizedLLMResponse:
+    """Call the native Responses tool surface with safe per-cell continuation."""
+    instructions, full_input = _messages_to_responses_input(messages)
+    reuse_state = _history_starts_with(messages, state.expected_prefix)
+    input_messages = messages[len(state.expected_prefix) :] if reuse_state else messages
+    _delta_instructions, response_input = _messages_to_responses_input(input_messages)
+
+    responses_tools = _openai_tools_to_responses(tools)
+    request: dict[str, Any] = {
+        "model": model,
+        "input": response_input if reuse_state else full_input,
+        "tools": responses_tools,
+        "tool_choice": tool_choice,
+        "parallel_tool_calls": True,
+        "reasoning": {"effort": _responses_reasoning_effort()},
+        "text": {"verbosity": _responses_text_verbosity()},
+        "max_output_tokens": _responses_output_token_budget(),
+        "prompt_cache_key": os.environ.get(
+            "BENCH_PROMPT_CACHE_KEY", f"governancebench:{model.casefold()}:responses"
+        ),
+        "store": True,
+    }
+    if instructions:
+        request["instructions"] = instructions
+    if reuse_state:
+        request["previous_response_id"] = state.previous_response_id
+    if timeout_s is not None:
+        request["timeout"] = timeout_s
+
+    response = state.client.responses.create(**request)
+    text_chunks: list[str] = []
+    output_text = _stringify_content(_obj_get(response, "output_text", ""))
+    if output_text:
+        text_chunks.append(output_text)
+    tool_calls: list[NormalizedToolCall] = []
+    for item in _obj_get(response, "output", []) or []:
+        item_type = str(_obj_get(item, "type", ""))
+        if item_type == "function_call":
+            tool_calls.append(
+                NormalizedToolCall(
+                    id=str(
+                        _obj_get(item, "call_id", "")
+                        or _obj_get(item, "id", "")
+                        or f"tool_{uuid4().hex}"
+                    ),
+                    name=str(_obj_get(item, "name", "")),
+                    arguments=str(_obj_get(item, "arguments", "{}") or "{}"),
+                )
+            )
+        elif item_type == "message" and not output_text:
+            for content in _obj_get(item, "content", []) or []:
+                if str(_obj_get(content, "type", "")) in {"output_text", "text"}:
+                    text = str(_obj_get(content, "text", ""))
+                    if text:
+                        text_chunks.append(text)
+
+    normalized_message = NormalizedAssistantMessage(
+        content="\n".join(text_chunks),
+        tool_calls=tool_calls,
+    )
+    response_id = str(_obj_get(response, "id", ""))
+    if response_id:
+        state.previous_response_id = response_id
+        assistant_dict = _normalized_message_to_openai_dict(normalized_message)
+        state.expected_prefix = json.loads(json.dumps([*messages, assistant_dict]))
+    else:
+        state.previous_response_id = ""
+        state.expected_prefix = []
+
+    usage = _obj_get(response, "usage", None)
+    input_details = _obj_get(usage, "input_tokens_details", None)
+    return NormalizedLLMResponse(
+        message=normalized_message,
+        usage=NormalizedUsage(
+            prompt_tokens=_safe_int(_obj_get(usage, "input_tokens", 0)),
+            completion_tokens=_safe_int(_obj_get(usage, "output_tokens", 0)),
+            cached_tokens=_safe_int(_obj_get(input_details, "cached_tokens", 0)),
+        ),
+        finish_reason=str(_obj_get(response, "status", "") or ""),
+        provider_metadata={
+            "state_reused": reuse_state,
+            "response_input_items": len(request["input"]),
+            "provider_tool_schema_hash": hashlib.sha256(
+                json.dumps(
+                    responses_tools,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            ).hexdigest()[:16],
+        },
+    )
+
+
 def _call_anthropic_provider(
     client: Any,
     model: str,
@@ -3194,6 +3448,15 @@ def _call_llm(
     if provider in ("openai", "openai-compat"):
         return _call_openai_provider(
             provider,
+            client,
+            model,
+            messages,
+            tools,
+            tool_choice=tool_choice,
+            timeout_s=timeout_s,
+        )
+    if provider == "openai-responses":
+        return _call_openai_responses_provider(
             client,
             model,
             messages,
@@ -3805,6 +4068,23 @@ def _run_agent_loop(
                 "tool_schema_hash": _tool_schema_hash(tools),
                 "controller_experiment": controller_experiment,
                 "tool_choice": request_tool_choice,
+                "provider": provider,
+                "api_surface": (
+                    "responses"
+                    if provider == "openai-responses"
+                    else "chat_completions"
+                    if provider in {"openai", "openai-compat"}
+                    else provider
+                ),
+                "reasoning_effort": (
+                    _responses_reasoning_effort()
+                    if provider == "openai-responses"
+                    else _openai_reasoning_params(model).get("reasoning_effort", "")
+                ),
+                "text_verbosity": (
+                    _responses_text_verbosity() if provider == "openai-responses" else ""
+                ),
+                **response.provider_metadata,
             }
         )
 

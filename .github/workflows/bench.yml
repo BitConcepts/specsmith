@@ -42,9 +42,14 @@ on:
           - scalar-parallel-write-only
           - scalar-parallel-validator-authority
           - scalar-milestone-bundle
+          - scalar-milestone-packet
+          - scalar-milestone-packet-adaptive
+          - scalar-milestone-packet-patch
+          - scalar-milestone-packet-authority
+          - scalar-milestone-packet-authority-v2
         default: control
       groups:
-        description: "Model groups to run (comma-separated: open,open-qwen,open-mid-admission,open-mid-followup,open-frontier,open-direct,openai,anthropic,google). Default: open."
+        description: "Model groups to run (comma-separated: open,open-qwen,open-mid-admission,open-mid-followup,open-frontier,open-direct,openai,openai-native,anthropic,google). Default: open."
         required: false
         default: "open"
       providers:
@@ -125,6 +130,7 @@ jobs:
           python scripts/govern_bench/select_models.py --groups open-mid-followup --pretty
           python scripts/govern_bench/select_models.py --groups open-frontier --pretty
           python scripts/govern_bench/select_models.py --groups open-direct --pretty
+          python scripts/govern_bench/select_models.py --groups openai-native --pretty
 
       - name: Verify demo-dependency provisioning + test collection
         run: |
@@ -164,6 +170,14 @@ jobs:
             --output /tmp/bench-smoke-hf.md \
             --json-output /tmp/bench-smoke-hf.json
 
+          python scripts/govern_bench/run_bench.py \
+            --task T28 \
+            --condition SPECSMITH_FULL \
+            --provider openai-responses --model gpt-5.6-sol \
+            --reps 1 \
+            --output /tmp/bench-smoke-openai-responses.md \
+            --json-output /tmp/bench-smoke-openai-responses.json
+
       - name: Verify locked benchmark profiles
         env:
           BENCH_DRY_RUN: "1"
@@ -201,6 +215,9 @@ jobs:
             /tmp/bench-smoke-hf.md
             /tmp/bench-smoke-hf.json
             /tmp/bench-smoke-hf.audit.json
+            /tmp/bench-smoke-openai-responses.md
+            /tmp/bench-smoke-openai-responses.json
+            /tmp/bench-smoke-openai-responses.audit.json
             /tmp/bench-smoke-controller.md
             /tmp/bench-smoke-controller.json
             /tmp/bench-smoke-controller.audit.json
@@ -293,7 +310,7 @@ jobs:
       - name: Install provider SDK
         run: |
           case "${{ matrix.provider }}" in
-            openai)        pip install openai ;;
+            openai|openai-responses) pip install openai ;;
             openai-compat) pip install openai ;;  # direct OpenAI-compatible host (e.g. OpenRouter)
             anthropic)     pip install anthropic ;;
             google)        pip install google-generativeai ;;
@@ -328,7 +345,7 @@ jobs:
           BENCH_OPENAI_COMPAT_API_KEY: ${{ secrets.BENCH_OPENAI_COMPAT_API_KEY }}
         run: |
           case "${{ matrix.provider }}" in
-            openai)        KEY="$OPENAI_API_KEY" ;;
+            openai|openai-responses) KEY="$OPENAI_API_KEY" ;;
             openai-compat) KEY="$BENCH_OPENAI_COMPAT_API_KEY" ;;
             anthropic)     KEY="$ANTHROPIC_API_KEY" ;;
             google)        KEY="$GOOGLE_API_KEY" ;;

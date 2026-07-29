@@ -131,7 +131,14 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--provider",
         default=os.environ.get("BENCH_PROVIDER", "openai"),
-        choices=["openai", "anthropic", "google", "openai-compat", "huggingface"],
+        choices=[
+            "openai",
+            "openai-responses",
+            "anthropic",
+            "google",
+            "openai-compat",
+            "huggingface",
+        ],
         help="Model provider to use for task runs (default: openai)",
     )
     parser.add_argument(
