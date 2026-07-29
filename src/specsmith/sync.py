@@ -28,6 +28,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol, cast
 
+from specsmith.identifiers import REQ_ID_PATTERN, TEST_ID_PATTERN
+
 
 class _MigratableStore(Protocol):
     """Minimal ESDB interface required by automatic legacy-data migration."""
@@ -47,17 +49,15 @@ class _MigratableStore(Protocol):
 #   Style A: ## REQ-001  or  ## REQ-CLI-001: Title
 #     The optional ": Title" suffix is captured in group(2).
 #   Style B: ## N. Title  (ID comes from inline - **ID:** REQ-NNN field)
-_FLEX_REQ_ID = r"REQ-(?:[A-Z][A-Z0-9_]*-)?\d+"
 _NUMBERED_HEADING = re.compile(r"^#{1,3}\s+\d+\.\s+(.+?)\s*$")
 # Group 1: REQ-ID,  Group 2 (optional): title text after the colon.
-_DIRECT_HEADING = re.compile(r"^#{1,3}\s+(" + _FLEX_REQ_ID + r")(?::\s*(.+))?\s*$")
-_ID_FIELD = re.compile(r"^-\s+\*\*ID:\*\*\s+(" + _FLEX_REQ_ID + r")")
+_DIRECT_HEADING = re.compile(r"^#{1,3}\s+(" + REQ_ID_PATTERN + r")(?::\s*(.+))?\s*$")
+_ID_FIELD = re.compile(r"^-\s+\*\*ID:\*\*\s+(" + REQ_ID_PATTERN + r")")
 _FIELD_LINE = re.compile(r"^-\s+\*\*(.+?):\*\*\s+(.+)")
 
 # Letter suffixes (e.g. TEST-NN-002a) are supported via [a-z]* — fixes #183.
-_FLEX_TEST_ID = r"TEST-(?:[A-Z][A-Z0-9_]*-)?\d+[a-z]*"
 _TEST_NUMBERED_HEADING = re.compile(r"^#{1,3}\s+(?:TEST-[A-Z0-9_-]+\s+)?(.+?)\s*$")
-_TEST_ID_FIELD = re.compile(r"^-\s+\*\*ID:\*\*\s+(" + _FLEX_TEST_ID + r")")
+_TEST_ID_FIELD = re.compile(r"^-\s+\*\*ID:\*\*\s+(" + TEST_ID_PATTERN + r")")
 
 
 def parse_requirements_md(text: str) -> list[dict[str, Any]]:
@@ -134,7 +134,10 @@ def parse_tests_md(text: str) -> list[dict[str, Any]]:
 
     for line in text.splitlines():
         # TEST-NNN heading or numbered-style
-        m_test_heading = re.match(r"^#{1,3}\s+(" + _FLEX_TEST_ID + r")(?:\.\s+(.+?))?\s*$", line)
+        m_test_heading = re.match(
+            r"^#{1,3}\s+(" + TEST_ID_PATTERN + r")(?:\.\s+(.+?))?\s*$",
+            line,
+        )
         if m_test_heading:
             _flush()
             current = {
