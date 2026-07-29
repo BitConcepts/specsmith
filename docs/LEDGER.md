@@ -412,3 +412,9 @@
 - **Type**: wi_close
 - **Status**: complete
 - **Chain hash**: `d7722dbf5a73eda7...`
+
+## 2026-07-28T22:28 — wi_close WI-5152A077AB35: Implemented and verified stable-schema native Responses controller improvements under REQ-491.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `becc6b43068afd65...`

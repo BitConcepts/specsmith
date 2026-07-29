@@ -101,6 +101,7 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
+        "scalar-milestone-packet-authority-v3",
     }
 )
 
@@ -351,6 +352,7 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
+        "scalar-milestone-packet-authority-v3",
     }
 
 
@@ -372,6 +374,7 @@ def _compact_context_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
+        "scalar-milestone-packet-authority-v3",
     }
 
 
@@ -388,6 +391,7 @@ def _native_edit_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
+        "scalar-milestone-packet-authority-v3",
     }
 
 
@@ -399,6 +403,7 @@ def _native_patch_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
+        "scalar-milestone-packet-authority-v3",
     }
 
 
@@ -412,6 +417,7 @@ def _scoped_read_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
+        "scalar-milestone-packet-authority-v3",
     }
 
 
@@ -501,6 +507,7 @@ def _milestone_bundle_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
+        "scalar-milestone-packet-authority-v3",
     }
 
 
@@ -512,6 +519,7 @@ def _milestone_packet_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
+        "scalar-milestone-packet-authority-v3",
     }
 
 
@@ -522,6 +530,7 @@ def _adaptive_required_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
+        "scalar-milestone-packet-authority-v3",
     }
 
 
@@ -533,11 +542,17 @@ def _repair_patch_only_experiment(experiment: str) -> bool:
     }
 
 
+def _stable_repair_schema_experiment(experiment: str) -> bool:
+    """Keep one provider-visible schema while the controller narrows repair actions."""
+    return experiment == "scalar-milestone-packet-authority-v3"
+
+
 def _validator_authority_experiment(experiment: str) -> bool:
     return experiment in {
         "scalar-parallel-validator-authority",
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
+        "scalar-milestone-packet-authority-v3",
     }
 
 
@@ -1246,6 +1261,8 @@ def _build_focused_repair_tools(
         composite_files=composite_files,
         composite_reads=composite_reads,
     )
+    if _stable_repair_schema_experiment(_controller_experiment()):
+        return tools
     if _repair_patch_only_experiment(_controller_experiment()):
         return [tool for tool in tools if tool["function"]["name"] in {"patch_file", "done"}]
     return tools
@@ -1490,8 +1507,12 @@ def _milestone_work_packet(task: BenchTask, files_written: list[str]) -> str:
         f"Allowed write paths: {', '.join(remaining)}",
         "Public completion criteria:",
         *(f"- {criterion}" for criterion in criteria),
-        "Execution contract: implement this milestone now in one write_milestone call. "
-        "The controller owns validation; do not run or inspect validators and do not write "
+        (
+            "Execution contract: implement this one-file milestone now with write_file. "
+            if len(remaining) == 1
+            else "Execution contract: implement this milestone now in one write_milestone call. "
+        )
+        + "The controller owns validation; do not run or inspect validators and do not write "
         "outside the allowed paths.",
     ]
     if validators:
@@ -3219,7 +3240,7 @@ def _call_openai_responses_provider(
     messages: list[dict[str, Any]],
     tools: list[dict[str, Any]],
     *,
-    tool_choice: str = "auto",
+    tool_choice: str | dict[str, Any] = "auto",
     timeout_s: float | None = None,
 ) -> NormalizedLLMResponse:
     """Call the native Responses tool surface with safe per-cell continuation."""
@@ -3464,7 +3485,7 @@ def _call_llm(
     messages: list[dict[str, Any]],
     tools: list[dict[str, Any]],
     *,
-    tool_choice: str = "auto",
+    tool_choice: str | dict[str, Any] = "auto",
     timeout_s: float | None = None,
 ) -> NormalizedLLMResponse:
     # huggingface is normalised to "openai-compat" by _build_provider_client;
@@ -4012,7 +4033,9 @@ def _run_agent_loop(
     active_repair_evidence_signature = ""
     last_repair_evidence_signature = ""
     invalid_composite_write_count = 0
+    invalid_milestone_packet_count = 0
     force_tool_call_next_turn = False
+    forced_tool_name_next_turn = ""
     stop_reason = "max_turns"
 
     for turn in range(max_turns):
@@ -4040,14 +4063,22 @@ def _run_agent_loop(
                 governance_decision=governance_decision,
             )
         turn_timeout_s = min(request_timeout_s, remaining_s)
-        request_tool_choice = (
-            "required"
-            if force_tool_call_next_turn
-            and condition.id == "SPECSMITH_FULL"
-            and _adaptive_required_experiment(controller_experiment)
-            else tool_choice
-        )
+        if forced_tool_name_next_turn:
+            request_tool_choice: str | dict[str, Any] = (
+                {"type": "function", "name": forced_tool_name_next_turn}
+                if provider == "openai-responses"
+                else "required"
+            )
+        else:
+            request_tool_choice = (
+                "required"
+                if force_tool_call_next_turn
+                and condition.id == "SPECSMITH_FULL"
+                and _adaptive_required_experiment(controller_experiment)
+                else tool_choice
+            )
         force_tool_call_next_turn = False
+        forced_tool_name_next_turn = ""
         try:
             response = _call_llm(
                 provider=provider,
@@ -4396,6 +4427,8 @@ def _run_agent_loop(
                             validator_verified,
                         )
                     )
+                elif out.startswith("ERROR: at least path_1 and content_1 are required"):
+                    invalid_milestone_packet_count += 1
 
             elif fn_name == "write_files":
                 out, batch_write_paths = _exec_write_files(
@@ -4768,6 +4801,34 @@ def _run_agent_loop(
             )
             rework_turns += 1
 
+        if (
+            condition.id == "SPECSMITH_FULL"
+            and invalid_milestone_packet_count
+            and any(
+                result.startswith("ERROR: at least path_1 and content_1 are required")
+                for result in tool_results
+            )
+        ):
+            remaining_paths = _next_incomplete_boundary_paths(task, files_written)
+            retry_tool = "write_file" if len(remaining_paths) == 1 else "write_milestone"
+            recovery = (
+                "The empty milestone packet was rejected. Retry this same active boundary "
+                f"once with {retry_tool}; include non-empty path and complete content values, "
+                "and do not emit prose."
+            )
+            messages = _replace_adaptive_progress_message(messages, recovery)
+            forced_tool_name_next_turn = retry_tool
+            agent_transcript.append(
+                {
+                    "turn": turn + 1,
+                    "role": "controller",
+                    "milestone_packet_payload_failure": invalid_milestone_packet_count,
+                    "forced_tool": retry_tool,
+                    "recovery": recovery,
+                }
+            )
+            rework_turns += 1
+
         if condition.id == "SPECSMITH_FULL" and (
             successful_write_paths or suppressed_unchanged_reads
         ):
@@ -4877,6 +4938,8 @@ def _run_agent_loop(
             )
             if repair_context_provided:
                 read_tools_suspended = True
+                if _stable_repair_schema_experiment(controller_experiment):
+                    forced_tool_name_next_turn = "patch_file"
                 agent_transcript.append(
                     {
                         "turn": turn + 1,
@@ -4986,6 +5049,8 @@ def _run_agent_loop(
                 composite_reads=composite_reads,
                 repair_written=True,
             )
+            if _stable_repair_schema_experiment(controller_experiment):
+                forced_tool_name_next_turn = "done"
             repair_ready = (
                 "Repair write accepted. Read and diagnostic tools are suspended because "
                 "the controller already owns the failing checks; call done now to rerun "

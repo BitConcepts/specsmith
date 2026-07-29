@@ -19,6 +19,7 @@ milestones:
     criteria:
       - "Schema declares exactly the seven incident fields, both enums, nullable acknowledged_at, required fields, and rejects additional properties."
       - "One resettable in-memory store powers create (201), composable list filters, acknowledge returning the updated incident (404 when absent), and the unchanged health route."
+      - "FastAPI query filters use lint-safe annotations and never call Query(...) directly in a function default."
       - "Public backend tests cover create, filtering, acknowledgement, missing IDs, and isolated store state."
     files:
       - contracts/incident.schema.json

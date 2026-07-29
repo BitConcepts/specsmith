@@ -635,6 +635,7 @@ def test_responses_route_reuses_only_an_exact_history_prefix(
         "gpt-5.6-sol",
         second_messages,
         tools,
+        tool_choice={"type": "function", "name": "patch_file"},
     )
     _call_openai_responses_provider(
         state,
@@ -652,6 +653,7 @@ def test_responses_route_reuses_only_an_exact_history_prefix(
     assert requests[0]["timeout"] == 30
     assert "previous_response_id" not in requests[0]
     assert requests[1]["previous_response_id"] == "resp-1"
+    assert requests[1]["tool_choice"] == {"type": "function", "name": "patch_file"}
     assert requests[1]["input"] == [
         {
             "type": "function_call_output",
@@ -1851,6 +1853,7 @@ def test_milestone_packet_does_not_duplicate_optional_eager_context(
         ("scalar-milestone-packet-adaptive", ["auto", "required", "auto"]),
         ("scalar-milestone-packet-authority", ["auto", "required", "auto"]),
         ("scalar-milestone-packet-authority-v2", ["auto", "required", "auto"]),
+        ("scalar-milestone-packet-authority-v3", ["auto", "required", "auto"]),
     ],
 )
 def test_milestone_packet_requires_a_tool_for_only_one_recovery_turn(

@@ -23,9 +23,17 @@ consolidated into the next published release.
 - Record Luna native admission `30414435928` as negative evidence: it exhausted
   20 turns and 72,880 tokens after fourteen milestone calls supplied non-string
   content, completed three of four milestones, and failed the hidden oracle.
+- Complete Luna strict-schema workflows `30415300896` and `30415451446`.
+  Provider enforcement made admission correct at 18,798 tokens and the n=5
+  screen passed 5/5, but 31,685 TPCA, 40% first-pass completion, and high
+  variance reject further repetition.
 - Make fixed milestone and atomic-patch schemas provider-strict by requiring
   every slot and representing unused slots as null, while preserving local
   type checks, atomicity, path scope, timeouts, and validator authority.
+- Add an isolated stable-schema v3 controller: unambiguous one-file milestone
+  writes, bounded empty-packet recovery, provider-stable repair tools, native
+  named patch/completion choice, and active-packet lint guidance. Existing
+  controller variants and locked benchmark controls remain unchanged.
 - Exclude authoritative milestone-packet paths from optional generic preload
   context so the model never receives a duplicate or stale copy of an active
   file while preserving the default just-in-time context policy.

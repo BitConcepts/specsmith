@@ -1,0 +1,57 @@
+{
+  "cell_fields": [
+    "workflow_id",
+    "commit_sha",
+    "task",
+    "category",
+    "horizon",
+    "condition",
+    "rep",
+    "model",
+    "provider",
+    "model_tier",
+    "benchmark_profile",
+    "passed",
+    "acceptance_oracle_passed",
+    "project_tests_passed",
+    "input_tokens",
+    "output_tokens",
+    "cached_input_tokens",
+    "cache_write_tokens",
+    "tokens",
+    "cost_usd",
+    "rework_turns",
+    "governance_turns",
+    "llm_turns",
+    "wall_clock_s",
+    "stop_reason",
+    "expected_file_count",
+    "written_file_count",
+    "milestones_completed",
+    "milestones_total",
+    "tokens_per_completed_milestone",
+    "language_count",
+    "tool_schema_hashes"
+  ],
+  "cells_canonical_sha256": "27e3a21be7636cc34df419b4a1cd5cecf179b392ace28dda674a97d2c3a761b9",
+  "cells_csv_sha256": "6092a2db5287470201e3ef2b23f872bb5c3ae56d1b4202e32a5c59040438c9d5",
+  "commit_sha": "73804473ccfd7c58905805cc775fa426bc85f3fc",
+  "excluded_fields": [
+    "agent_transcript",
+    "final_diff",
+    "governance_decision",
+    "lint_output",
+    "test_output",
+    "verify_result"
+  ],
+  "row_count": 5,
+  "schema": "governancebench-evidence-v2",
+  "source_artifacts": [
+    {
+      "name": "bench-results-gpt-5.6-luna-responses.json",
+      "rows": 5,
+      "sha256": "0560352ce8306a5b531bc17c0a85acf0e11c1f395bcf23dca1efbef8e384c1ab"
+    }
+  ],
+  "workflow_id": "30415451446"
+}

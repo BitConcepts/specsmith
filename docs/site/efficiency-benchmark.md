@@ -741,9 +741,12 @@ Chat Completions compatibility mode to native Responses function tools.
 | [30412913235](https://github.com/layer1labs/specsmith/actions/runs/30412913235) | GPT-5.6 Terra | 1/1 | 17,014 | $0.1147 | 5 | n=1 diagnostic; repeat eligible |
 | [30413249488](https://github.com/layer1labs/specsmith/actions/runs/30413249488) | GPT-5.6 Terra | 5/5 | 17,213 | $0.1176 | 5 | clean screen; expand to n=10 |
 | [30414435928](https://github.com/layer1labs/specsmith/actions/runs/30414435928) | GPT-5.6 Luna | 0/1 | undefined (72,880 used) | undefined ($0.1823 spent) | 20 | reject repetition; repair schema |
+| [30415300896](https://github.com/layer1labs/specsmith/actions/runs/30415300896) | GPT-5.6 Luna, strict schema | 1/1 | 18,798 | $0.0532 | 5 | correct repair admission; repeat eligible |
+| [30415451446](https://github.com/layer1labs/specsmith/actions/runs/30415451446) | GPT-5.6 Luna, strict schema | 5/5 | 31,685 | $0.1137 | 6.2 | correct but token/first-pass regression; reject repetition |
 
-Every row passed public validators and the hidden oracle, completed all four
-milestones, and used one implementation attempt with no repair cycle. The Terra
+Every successful Sol and Terra row passed public validators and the hidden
+oracle, completed all four milestones, and used one implementation attempt
+with no repair cycle. The Terra
 n=5 range was 16,777–17,411 tokens; mean wall time was 45.9 seconds. Relative
 to the Sol native diagnostic, Terra's screen used 6.8% fewer mean tokens and
 54.6% lower mean cost. The separately measured July 25 Sol release envelope
@@ -761,16 +764,25 @@ now excludes files already supplied by an authoritative milestone packet,
 preventing duplicate or stale file bodies without changing the default
 zero-byte preload.
 
-Luna selected the correct `write_milestone` tool on every turn but failed its
-argument contract fourteen times because used `content_N` values were not
-strings. It completed three of four milestones, omitted architecture evidence,
-and exhausted the 20-turn task ceiling. Public tests passed while the
-independent oracle failed, so it has no TPCA and no substitution value. The
-next isolated repair makes all fixed milestone and atomic-patch slots required
-with nullable unused slots. That allows native Responses strict validation to
-enforce text for every used path/content pair without weakening local
-all-or-nothing writes, scope checks, timeouts, validators, or the hidden oracle.
-Only a new n=1 Luna admission is justified.
+Luna initially selected `write_milestone` but failed its argument contract
+fourteen times because used `content_N` values were not strings. Requiring all
+fixed slots, making unused slots nullable, and enforcing provider strictness
+removed every serialization failure: the repair admission used 74.2% fewer
+tokens and 75% fewer turns. The five-run confirmation was correct in every row,
+but ranged from 18,102 to 58,624 tokens, averaged 84.1% more tokens than Terra,
+and completed first-pass in only 2/5 rows. Repairs repeatedly targeted
+`backend/main.py`; two rows also emitted empty milestone packets, and repair
+phases changed the provider-visible tool hash. Luna is therefore not promoted.
+
+The preregistered v3 diagnostic changes only those controller boundaries. It
+repeats the public lint-safe query constraint inside the active API packet,
+uses `write_file` when one file remains, rejects and redirects one empty
+milestone packet, and preserves the full strict tool schema while native
+Responses chooses the authorized `patch_file` and `done` tools by name. The
+locked T28 task, hidden oracle, validators, 20-turn ceiling, low
+effort/verbosity, request deadlines, and zero provider retries are unchanged.
+The first paid screen uses GPT-5.6 Sol at n=1; no repeated spend is admitted
+unless it improves or preserves the current Sol envelope.
 
 ## Benchmark-driven optimization loop
 

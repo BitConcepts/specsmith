@@ -37,12 +37,13 @@ The native Responses family screen is now complete. Sol passed T28/FULL at n=1 i
 workflow `30412677765` using 18,474 tokens and $0.2590. Terra then passed at
 n=1 in `30412913235` and earned the matched n=5 screen `30413249488`: 5/5
 correct, 17,213 mean tokens, $0.1176 mean cost, five turns, all four milestones,
-and no deterministic audit weakness. Luna failed its n=1 admission in workflow
-`30414435928` at 72,880 tokens and 20 turns. Fourteen of twenty
-`write_milestone` calls carried non-string content, three milestones completed,
-and the independent oracle failed. These are route-screening results, not a
-release claim. Terra must expand to n=10 before this route supports
-release-quality claims.
+and no deterministic audit weakness. Luna's initial workflow `30414435928`
+failed at 72,880 tokens and 20 turns because fourteen `write_milestone` calls
+carried non-string content. Provider-strict schemas then made `30415300896`
+correct at 18,798 tokens and five turns. Its n=5 screen `30415451446` remained
+5/5 correct, but averaged 31,685 tokens, 6.2 turns, and only 40% first-pass
+completion. These are route-screening results, not a release claim. Terra must
+expand to n=10 before this route supports release-quality claims.
 
 All native cells retain the validator-authority, milestone-packet, repair-only
 atomic-patch controller, low reasoning effort, low text verbosity, bounded
@@ -50,10 +51,13 @@ requests, zero provider retries, and a two-step live tool/continuation probe.
 History compaction invalidates `previous_response_id` continuation and forces a
 full auditable request. Authoritative packet paths are excluded from optional
 generic preload context so a file body cannot be duplicated or retained after
-the active milestone advances. Fixed milestone and atomic-patch slots are now
+the active milestone advances. Fixed milestone and atomic-patch slots are
 provider-strict: every slot is present, unused slots are null, and used content
-must be text. Luna receives one repair admission under that isolated schema
-change; it does not receive repetition budget unless correctness passes.
+must be text. The next isolated v3 admission keeps that schema stable during
+repair, uses native named tool choice for the controller-authorized patch and
+completion actions, recovers an empty milestone packet once, and uses
+`write_file` unambiguously when only one milestone file remains. It retains
+every task and validation control and starts with one GPT-5.6 Sol native cell.
 
 ---
 

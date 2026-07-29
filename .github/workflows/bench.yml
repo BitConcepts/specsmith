@@ -47,6 +47,7 @@ on:
           - scalar-milestone-packet-patch
           - scalar-milestone-packet-authority
           - scalar-milestone-packet-authority-v2
+          - scalar-milestone-packet-authority-v3
         default: control
       groups:
         description: "Model groups to run (comma-separated: open,open-qwen,open-mid-admission,open-mid-followup,open-frontier,open-direct,openai,openai-native,anthropic,google). Default: open."

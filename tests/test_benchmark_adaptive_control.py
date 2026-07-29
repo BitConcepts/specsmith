@@ -56,6 +56,7 @@ from govern_bench.harness import (  # noqa: E402
     _scope_progress,
     _serialized_done_tool_call,
     _serialized_function_tool_call,
+    _stable_repair_schema_experiment,
     _updated_repeated_action_batch_streak,
     _updated_repeated_noop_streak,
     _updated_repeated_write_streak,
@@ -365,6 +366,11 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
             ["write_file", "write_milestone", "patch_file", "done"],
             "auto",
         ),
+        (
+            "scalar-milestone-packet-authority-v3",
+            ["write_file", "write_milestone", "patch_file", "done"],
+            "auto",
+        ),
     ],
 )
 def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
@@ -440,6 +446,7 @@ def test_benchmark_workflow_exposes_scoped_native_patch_experiment() -> None:
     )
     assert "scalar-native-patch-scoped" in workflow
     assert "scalar-native-patch-scoped-required" in workflow
+    assert "scalar-milestone-packet-authority-v3" in workflow
     native_workflow = (
         Path(__file__).parent.parent / ".github" / "workflows" / "qwen-native-bench.yml"
     ).read_text(encoding="utf-8")
@@ -920,6 +927,43 @@ def test_milestone_authority_repair_surface_is_atomic_and_path_focused(
             repair_written=True,
         )
     ] == ["patch_file", "done"]
+
+    monkeypatch.setenv("BENCH_CONTROLLER_EXPERIMENT", "scalar-milestone-packet-authority-v3")
+    stable_tools = _build_focused_repair_tools(
+        "SPECSMITH_FULL",
+        task,
+        composite_files=True,
+        repair_written=True,
+    )
+    assert [tool["function"]["name"] for tool in stable_tools] == [
+        "write_file",
+        "write_milestone",
+        "patch_file",
+        "done",
+    ]
+    assert all(tool["function"]["strict"] is True for tool in stable_tools)
+    assert _stable_repair_schema_experiment("scalar-milestone-packet-authority-v3")
+
+
+def test_single_file_milestone_packet_uses_unambiguous_write_tool() -> None:
+    task = get_task("T28")
+    completed = [
+        "contracts/incident.schema.json",
+        "backend/main.py",
+        "tests/test_backend.py",
+        "worker/main.go",
+        "worker/main_test.go",
+        "ui/src/api.ts",
+        "ui/src/App.tsx",
+        "ui/src/styles.css",
+        "ui/tests/incident-console.spec.ts",
+    ]
+
+    packet = _milestone_work_packet(task, completed)
+
+    assert "Allowed write paths: docs/architecture.md" in packet
+    assert "implement this one-file milestone now with write_file" in packet
+    assert "one write_milestone call" not in packet
 
 
 def test_full_completion_applies_one_bounded_ruff_safe_fix(
