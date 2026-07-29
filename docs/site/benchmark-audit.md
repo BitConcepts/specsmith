@@ -101,8 +101,20 @@ passed first-pass at 17,407 tokens. Its earned
 [n=5 screen 30454018932](https://github.com/layer1labs/specsmith/actions/runs/30454018932)
 passed 5/5 at 18,055 mean TPCA, $0.1199 mean cost, 5.2 turns, 80% first-pass,
 and no loop recovery. The sole repair was one focused Playwright patch. The
-audit now selects `expand_release_sample`; T29 n=10 remains unrun. T29
-therefore increases evaluator diversity without establishing real-repository
+audit selected `expand_release_sample`.
+
+The resulting
+[n=10 workflow 30457360342](https://github.com/layer1labs/specsmith/actions/runs/30457360342)
+was complete and passed 10/10, with 20,099.9 TPCA, $0.127686 estimated cost,
+5.7 turns, and 9.8% token CV. First-pass completion regressed to 30%. Six
+focused repairs addressed a missing Playwright `toBeVisible` assertion; a
+seventh replaced the nonexistent `pytest.anything` in a model-authored test.
+The audit reports no high or critical weakness, but selects
+`optimize_and_rerun` because the repeated UI boundary added about 4,060 tokens
+to repaired rows. It groups that boundary under `ui/src/App.tsx`; the retained
+traces locate the repeated invariant in `ui/tests/release-control.spec.ts`.
+T29 therefore increases evaluator diversity and supplies an exact-route n=10
+sample without establishing clean promotion or real-repository
 generalization.
 
 ## Current broad audit

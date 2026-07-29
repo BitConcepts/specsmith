@@ -70,8 +70,12 @@ disabled-action, and responsive CSS at milestone three on a CSS-only boundary,
 and fail-closes after two unchanged repair streaks. Admission `30453721376`
 passed first-pass at 17,407 tokens. The earned n=5 `30454018932` passed 5/5 at
 18,055 mean TPCA, $0.1199 mean cost, 5.2 turns, 80% first-pass, and zero loop
-recoveries. The audit selects `expand_release_sample`; T29 n=10 is unrun, so
-this remains synthetic screening evidence rather than a release claim.
+recoveries. Independent n=10 `30457360342` passed 10/10 at 20,100 mean TPCA,
+$0.1277 mean cost, 5.7 turns, and 9.8% CV, but first-pass fell to 30%. Six
+rows repaired a missing Playwright visibility assertion and one repaired an
+invalid model-authored pytest assertion. The audit selects
+`optimize_and_rerun`, so this is exact-route, synthetic release-sized evidence
+rather than a clean promotion or real-repository claim.
 
 ---
 

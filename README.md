@@ -153,8 +153,10 @@ from the immediately preceding native controller diagnostic. A frozen-controller
 Terra replication was less stable: T28 passed 9/10 at 19.6k TPCA, while a new
 independent synthetic repository task initially passed 5/5 at 22.0k TPCA with
 0% first-pass completion. A trace-derived v5 screen then passed 5/5 at 18.1k
-TPCA, 80% first-pass, and zero loop recoveries; its audit admits n=10, which
-has not been run. These results are task- and route-specific. Managed
+TPCA and 80% first-pass. Its independent n=10 sample passed 10/10 at 20.1k
+TPCA, but first-pass completion fell to 30%; the audit found a recurring UI
+test-contract repair and requires optimization before another confirmation.
+These results are task- and route-specific. Managed
 20B–32B and Qwen native-tool candidates have useful correct diagnostics but
 have not passed the repeated replacement gates, so Specsmith does not claim
 that small models generally replace frontier models.

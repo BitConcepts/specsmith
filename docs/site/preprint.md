@@ -29,7 +29,7 @@ favorable point estimate.
 | A lower-tier governed system substitutes for frontier raw on the mixed release suite | Preregistered eight-task 2×2 design, n=10, fixed-suite correctness and TPCA gates | Supported for Terra FULL versus Sol raw in workflow 30210886840 |
 | The result is robust to resampling the eight named tasks | Task-cluster correctness and TPCA confidence gates both pass | Supported within the benchmark distribution; this is not evidence on fresh repositories |
 | A lower-tier governed system substitutes on coding-only work | Prespecified coding slice clears the same correctness and TPCA gates | Not confirmed: observed results favor Terra FULL, but the correctness lower bound missed the margin by 0.7 pp |
-| The result generalizes to new repositories and task families | Independent replication across fresh real repositories, languages, providers, and task distributions | Not established: optimized synthetic T29 v5 passed 5/5 at 80% first-pass, but n=10 is unrun and no fresh real repository was tested |
+| The result generalizes to new repositories and task families | Independent replication across fresh real repositories, languages, providers, and task distributions | Not established: synthetic T29 v5 passed 10/10 at n=10, but first-pass was 30%, its audit requires optimization, and no fresh real repository was tested |
 | Published 8B or mini models replace frontier models | A small-model admission, matched n=5 screen, and n=10 release gate all pass | Rejected for current routes: Llama 3.1 8B and GPT-4o mini T28 admissions failed |
 | A reasoning-capable 20B–32B model can complete governed T28 | Correct public checks and independent oracle in admission | Supported at n=1 for Qwen3.6-27B/DeepInfra; the best controller diagnostic used 26,850 tokens and 6 turns |
 | A 20B–32B governed model replaces frontier Sol efficiently | Correct admission inside the versioned Sol envelope, then matched n=5 and n=10 gates | Not supported: the best correct 27B cell still used 1.53× the Sol token envelope and has no matched n=5 confirmation |
@@ -238,9 +238,15 @@ and zero loop recoveries. One row repaired a missing Playwright assertion in
 one focused patch. Relative to v4, mean tokens fell 18.1%, estimated cost/pass
 7.7%, and turns 18.8%; because task/validator and recovery changed together,
 these are package-level deltas rather than a single-factor causal estimate.
-The audit admits an n=10 expansion, but that gate is unrun. This is preliminary
-synthetic-fixture evidence, not real-repository generalization or a
-release-sized Terra claim.
+The admitted
+[n=10 workflow 30457360342](https://github.com/layer1labs/specsmith/actions/runs/30457360342)
+passed 10/10 at 20,099.9 mean TPCA, $0.127686 mean estimated cost, 5.7 turns,
+and 9.8% CV. First-pass completion was only 30%: six rows repaired a missing
+Playwright visibility assertion and one repaired an invalid model-authored
+pytest assertion. Relative to n=5, mean tokens rose 11.3%, cost 6.5%, and
+turns 9.6%. The deterministic audit selects `optimize_and_rerun`, not
+publication as a clean promotion. This is release-sized evidence for one
+synthetic fixture and exact route, not real-repository generalization.
 
 ## Reproduction
 

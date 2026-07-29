@@ -753,7 +753,8 @@ Chat Completions compatibility mode to native Responses function tools.
 | [30447523090](https://github.com/layer1labs/specsmith/actions/runs/30447523090) | GPT-5.6 Terra, structured v4, fresh T29 | 1/1 | 20,673 | $0.1270 | 6 | admission passed |
 | [30447789765](https://github.com/layer1labs/specsmith/actions/runs/30447789765) | GPT-5.6 Terra, structured v4, fresh T29 | 5/5 | 22,038 | $0.1299 | 6.4 | 0% first-pass; optimize before n=10 |
 | [30453721376](https://github.com/layer1labs/specsmith/actions/runs/30453721376) | GPT-5.6 Terra, structured v5, fresh T29 | 1/1 | 17,407 | $0.1189 | 5 | first-pass admission; repeat eligible |
-| [30454018932](https://github.com/layer1labs/specsmith/actions/runs/30454018932) | GPT-5.6 Terra, structured v5, fresh T29 | 5/5 | 18,055 | $0.1199 | 5.2 | 80% first-pass; audit admits unrun n=10 |
+| [30454018932](https://github.com/layer1labs/specsmith/actions/runs/30454018932) | GPT-5.6 Terra, structured v5, fresh T29 | 5/5 | 18,055 | $0.1199 | 5.2 | 80% first-pass; expand to n=10 |
+| [30457360342](https://github.com/layer1labs/specsmith/actions/runs/30457360342) | GPT-5.6 Terra, structured v5, fresh T29 | 10/10 | 20,100 | $0.1277 | 5.7 | 30% first-pass; optimize and rerun |
 
 Every successful Sol and Terra row passed public validators and the hidden
 oracle, completed all four milestones, and used one implementation attempt
@@ -851,9 +852,27 @@ the v4 T29 screen, the v5 package used 18.1% fewer tokens, 7.7% lower estimated
 cost, and 18.8% fewer turns, while first-pass completion rose 80 percentage
 points. Because the validator/task contract and recovery controller changed
 together, these are package-level deltas, not a single-factor causal estimate.
-The audit returned `expand_release_sample`; T29 n=10 remains unrun. This is
-synthetic screening evidence, not cross-repository generalization or a
-universal model claim.
+The n=5 audit returned `expand_release_sample`, authorizing the independent
+sample below. The five-row result remains screening evidence and is not pooled
+with its confirmation.
+
+The independent n=10 workflow `30457360342` then passed public validators,
+project tests, and the hidden oracle in all ten rows. It averaged 20,099.9
+TPCA (17,079–21,677), $0.127686 estimated cost, 5.7 turns, and 9.8% token CV.
+Only 3/10 rows were first-pass. Six rows repaired the UI boundary because the
+generated Playwright journey omitted `toBeVisible`; one repaired a
+self-authored backend test that used the nonexistent `pytest.anything`.
+Retained traces show the repeated invariant belongs to
+`ui/tests/release-control.spec.ts`, although the aggregate audit groups the
+boundary under its first scoped path, `ui/src/App.tsx`.
+
+Relative to the favorable n=5 point estimate, n=10 used 11.3% more mean tokens,
+6.5% more estimated cost, and 9.6% more turns while first-pass completion fell
+50 percentage points. The audit therefore returned `optimize_and_rerun`, with
+no high or critical weakness and no failed row. The result is complete
+release-sized evidence for this exact synthetic task, controller, model, and
+route, but it is not a clean promotion or evidence of real-repository
+generalization.
 
 ## Benchmark-driven optimization loop
 

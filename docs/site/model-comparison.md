@@ -41,7 +41,8 @@ task-conditional substitution—not general small-model replacement.
 | [30416984775](https://github.com/layer1labs/specsmith/actions/runs/30416984775) | GPT-5.6 Sol / stable-schema native Responses v3 | 1 T28 FULL | Correct at 19.3k TPCA and five turns; 1.10× release anchor, so repetition rejected |
 | [30418513274](https://github.com/layer1labs/specsmith/actions/runs/30418513274) | GPT-5.6 Sol / structured native Responses v4 | 10 T28 FULL | 10/10 correct and first-pass at 17.9k TPCA, five turns, 1.77% CV; release-sized audit clear |
 | [30445030314](https://github.com/layer1labs/specsmith/actions/runs/30445030314) | GPT-5.6 Terra / structured native Responses v4 | 10 T28 FULL | 9/10 at 19.6k TPCA; one repeated-tool-loop failure; rejected |
-| [30454018932](https://github.com/layer1labs/specsmith/actions/runs/30454018932) | GPT-5.6 Terra / structured native Responses v5 | 5 fresh T29 FULL | 5/5 at 18.1k TPCA, 80% first-pass, zero loop recoveries; audit admits unrun n=10 |
+| [30457360342](https://github.com/layer1labs/specsmith/actions/runs/30457360342) | GPT-5.6 Terra / structured native Responses v5 | 10 fresh T29 FULL | 10/10 at 20.1k TPCA, 30% first-pass, 9.8% CV; recurring UI test-contract repair blocks promotion |
+| [30454018932](https://github.com/layer1labs/specsmith/actions/runs/30454018932) | GPT-5.6 Terra / structured native Responses v5 | 5 fresh T29 FULL | 5/5 at 18.1k TPCA, 80% first-pass, zero loop recoveries; promoted to n=10 |
 | [30453721376](https://github.com/layer1labs/specsmith/actions/runs/30453721376) | GPT-5.6 Terra / structured native Responses v5 | 1 fresh T29 FULL | First-pass at 17.4k TPCA; admitted to n=5 |
 | [30447789765](https://github.com/layer1labs/specsmith/actions/runs/30447789765) | GPT-5.6 Terra / structured native Responses v4 | 5 fresh T29 FULL | 5/5 at 22.0k TPCA, but 0% first-pass and systematic App empty-state repair; n=10 blocked |
 | [30447523090](https://github.com/layer1labs/specsmith/actions/runs/30447523090) | GPT-5.6 Terra / structured native Responses v4 | 1 fresh T29 FULL | Correct at 20.7k TPCA; admitted to n=5 |
@@ -98,8 +99,16 @@ repair streaks at two. Its n=5 package reduced mean TPCA 18.1%, estimated
 cost/pass 7.7%, and turns 18.8% versus v4 while moving first-pass completion
 from 0% to 80%. One row repaired a missing Playwright assertion in one patch.
 Because both validator/task contract and recovery changed, this is not a
-single-factor causal estimate. The audit admits an unrun n=10; it does not
-establish release-sized or real-repository generalization.
+single-factor causal estimate.
+
+The independent n=10 then passed all ten rows at 20,099.9 TPCA, $0.127686
+estimated cost, 5.7 turns, and 9.8% CV, but only three rows completed
+first-pass. Six rows repaired the missing Playwright `toBeVisible` invariant
+and one repaired an invalid self-authored pytest assertion. Compared with n=5,
+mean tokens rose 11.3%, cost 6.5%, and turns 9.6%, while first-pass fell 50
+percentage points. The audit selects `optimize_and_rerun`; this exact-route
+sample is release-sized, but it is neither a clean promotion nor
+real-repository generalization.
 
 Results are never combined across incompatible commits, task grids, routes, or
 repetition sets. GPT-5.6 uses Chat Completions with `reasoning_effort=none` for

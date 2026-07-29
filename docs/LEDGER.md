@@ -421,3 +421,23 @@
 - **Status**: complete
 - **Epistemic status**: high
 - **Chain hash**: `cc312b76ba12c9e8...`
+
+## 2026-07-29T09:41 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `e4a6a01a452bce5d...`
+
+## 2026-07-29T10:13 — wi_close WI-F57098B23904: Workflow 30457360342 completed with 10/10 valid rows and deterministic audit; exact result recorded without promotion overstatement.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `448a2a9b9d77c1d9...`
+
+## 2026-07-29T10:13 — wi_close WI-88CEAF8B0D42: Validated n=10 evidence synchronized across public docs and preprint; linked tests, lint, strict docs, PDF build, manifest verification, and governance audit passed.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `85ca33439aa1c2c5...`

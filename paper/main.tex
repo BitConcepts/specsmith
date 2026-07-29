@@ -393,10 +393,15 @@ zero loop recoveries. One row repaired a missing Playwright visibility
 assertion in one patch. Relative to v4, mean tokens fell 18.1\%, cost 7.7\%,
 and turns 18.8\%; because the task/validator contract and recovery controller
 changed together, this is a package-level delta rather than a single-factor
-causal estimate. The audit admits a ten-row expansion, but that gate remains
-unrun. This adds fresh-fixture screening evidence while preserving the
-negative conclusion on release reliability and real-repository
-generalization.
+causal estimate. The admitted independent ten-row workflow 30457360342 passed
+all ten rows at 20,099.9 mean tokens per correct answer, \$0.127686 mean
+estimated cost, 5.7 turns, and 9.8\% coefficient of variation. First-pass
+completion was only 30\%: six rows repaired a missing Playwright visibility
+assertion and one repaired an invalid model-authored pytest assertion. Relative
+to the favorable five-row estimate, mean tokens rose 11.3\%, cost 6.5\%, and
+turns 9.6\%. The audit therefore selects \texttt{optimize\_and\_rerun}, not
+clean promotion. This supplies exact-route, synthetic release-sized evidence
+while preserving the negative conclusion on real-repository generalization.
 
 \section{Threats to Validity}
 
