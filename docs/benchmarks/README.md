@@ -33,6 +33,17 @@ See the [current executable results](../site/efficiency-benchmark.md) and the
 
 ## Current validated evidence
 
+- Frozen-v4 Terra replication: the corrected T28 screen
+  `30444589182` passed 5/5, but the independent n=10
+  `30445030314` passed 9/10 at 19.6k TPCA. The failed row stopped under the
+  repeated-tool-loop guard with three product boundaries incomplete, so Terra
+  was not promoted.
+- Fresh synthetic repository replication: T29 uses a separate release-control
+  domain, seven-field contract, starter repository, public validators, and
+  evaluator-only oracle while preserving the four frozen milestones and
+  bounded controller controls. Admission `30447523090` passed; screen
+  `30447789765` passed 5/5 at 22.0k TPCA, but every row repaired CSS and the
+  audit blocked n=10 pending optimization.
 - Current frontier screen: GPT-5.6 Sol runs `29963772623` and `29963515885`,
   eight exact task types, Cursor rules/FULL, and five repetitions per cell.
   FULL passed 40/40 at 9.0k TPCA; Cursor rules passed 34/40 at 33.8k TPCA.
@@ -68,13 +79,12 @@ prompt expansion or selective reporting.
 
 ## Long-horizon product slice
 
-`T28` is intentionally reported as its own slice. It requires one coherent
-incident-command product across Python/FastAPI, Go, TypeScript/React,
-Playwright, JSON Schema, CSS, tests, and architecture documentation. Its
-20-turn ceiling is task metadata, not a global expansion of every benchmark
-cell. The evaluator-only oracle verifies API behavior, contract parity, Go
-normalization, UI states and accessibility, the browser journey, public tests,
-and the architecture record.
+`T28` and `T29` are intentionally reported as long-horizon slices. T28 requires
+one coherent incident-command product; T29 independently requires a
+release-control product with a different contract, repository, validators, and
+hidden oracle. Both span Python/FastAPI, Go, TypeScript/React, Playwright, JSON
+Schema, CSS, tests, and architecture documentation. Their 20-turn ceiling is
+task metadata, not a global expansion of every benchmark cell.
 
 Each run writes an adjacent `*.audit.json` artifact. The audit is deterministic
 and flags incomplete evidence, undersampling, acceptance gaps, correctness

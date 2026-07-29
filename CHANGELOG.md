@@ -44,6 +44,18 @@ consolidated into the next published release.
   independent n=10 confirmation `30418513274`. The final sample passed 10/10
   and first-pass 10/10 at 17,907 mean TPCA, five turns, 1.77% CV, and one
   schema hash per row; the audit reports no correctness or efficiency blocker.
+- Replicate frozen structured v4 with Terra. Corrected T28 n=5
+  `30444589182` passed 5/5, but independent n=10 `30445030314` passed 9/10 at
+  19,648 TPCA after one bounded repeated-tool-loop failure, so promotion is
+  rejected.
+- Add independent synthetic long-horizon task T29 with a release-control
+  repository, distinct contract, public validators, and hidden oracle.
+  Admission `30447523090` and n=5 `30447789765` passed; the screen was 5/5 at
+  22,038 TPCA, but systematic CSS repair and 0% first-pass completion block
+  n=10.
+- Normalize nested verification file-path evidence at CLI, governance,
+  persistence, and risk-audit boundaries so malformed legacy or tampered work
+  items cannot crash `specsmith audit`.
 - Exclude authoritative milestone-packet paths from optional generic preload
   context so the model never receives a duplicate or stale copy of an active
   file while preserving the default just-in-time context policy.

@@ -119,5 +119,16 @@
     "requirement_ids": [
       "REQ-027"
     ]
+  },
+  {
+    "approval_type": "implementation",
+    "work_item_id": "WI-182B7DEEC2D6",
+    "approver": "Tristen Pierson <98970594+tbitcs@users.noreply.github.com>",
+    "timestamp": "2026-07-29T11:43:56Z",
+    "scope": "REQ-490 benchmark evidence publication",
+    "rationale": "Immutable Terra v4 and fresh T29 evidence is archived with verified manifests; README, RTD, benchmark pages, changelog, and preprint report exact outcomes and limitations; 195 linked tests and strict docs pass.",
+    "requirement_ids": [
+      "REQ-490"
+    ]
   }
 ]

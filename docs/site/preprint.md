@@ -29,7 +29,7 @@ favorable point estimate.
 | A lower-tier governed system substitutes for frontier raw on the mixed release suite | Preregistered eight-task 2×2 design, n=10, fixed-suite correctness and TPCA gates | Supported for Terra FULL versus Sol raw in workflow 30210886840 |
 | The result is robust to resampling the eight named tasks | Task-cluster correctness and TPCA confidence gates both pass | Supported within the benchmark distribution; this is not evidence on fresh repositories |
 | A lower-tier governed system substitutes on coding-only work | Prespecified coding slice clears the same correctness and TPCA gates | Not confirmed: observed results favor Terra FULL, but the correctness lower bound missed the margin by 0.7 pp |
-| The result generalizes to new repositories and task families | Independent replication across fresh real repositories, languages, providers, and task distributions | Not established |
+| The result generalizes to new repositories and task families | Independent replication across fresh real repositories, languages, providers, and task distributions | Not established: synthetic T29 passed 5/5, but every row required repair, n=10 was blocked, and no fresh real repository was tested |
 | Published 8B or mini models replace frontier models | A small-model admission, matched n=5 screen, and n=10 release gate all pass | Rejected for current routes: Llama 3.1 8B and GPT-4o mini T28 admissions failed |
 | A reasoning-capable 20B–32B model can complete governed T28 | Correct public checks and independent oracle in admission | Supported at n=1 for Qwen3.6-27B/DeepInfra; the best controller diagnostic used 26,850 tokens and 6 turns |
 | A 20B–32B governed model replaces frontier Sol efficiently | Correct admission inside the versioned Sol envelope, then matched n=5 and n=10 gates | Not supported: the best correct 27B cell still used 1.53× the Sol token envelope and has no matched n=5 confirmation |
@@ -212,6 +212,18 @@ passed 10/10 at 17,907 mean TPCA, five turns, 100% first-pass completion, and
 1.77% CV. This is 7.2% below v3 and establishes a release-sized Sol/T28 route
 result. It does not establish a universal native-interface or cross-repository
 effect.
+
+Frozen-v4 Terra supplied a stricter replication. Corrected T28 n=5 passed, but
+the independent
+[n=10 workflow 30445030314](https://github.com/layer1labs/specsmith/actions/runs/30445030314)
+passed 9/10 at 19,648 TPCA after one bounded repeated-tool-loop failure. A new
+synthetic release-control repository then changed the domain, contract,
+starter, public validators, and hidden oracle without changing the controller.
+Its
+[T29 n=5 workflow 30447789765](https://github.com/layer1labs/specsmith/actions/runs/30447789765)
+passed 5/5 at 22,038 TPCA, but all five rows repaired CSS and the audit blocked
+n=10. This is preliminary fresh-fixture evidence, not real-repository
+generalization or a release-sized Terra claim.
 
 ## Reproduction
 

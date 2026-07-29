@@ -747,6 +747,11 @@ Chat Completions compatibility mode to native Responses function tools.
 | [30417839826](https://github.com/layer1labs/specsmith/actions/runs/30417839826) | GPT-5.6 Sol, structured v4 | 1/1 | 17,844 | $0.2582 | 5 | correct; promote to n=5 |
 | [30418033123](https://github.com/layer1labs/specsmith/actions/runs/30418033123) | GPT-5.6 Sol, structured v4 | 5/5 | 17,912 | $0.2540 | 5 | clean screen; promote to n=10 |
 | [30418513274](https://github.com/layer1labs/specsmith/actions/runs/30418513274) | GPT-5.6 Sol, structured v4 | 10/10 | 17,907 | $0.2501 | 5 | release-sized; publish or expand |
+| [30443624573](https://github.com/layer1labs/specsmith/actions/runs/30443624573) | GPT-5.6 Terra, structured v4, pre-validator repair | 4/5 | 21,195 | $0.1157 | 5 | public/oracle disagreement; repair evaluator |
+| [30444589182](https://github.com/layer1labs/specsmith/actions/runs/30444589182) | GPT-5.6 Terra, structured v4, corrected T28 | 5/5 | 17,696 | $0.1195 | 5.2 | clean screen; promote to n=10 |
+| [30445030314](https://github.com/layer1labs/specsmith/actions/runs/30445030314) | GPT-5.6 Terra, structured v4, corrected T28 | 9/10 | 19,648 | $0.1154 | 5.1 | repeated-tool-loop failure; reject promotion |
+| [30447523090](https://github.com/layer1labs/specsmith/actions/runs/30447523090) | GPT-5.6 Terra, structured v4, fresh T29 | 1/1 | 20,673 | $0.1270 | 6 | admission passed |
+| [30447789765](https://github.com/layer1labs/specsmith/actions/runs/30447789765) | GPT-5.6 Terra, structured v4, fresh T29 | 5/5 | 22,038 | $0.1299 | 6.4 | 0% first-pass; optimize before n=10 |
 
 Every successful Sol and Terra row passed public validators and the hidden
 oracle, completed all four milestones, and used one implementation attempt
@@ -803,6 +808,32 @@ release anchor. The audit returned `publish_or_expand` with no correctness or
 efficiency blocker. Its only low-severity note was provider cache
 discontinuity; preserving server history would retain stale source bodies, so
 this cycle keeps bounded epistemic compression and freezes v4.
+
+### Frozen-v4 Terra and fresh-repository replication
+
+Terra used the exact structured-v4 controller, model route, task limits, and
+validator authority. An initial T28 n=5 exposed a public/oracle disagreement:
+one implementation named the backend query parameter `status_filter`; the
+combined public severity/status check passed because severity alone selected
+the expected row, while the hidden status-only oracle failed. The visible
+validator was strengthened to require the post-transition status-only result,
+then the corrected admission and n=5 passed.
+
+The independent corrected T28 n=10 did not confirm release reliability. Nine
+rows passed both graders, but one repeated the first milestone until the loop
+guard stopped it with the Go worker, UI, and architecture still incomplete.
+The sample used 176,832 total tokens and produced 19,648 TPCA. Its audit
+returned `repair_and_rerun`, so the clean n=5 is not promoted.
+
+T29 then tested a fresh synthetic release-control repository with a distinct
+contract, starter, validators, and hidden oracle while retaining the same four
+milestone sizes and frozen controls. Admission passed at 20,673 tokens. The
+n=5 screen passed public and hidden acceptance in all five rows at 22,038 mean
+TPCA and $0.1299 mean cost. However, all five rows repaired `styles.css`, one
+row invoked bounded loop recovery, and first-pass completion was 0%. The audit
+returned `optimize_and_rerun`; no T29 n=10 was run. This broadens evidence
+beyond one fixture but remains synthetic, undersized, and insufficient for a
+cross-repository or universal model claim.
 
 ## Benchmark-driven optimization loop
 

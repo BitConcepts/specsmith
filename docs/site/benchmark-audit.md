@@ -72,6 +72,25 @@ retain stale epistemic context. Because the release-sized token envelope is
 stable, v4 freezes bounded context rather than trading it for an unmeasured
 cache optimization.
 
+## Terra replication and independent synthetic repository
+
+The same frozen v4 controller did not reproduce Sol's release-sized reliability
+with Terra. After a visible status-only validator repair, T28 admission and n=5
+passed, but
+[n=10 workflow 30445030314](https://github.com/layer1labs/specsmith/actions/runs/30445030314)
+passed only 9/10. The failed row repeatedly targeted milestone one and stopped
+under the deterministic loop guard before completing the worker, UI, or
+architecture. TPCA was 19,648, and the audit rejected promotion.
+
+Fresh task T29 is a separate synthetic release-control repository with a
+different seven-field contract, public validators, and hidden oracle. Its
+[n=5 workflow 30447789765](https://github.com/layer1labs/specsmith/actions/runs/30447789765)
+passed 5/5 at 22,038 TPCA and $0.1299 mean cost. This is useful
+fresh-fixture correctness evidence, but every row required a `styles.css`
+repair and one used bounded loop recovery. The deterministic audit selected
+`optimize_and_rerun`, not n=10. T29 therefore increases evaluator diversity
+without establishing real-repository generalization.
+
 ## Current broad audit
 
 [Workflow 30206398622](https://github.com/layer1labs/specsmith/actions/runs/30206398622)

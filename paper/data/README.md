@@ -37,6 +37,12 @@ fields.
 | `native-sol-structured-v4-admission-30417839826` | 30417839826 | GPT-5.6 Sol native structured milestone admission; correct at 17,844 tokens |
 | `native-sol-structured-v4-n5-30418033123` | 30418033123 | Five-row native structured milestone promotion; 5/5 correct at 17,912 mean TPCA |
 | `native-sol-structured-v4-n10-30418513274` | 30418513274 | Independent native structured milestone confirmation; 10/10 correct at 17,907 mean TPCA |
+| `native-terra-structured-v4-initial-n5-30443624573` | 30443624573 | Initial Terra v4 T28 n=5; 4/5 after public/oracle status-filter disagreement |
+| `native-terra-structured-v4-admission-30444375348` | 30444375348 | Corrected Terra v4 T28 admission; correct at 17,266 tokens |
+| `native-terra-structured-v4-n5-30444589182` | 30444589182 | Corrected Terra v4 T28 screen; 5/5 at 17,696 mean TPCA |
+| `native-terra-structured-v4-n10-30445030314` | 30445030314 | Independent Terra v4 T28 confirmation; 9/10 at 19,648 TPCA; promotion rejected |
+| `native-terra-fresh-t29-admission-30447523090` | 30447523090 | Fresh synthetic T29 admission; correct at 20,673 tokens |
+| `native-terra-fresh-t29-n5-30447789765` | 30447789765 | Fresh synthetic T29 screen; 5/5 at 22,038 TPCA, systematic repair blocks n=10 |
 
 Full raw rows, traces, diffs, and validator output remain in the cited GitHub
 Actions artifacts for the configured retention period. They are not copied

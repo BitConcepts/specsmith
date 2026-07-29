@@ -464,3 +464,21 @@
 - **Type**: wi_close
 - **Status**: complete
 - **Chain hash**: `825d2e8f8c18a721...`
+
+## 2026-07-29T07:44 — wi_close WI-182B7DEEC2D6: Frozen-v4 Terra and fresh T29 evidence archived, documented, and verified.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `e2cb36328e488040...`
+
+## 2026-07-29T07:44 — wi_close WI-3287E2FDA163: Frozen-v4 Terra T28 ladder completed; 9/10 release result archived and promotion rejected.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `8cb97e395d8415f1...`
+
+## 2026-07-29T07:44 — wi_close WI-02CFA02CAAB6: Fresh T29 admission and n=5 replication completed; evidence archived and n=10 blocked by audit.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `0058090d83fc5590...`

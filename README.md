@@ -149,11 +149,13 @@ coding-only confidence gate remained inconclusive.
 For the long-horizon polyglot task, native structured milestone tools with
 GPT-5.6 Sol passed an independent 10/10 confirmation at 17.9k TPCA, five turns,
 and 1.77% coefficient of variation. The schema change reduced TPCA by 7.2%
-from the immediately preceding native controller diagnostic. These results are
-task- and route-specific. Managed 20B–32B and Qwen native-tool candidates have
-useful correct diagnostics but have not passed the repeated replacement gates,
-so Specsmith does not claim that small models generally replace frontier
-models.
+from the immediately preceding native controller diagnostic. A frozen-controller
+Terra replication was less stable: T28 passed 9/10 at 19.6k TPCA, while a new
+independent synthetic repository task passed 5/5 at 22.0k TPCA but required
+repair in every row. These results are task- and route-specific. Managed
+20B–32B and Qwen native-tool candidates have useful correct diagnostics but
+have not passed the repeated replacement gates, so Specsmith does not claim
+that small models generally replace frontier models.
 
 See the
 [full benchmark report](https://specsmith.readthedocs.io/stable/efficiency-benchmark/),
