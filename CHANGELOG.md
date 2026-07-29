@@ -20,6 +20,12 @@ consolidated into the next published release.
   the matched Terra screen `30413249488`: Terra passed 5/5 T28/FULL cells at
   17,213 mean tokens, $0.1176 mean cost, five turns, all four milestones, and
   no deterministic audit weakness.
+- Record Luna native admission `30414435928` as negative evidence: it exhausted
+  20 turns and 72,880 tokens after fourteen milestone calls supplied non-string
+  content, completed three of four milestones, and failed the hidden oracle.
+- Make fixed milestone and atomic-patch schemas provider-strict by requiring
+  every slot and representing unused slots as null, while preserving local
+  type checks, atomicity, path scope, timeouts, and validator authority.
 - Exclude authoritative milestone-packet paths from optional generic preload
   context so the model never receives a duplicate or stale copy of an active
   file while preserving the default just-in-time context policy.

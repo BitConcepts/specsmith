@@ -740,6 +740,7 @@ Chat Completions compatibility mode to native Responses function tools.
 | [30412677765](https://github.com/layer1labs/specsmith/actions/runs/30412677765) | GPT-5.6 Sol | 1/1 | 18,474 | $0.2590 | 5 | n=1 diagnostic; repeat eligible |
 | [30412913235](https://github.com/layer1labs/specsmith/actions/runs/30412913235) | GPT-5.6 Terra | 1/1 | 17,014 | $0.1147 | 5 | n=1 diagnostic; repeat eligible |
 | [30413249488](https://github.com/layer1labs/specsmith/actions/runs/30413249488) | GPT-5.6 Terra | 5/5 | 17,213 | $0.1176 | 5 | clean screen; expand to n=10 |
+| [30414435928](https://github.com/layer1labs/specsmith/actions/runs/30414435928) | GPT-5.6 Luna | 0/1 | undefined (72,880 used) | undefined ($0.1823 spent) | 20 | reject repetition; repair schema |
 
 Every row passed public validators and the hidden oracle, completed all four
 milestones, and used one implementation attempt with no repair cycle. The Terra
@@ -755,9 +756,21 @@ function call and then continues after its output, and reuses server-side state
 only across an exact history prefix. Controller compaction intentionally
 invalidated continuation in these cells; implicit prompt caching still reached
 5,886 mean cached input tokens in the five-run screen. The next causal
-admission is the separately labeled Luna route. Optional generic preload now
-excludes files already supplied by an authoritative milestone packet, preventing
-duplicate or stale file bodies without changing the default zero-byte preload.
+admission tested the separately labeled Luna route. Optional generic preload
+now excludes files already supplied by an authoritative milestone packet,
+preventing duplicate or stale file bodies without changing the default
+zero-byte preload.
+
+Luna selected the correct `write_milestone` tool on every turn but failed its
+argument contract fourteen times because used `content_N` values were not
+strings. It completed three of four milestones, omitted architecture evidence,
+and exhausted the 20-turn task ceiling. Public tests passed while the
+independent oracle failed, so it has no TPCA and no substitution value. The
+next isolated repair makes all fixed milestone and atomic-patch slots required
+with nullable unused slots. That allows native Responses strict validation to
+enforce text for every used path/content pair without weakening local
+all-or-nothing writes, scope checks, timeouts, validators, or the hidden oracle.
+Only a new n=1 Luna admission is justified.
 
 ## Benchmark-driven optimization loop
 

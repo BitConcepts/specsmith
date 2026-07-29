@@ -33,13 +33,16 @@ repeated repairs regressed to 98,679 tokens. The controller now records
 milestone yield and stops an identical single-action no-op after one recovery;
 no additional paid repetition is admitted.
 
-The native Responses admission is now complete. Sol passed T28/FULL at n=1 in
+The native Responses family screen is now complete. Sol passed T28/FULL at n=1 in
 workflow `30412677765` using 18,474 tokens and $0.2590. Terra then passed at
 n=1 in `30412913235` and earned the matched n=5 screen `30413249488`: 5/5
 correct, 17,213 mean tokens, $0.1176 mean cost, five turns, all four milestones,
-and no deterministic audit weakness. These are route-screening results, not a
-release claim. Luna is registered as the next cost-sensitive n=1 admission;
-Terra must expand to n=10 before this route supports release-quality claims.
+and no deterministic audit weakness. Luna failed its n=1 admission in workflow
+`30414435928` at 72,880 tokens and 20 turns. Fourteen of twenty
+`write_milestone` calls carried non-string content, three milestones completed,
+and the independent oracle failed. These are route-screening results, not a
+release claim. Terra must expand to n=10 before this route supports
+release-quality claims.
 
 All native cells retain the validator-authority, milestone-packet, repair-only
 atomic-patch controller, low reasoning effort, low text verbosity, bounded
@@ -47,7 +50,10 @@ requests, zero provider retries, and a two-step live tool/continuation probe.
 History compaction invalidates `previous_response_id` continuation and forces a
 full auditable request. Authoritative packet paths are excluded from optional
 generic preload context so a file body cannot be duplicated or retained after
-the active milestone advances.
+the active milestone advances. Fixed milestone and atomic-patch slots are now
+provider-strict: every slot is present, unused slots are null, and used content
+must be text. Luna receives one repair admission under that isolated schema
+change; it does not receive repetition budget unless correctness passes.
 
 ---
 

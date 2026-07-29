@@ -39,6 +39,7 @@ task-conditional substitution—not general small-model replacement.
 | [30413249488](https://github.com/layer1labs/specsmith/actions/runs/30413249488) | GPT-5.6 Terra / native Responses | 5 T28 FULL | 5/5 correct at 17.2k TPCA, $0.1176 mean cost, five turns, clean audit |
 | [30412913235](https://github.com/layer1labs/specsmith/actions/runs/30412913235) | GPT-5.6 Terra / native Responses | 1 T28 FULL | Correct at 17.0k TPCA; promoted to n=5 |
 | [30412677765](https://github.com/layer1labs/specsmith/actions/runs/30412677765) | GPT-5.6 Sol / native Responses | 1 T28 FULL | Correct at 18.5k TPCA; native tool/continuation route admitted |
+| [30414435928](https://github.com/layer1labs/specsmith/actions/runs/30414435928) | GPT-5.6 Luna / native Responses | 1 T28 FULL | Failed at 72.9k/20 turns; non-string milestone content blocked 14 calls; 3/4 milestones |
 | [30209142281](https://github.com/layer1labs/specsmith/actions/runs/30209142281) | GPT-5.6 Sol | 1 per T1/T10/T11/T13/T28 FULL | Post-broad admission: T11 improved to 11.2k/2 turns; T13 preload regressed and was removed |
 | [30206398622](https://github.com/layer1labs/specsmith/actions/runs/30206398622) | GPT-5.6 Sol | 10 per eight tasks × Cursor/FULL | 160 valid; FULL 80/80 at 10.7k, Cursor 70/80 at 24.8k TPCA |
 | [30206394966](https://github.com/layer1labs/specsmith/actions/runs/30206394966) | GPT-5.6 Terra + Sol | 5 per T1/T10/T13/T28 × raw/FULL | Terra+FULL 20/20 at 19.1k; Sol raw 20/20 at 29.2k TPCA |
@@ -418,12 +419,13 @@ rejected.
 
 The next managed admissions should remain bounded:
 
-1. **GPT-5.6 Luna on native Responses tools** — the Sol and Terra route
-   admissions succeeded, and Terra's matched T28/FULL n=5 screen passed 5/5 at
-   17.2k TPCA and $0.1176 mean cost. Run Luna once under the identical
-   `scalar-milestone-packet-authority` controls. It receives repetition budget
-   only if the public validators and hidden oracle pass and its efficiency
-   improves on Terra.
+1. **GPT-5.6 Luna strict-schema repair admission** — the initial native route
+   failed because fourteen `write_milestone` calls carried non-string content.
+   Rerun one T28/FULL cell after making every fixed scalar slot required and
+   unused slots nullable, which enables provider strict validation. Preserve
+   the same controller, effort, verbosity, timeouts, validators, and oracle.
+   Luna receives no repetition budget unless correctness passes and efficiency
+   improves materially on Terra.
 2. **GPT-5.6 Terra native release confirmation** — expand the identical T28
    cell from five to ten repetitions before making a release-quality native
    route claim. Do not pool the earlier n=1 admission.

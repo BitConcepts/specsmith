@@ -726,7 +726,14 @@ _PATCH_FILE_TOOL: dict[str, Any] = {
             "properties": {
                 "path": {"type": "string", "description": "File path relative to project root"},
                 **{
-                    key: specification
+                    key: (
+                        specification
+                        if index == 1
+                        else {
+                            "anyOf": [specification, {"type": "null"}],
+                            "description": specification["description"],
+                        }
+                    )
                     for index in range(1, 4)
                     for key, specification in (
                         (
@@ -749,7 +756,14 @@ _PATCH_FILE_TOOL: dict[str, Any] = {
                     )
                 },
             },
-            "required": ["path", "old_text_1", "new_text_1"],
+            "required": [
+                "path",
+                *(
+                    key
+                    for index in range(1, 4)
+                    for key in (f"old_text_{index}", f"new_text_{index}")
+                ),
+            ],
             "additionalProperties": False,
         },
     },
@@ -767,7 +781,14 @@ _MILESTONE_WRITE_TOOL: dict[str, Any] = {
         "parameters": {
             "type": "object",
             "properties": {
-                key: specification
+                key: (
+                    specification
+                    if index == 1
+                    else {
+                        "anyOf": [specification, {"type": "null"}],
+                        "description": specification["description"],
+                    }
+                )
                 for index in range(1, 5)
                 for key, specification in (
                     (
@@ -786,7 +807,10 @@ _MILESTONE_WRITE_TOOL: dict[str, Any] = {
                     ),
                 )
             },
-            "required": ["path_1", "content_1"],
+            "required": [
+                key for index in range(1, 5) for key in (f"path_{index}", f"content_{index}")
+            ],
+            "additionalProperties": False,
         },
     },
 }

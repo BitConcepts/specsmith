@@ -33,6 +33,7 @@ favorable point estimate.
 | Published 8B or mini models replace frontier models | A small-model admission, matched n=5 screen, and n=10 release gate all pass | Rejected for current routes: Llama 3.1 8B and GPT-4o mini T28 admissions failed |
 | A reasoning-capable 20B–32B model can complete governed T28 | Correct public checks and independent oracle in admission | Supported at n=1 for Qwen3.6-27B/DeepInfra; the best controller diagnostic used 26,850 tokens and 6 turns |
 | A 20B–32B governed model replaces frontier Sol efficiently | Correct admission inside the versioned Sol envelope, then matched n=5 and n=10 gates | Not supported: the best correct 27B cell still used 1.53× the Sol token envelope and has no matched n=5 confirmation |
+| Native Responses tools improve the governed T28 model/cost frontier | Same-controller route admission followed by matched n=5 and n=10 confirmation | Screening only: Terra passed 5/5 at 17,213 TPCA and $0.1176 per pass; Luna failed admission; no n=10 native claim |
 | Small models universally replace frontier models | Broad external replication across fresh repositories, languages, providers, and task distributions | Not claimed |
 
 The decisive
@@ -173,6 +174,22 @@ not supply missing semantic capability. None of these rows has defined TPCA or
 supports model substitution. Compact evidence v2 records the 1/4 milestone
 yield, and a final content-free no-op guard stops the second identical retry;
 that guard is locally verified but was not followed by another paid run.
+
+The native Responses route then held the controller constant and changed only
+the model-serving interface. Sol passed one T28/FULL admission at 18,474 tokens
+in [workflow 30412677765](https://github.com/layer1labs/specsmith/actions/runs/30412677765).
+Terra passed admission and then 5/5 screening cells in
+[workflow 30413249488](https://github.com/layer1labs/specsmith/actions/runs/30413249488)
+at 17,213 mean tokens, $0.1176 mean cost, five turns, and no audit weakness.
+This is screening evidence, not a release claim. Luna failed its separately
+labeled admission in
+[workflow 30414435928](https://github.com/layer1labs/specsmith/actions/runs/30414435928):
+72,880 tokens, 20 turns, three of four milestones, and a failed independent
+oracle. Fourteen milestone calls were rejected because used content fields were
+not strings. A preregistered repair enables provider strict validation with
+required nullable fixed slots; it must pass a new n=1 cell before any
+repetition. These results reinforce that native tool availability alone does
+not guarantee efficient tool serialization on a lower-cost model.
 
 ## Reproduction
 

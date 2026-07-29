@@ -43,6 +43,7 @@ from govern_bench.harness import (  # noqa: E402
     _next_incomplete_boundary_paths,
     _noop_action_signature,
     _openai_sampling_params,
+    _openai_tools_to_responses,
     _provider_max_retries,
     _read_paths_from_calls,
     _record_written_evidence,
@@ -394,6 +395,11 @@ def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
         assert not any(spec.get("type") == "array" for spec in properties.values())
         if experiment.startswith("scalar-milestone-packet"):
             assert milestone_tool["function"]["strict"] is True
+            parameters = milestone_tool["function"]["parameters"]
+            assert set(parameters["required"]) == set(properties)
+            assert {"type": "null"} in properties["path_2"]["anyOf"]
+            native_tool = _openai_tools_to_responses([milestone_tool])[0]
+            assert native_tool["strict"] is True
         if experiment == "scalar-milestone-packet-patch":
             assert "prefer one atomic patch_file call" in contract
     elif experiment.startswith("scalar-parallel") or experiment.startswith("scalar-native-patch"):
@@ -412,6 +418,10 @@ def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
             assert not any(spec.get("type") == "array" for spec in properties.values())
             assert properties["old_text_1"]["minLength"] == 1
             assert patch_tool["function"]["strict"] is True
+            parameters = patch_tool["function"]["parameters"]
+            assert set(parameters["required"]) == set(properties)
+            assert {"type": "null"} in properties["old_text_2"]["anyOf"]
+            assert _openai_tools_to_responses([patch_tool])[0]["strict"] is True
     else:
         assert "use write_files" in contract
 
@@ -658,6 +668,10 @@ def test_scalar_milestone_bundle_validates_pairs_before_writing(tmp_path: Path) 
             "content_1": "ONE = 1\n",
             "path_2": "two.py",
             "content_2": "TWO = 2\n",
+            "path_3": None,
+            "content_3": None,
+            "path_4": None,
+            "content_4": None,
         },
         written,
     )
