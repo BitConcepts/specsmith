@@ -42,8 +42,11 @@ See the [current executable results](../site/efficiency-benchmark.md) and the
   domain, seven-field contract, starter repository, public validators, and
   evaluator-only oracle while preserving the four frozen milestones and
   bounded controller controls. Admission `30447523090` passed; screen
-  `30447789765` passed 5/5 at 22.0k TPCA, but every row repaired CSS and the
-  audit blocked n=10 pending optimization.
+  `30447789765` passed 5/5 at 22.0k TPCA, but every row repaired the App
+  empty-state boundary and the audit blocked n=10. The trace-derived v5
+  admission `30453721376` passed first-pass; n=5 `30454018932` passed 5/5 at
+  18.1k TPCA, 80% first-pass, and zero loop recoveries. Its audit admits the
+  still-unrun n=10 gate.
 - Current frontier screen: GPT-5.6 Sol runs `29963772623` and `29963515885`,
   eight exact task types, Cursor rules/FULL, and five repetitions per cell.
   FULL passed 40/40 at 9.0k TPCA; Cursor rules passed 34/40 at 33.8k TPCA.

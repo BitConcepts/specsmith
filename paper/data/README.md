@@ -42,7 +42,9 @@ fields.
 | `native-terra-structured-v4-n5-30444589182` | 30444589182 | Corrected Terra v4 T28 screen; 5/5 at 17,696 mean TPCA |
 | `native-terra-structured-v4-n10-30445030314` | 30445030314 | Independent Terra v4 T28 confirmation; 9/10 at 19,648 TPCA; promotion rejected |
 | `native-terra-fresh-t29-admission-30447523090` | 30447523090 | Fresh synthetic T29 admission; correct at 20,673 tokens |
-| `native-terra-fresh-t29-n5-30447789765` | 30447789765 | Fresh synthetic T29 screen; 5/5 at 22,038 TPCA, systematic repair blocks n=10 |
+| `native-terra-fresh-t29-n5-30447789765` | 30447789765 | Fresh synthetic T29 screen; 5/5 at 22,038 TPCA, systematic App repair blocks n=10 |
+| `native-terra-fresh-t29-v5-admission-30453721376` | 30453721376 | Trace-derived T29 v5 admission; first-pass at 17,407 tokens |
+| `native-terra-fresh-t29-v5-n5-30454018932` | 30454018932 | T29 v5 screen; 5/5 at 18,055 TPCA, 80% first-pass; n=10 unrun |
 
 Full raw rows, traces, diffs, and validator output remain in the cited GitHub
 Actions artifacts for the configured retention period. They are not copied

@@ -86,10 +86,24 @@ Fresh task T29 is a separate synthetic release-control repository with a
 different seven-field contract, public validators, and hidden oracle. Its
 [n=5 workflow 30447789765](https://github.com/layer1labs/specsmith/actions/runs/30447789765)
 passed 5/5 at 22,038 TPCA and $0.1299 mean cost. This is useful
-fresh-fixture correctness evidence, but every row required a `styles.css`
-repair and one used bounded loop recovery. The deterministic audit selected
-`optimize_and_rerun`, not n=10. T29 therefore increases evaluator diversity
-without establishing real-repository generalization.
+fresh-fixture correctness evidence, but every row entered App empty-state
+repair and one used bounded loop recovery. The original `styles.css` hotspot
+label was an audit-parser error caused by a relative import in controller-
+supplied App content; re-audit of the retained raw rows correctly identifies
+`ui/src/App.tsx`. The deterministic audit selected `optimize_and_rerun`, not
+n=10.
+
+Versioned v5 made the structural empty-state rule match the hidden oracle,
+added a CSS-only milestone-three validator, and reduced unchanged authoritative
+repair tolerance from three streaks to two. Admission
+[30453721376](https://github.com/layer1labs/specsmith/actions/runs/30453721376)
+passed first-pass at 17,407 tokens. Its earned
+[n=5 screen 30454018932](https://github.com/layer1labs/specsmith/actions/runs/30454018932)
+passed 5/5 at 18,055 mean TPCA, $0.1199 mean cost, 5.2 turns, 80% first-pass,
+and no loop recovery. The sole repair was one focused Playwright patch. The
+audit now selects `expand_release_sample`; T29 n=10 remains unrun. T29
+therefore increases evaluator diversity without establishing real-repository
+generalization.
 
 ## Current broad audit
 

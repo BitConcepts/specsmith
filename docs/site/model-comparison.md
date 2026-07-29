@@ -41,7 +41,9 @@ task-conditional substitution—not general small-model replacement.
 | [30416984775](https://github.com/layer1labs/specsmith/actions/runs/30416984775) | GPT-5.6 Sol / stable-schema native Responses v3 | 1 T28 FULL | Correct at 19.3k TPCA and five turns; 1.10× release anchor, so repetition rejected |
 | [30418513274](https://github.com/layer1labs/specsmith/actions/runs/30418513274) | GPT-5.6 Sol / structured native Responses v4 | 10 T28 FULL | 10/10 correct and first-pass at 17.9k TPCA, five turns, 1.77% CV; release-sized audit clear |
 | [30445030314](https://github.com/layer1labs/specsmith/actions/runs/30445030314) | GPT-5.6 Terra / structured native Responses v4 | 10 T28 FULL | 9/10 at 19.6k TPCA; one repeated-tool-loop failure; rejected |
-| [30447789765](https://github.com/layer1labs/specsmith/actions/runs/30447789765) | GPT-5.6 Terra / structured native Responses v4 | 5 fresh T29 FULL | 5/5 at 22.0k TPCA, but 0% first-pass and systematic CSS repair; n=10 blocked |
+| [30454018932](https://github.com/layer1labs/specsmith/actions/runs/30454018932) | GPT-5.6 Terra / structured native Responses v5 | 5 fresh T29 FULL | 5/5 at 18.1k TPCA, 80% first-pass, zero loop recoveries; audit admits unrun n=10 |
+| [30453721376](https://github.com/layer1labs/specsmith/actions/runs/30453721376) | GPT-5.6 Terra / structured native Responses v5 | 1 fresh T29 FULL | First-pass at 17.4k TPCA; admitted to n=5 |
+| [30447789765](https://github.com/layer1labs/specsmith/actions/runs/30447789765) | GPT-5.6 Terra / structured native Responses v4 | 5 fresh T29 FULL | 5/5 at 22.0k TPCA, but 0% first-pass and systematic App empty-state repair; n=10 blocked |
 | [30447523090](https://github.com/layer1labs/specsmith/actions/runs/30447523090) | GPT-5.6 Terra / structured native Responses v4 | 1 fresh T29 FULL | Correct at 20.7k TPCA; admitted to n=5 |
 | [30444589182](https://github.com/layer1labs/specsmith/actions/runs/30444589182) | GPT-5.6 Terra / structured native Responses v4 | 5 corrected T28 FULL | 5/5 at 17.7k TPCA; promoted, but the independent n=10 later failed |
 | [30418033123](https://github.com/layer1labs/specsmith/actions/runs/30418033123) | GPT-5.6 Sol / structured native Responses v4 | 5 T28 FULL | 5/5 correct at 17.9k TPCA; promoted to independent n=10 |
@@ -85,6 +87,19 @@ task-conditional substitution—not general small-model replacement.
 | [29962883256](https://github.com/layer1labs/specsmith/actions/runs/29962883256) | Qwen3.6-35B-A3B, Qwen3-Coder-Next, Qwen3-Coder-480B-A35B | 1 | Managed-route diagnostic only |
 | `29839696631`, `29942515095` | GPT-5.6 Sol | 5 | Superseded historical screens |
 | `29944111036` | Qwen3.6-35B-A3B / Scaleway | 1 | Superseded route diagnostic |
+
+The v4 T29 audit originally named `styles.css` as its 5/5 repair hotspot.
+Re-audit of the retained rows showed that was a parser artifact from
+`import "./styles.css"` inside controller-supplied App content; the real
+boundary was `ui/src/App.tsx`, whose structural empty state passed the hidden
+oracle but not the public validator's literal-word check. Versioned v5 aligned
+that check, added CSS-only milestone-three validation, and bounded unchanged
+repair streaks at two. Its n=5 package reduced mean TPCA 18.1%, estimated
+cost/pass 7.7%, and turns 18.8% versus v4 while moving first-pass completion
+from 0% to 80%. One row repaired a missing Playwright assertion in one patch.
+Because both validator/task contract and recovery changed, this is not a
+single-factor causal estimate. The audit admits an unrun n=10; it does not
+establish release-sized or real-repository generalization.
 
 Results are never combined across incompatible commits, task grids, routes, or
 repetition sets. GPT-5.6 uses Chat Completions with `reasoning_effort=none` for

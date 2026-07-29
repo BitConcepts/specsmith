@@ -377,10 +377,26 @@ promotion. We next introduced T29, an independent synthetic release-control
 repository with a different domain, seven-field contract, starter,
 validators, and hidden oracle while preserving the four milestone sizes and
 frozen controller. T29 passed five of five rows at 22,038 mean tokens per
-correct answer and \$0.1299 mean estimated cost, but every row required a CSS
-repair and one invoked loop recovery. The audit therefore blocked a ten-row
-release sample. This adds fresh-fixture evidence while preserving the negative
-conclusion on release reliability and real-repository generalization.
+correct answer and \$0.1299 mean estimated cost, but every row entered App
+empty-state repair and one invoked loop recovery. Re-audit showed the original
+CSS-hotspot label was a parser artifact from a relative import in supplied App
+content. The public validator required the literal word ``empty'' even when
+the hidden oracle accepted the structural zero-length/no-release state.
+
+A trace-derived v5 package aligned that check, added CSS-only milestone-three
+validation for focus, disabled actions, and responsive layout, and bounded
+unchanged repair streaks at two. Admission workflow 30453721376 passed
+first-pass at 17,407 tokens. The earned five-row workflow 30454018932 passed
+five of five at 18,055 mean tokens per
+correct answer, \$0.1199 mean estimated cost, 5.2 turns, 80\% first-pass, and
+zero loop recoveries. One row repaired a missing Playwright visibility
+assertion in one patch. Relative to v4, mean tokens fell 18.1\%, cost 7.7\%,
+and turns 18.8\%; because the task/validator contract and recovery controller
+changed together, this is a package-level delta rather than a single-factor
+causal estimate. The audit admits a ten-row expansion, but that gate remains
+unrun. This adds fresh-fixture screening evidence while preserving the
+negative conclusion on release reliability and real-repository
+generalization.
 
 \section{Threats to Validity}
 

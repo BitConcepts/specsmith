@@ -51,8 +51,15 @@ consolidated into the next published release.
 - Add independent synthetic long-horizon task T29 with a release-control
   repository, distinct contract, public validators, and hidden oracle.
   Admission `30447523090` and n=5 `30447789765` passed; the screen was 5/5 at
-  22,038 TPCA, but systematic CSS repair and 0% first-pass completion block
-  n=10.
+  22,038 TPCA, but systematic App empty-state repair and 0% first-pass
+  completion blocked n=10. Correct the audit parser that had misattributed the
+  imported `styles.css` path as the repair target.
+- Add versioned T29 controller v5 with a CSS-only milestone-three validator,
+  public/oracle-aligned structural empty-state validation, and a two-streak
+  bounded repair limit. Admission `30453721376` passed first-pass at 17,407
+  tokens; n=5 `30454018932` passed 5/5 at 18,055 mean TPCA, $0.1199 mean cost,
+  5.2 turns, 80% first-pass, and zero loop recoveries. The audit admits—but
+  does not supply—the unrun n=10 confirmation.
 - Normalize nested verification file-path evidence at CLI, governance,
   persistence, and risk-audit boundaries so malformed legacy or tampered work
   items cannot crash `specsmith audit`.

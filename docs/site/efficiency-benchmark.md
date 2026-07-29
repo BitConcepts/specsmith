@@ -752,6 +752,8 @@ Chat Completions compatibility mode to native Responses function tools.
 | [30445030314](https://github.com/layer1labs/specsmith/actions/runs/30445030314) | GPT-5.6 Terra, structured v4, corrected T28 | 9/10 | 19,648 | $0.1154 | 5.1 | repeated-tool-loop failure; reject promotion |
 | [30447523090](https://github.com/layer1labs/specsmith/actions/runs/30447523090) | GPT-5.6 Terra, structured v4, fresh T29 | 1/1 | 20,673 | $0.1270 | 6 | admission passed |
 | [30447789765](https://github.com/layer1labs/specsmith/actions/runs/30447789765) | GPT-5.6 Terra, structured v4, fresh T29 | 5/5 | 22,038 | $0.1299 | 6.4 | 0% first-pass; optimize before n=10 |
+| [30453721376](https://github.com/layer1labs/specsmith/actions/runs/30453721376) | GPT-5.6 Terra, structured v5, fresh T29 | 1/1 | 17,407 | $0.1189 | 5 | first-pass admission; repeat eligible |
+| [30454018932](https://github.com/layer1labs/specsmith/actions/runs/30454018932) | GPT-5.6 Terra, structured v5, fresh T29 | 5/5 | 18,055 | $0.1199 | 5.2 | 80% first-pass; audit admits unrun n=10 |
 
 Every successful Sol and Terra row passed public validators and the hidden
 oracle, completed all four milestones, and used one implementation attempt
@@ -829,11 +831,29 @@ T29 then tested a fresh synthetic release-control repository with a distinct
 contract, starter, validators, and hidden oracle while retaining the same four
 milestone sizes and frozen controls. Admission passed at 20,673 tokens. The
 n=5 screen passed public and hidden acceptance in all five rows at 22,038 mean
-TPCA and $0.1299 mean cost. However, all five rows repaired `styles.css`, one
-row invoked bounded loop recovery, and first-pass completion was 0%. The audit
-returned `optimize_and_rerun`; no T29 n=10 was run. This broadens evidence
-beyond one fixture but remains synthetic, undersized, and insufficient for a
-cross-repository or universal model claim.
+TPCA and $0.1299 mean cost. Re-auditing the raw trace corrected a path-parser
+artifact: `styles.css` appeared only as a relative import inside controller-
+supplied App content. The actual 5/5 hotspot was the App empty state. The
+public validator required the literal word `empty` even when the implementation
+already satisfied the hidden oracle's structural zero-length/no-release rule;
+one row then spent three patches on that wording mismatch.
+
+Versioned v5 preserved v4's native structured milestone schema and added three
+causally linked changes: public/oracle-aligned structural empty-state
+validation, an explicit CSS-only milestone-three validator for keyboard focus,
+disabled actions, and responsive layout, and fail-closed repeated-repair
+budgeting after two unchanged streaks. Admission `30453721376` passed first-
+pass at 17,407 tokens. The earned n=5 screen `30454018932` passed 5/5 at
+18,055 mean TPCA, $0.1199 mean cost, 5.2 turns, 80% first-pass, and zero loop
+recoveries. Four rows completed in exactly five turns; the fifth repaired a
+missing Playwright `toBeVisible` assertion in one focused patch. Relative to
+the v4 T29 screen, the v5 package used 18.1% fewer tokens, 7.7% lower estimated
+cost, and 18.8% fewer turns, while first-pass completion rose 80 percentage
+points. Because the validator/task contract and recovery controller changed
+together, these are package-level deltas, not a single-factor causal estimate.
+The audit returned `expand_release_sample`; T29 n=10 remains unrun. This is
+synthetic screening evidence, not cross-repository generalization or a
+universal model claim.
 
 ## Benchmark-driven optimization loop
 

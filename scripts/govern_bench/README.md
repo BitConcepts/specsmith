@@ -63,6 +63,16 @@ confirmation `30418513274`. The final ten rows were 10/10 correct and
 first-pass at 17,907 mean TPCA, five turns, 1.77% CV, and one schema hash per
 row. The audit reports no correctness or efficiency blocker.
 
+Fresh-repository T29 then exposed a public/hidden empty-state mismatch and an
+audit parser that misattributed `import "./styles.css"` as the repair target.
+Versioned v5 aligns the structural empty-state rule, validates focus,
+disabled-action, and responsive CSS at milestone three on a CSS-only boundary,
+and fail-closes after two unchanged repair streaks. Admission `30453721376`
+passed first-pass at 17,407 tokens. The earned n=5 `30454018932` passed 5/5 at
+18,055 mean TPCA, $0.1199 mean cost, 5.2 turns, 80% first-pass, and zero loop
+recoveries. The audit selects `expand_release_sample`; T29 n=10 is unrun, so
+this remains synthetic screening evidence rather than a release claim.
+
 ---
 
 ## Quick Start
