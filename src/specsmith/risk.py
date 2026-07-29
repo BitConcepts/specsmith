@@ -50,10 +50,12 @@ def risk_level_from_score(score: int) -> str:
 
 
 def assess_work_item_risk(work_item: Any, project_type: str = "") -> RiskAssessment:
+    from specsmith.wi_store import normalize_files_touched
+
     score = 0
     factors: list[str] = []
 
-    files_touched = list(getattr(work_item, "files_touched", []) or [])
+    files_touched = normalize_files_touched(getattr(work_item, "files_touched", []))
     if len(files_touched) >= 10:
         score += 3
         factors.append("large_file_footprint")

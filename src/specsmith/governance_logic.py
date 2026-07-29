@@ -484,9 +484,10 @@ def run_verify(
         PreflightDecision,
         classify_retry_strategy,
     )
+    from specsmith.wi_store import normalize_files_touched
 
     root = _safe_resolve(project_dir)
-    files_changed = files_changed or []
+    files_changed = normalize_files_touched(files_changed)
     test_results = test_results or {}
 
     failed = 0

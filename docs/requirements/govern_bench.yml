@@ -66,11 +66,14 @@
 - id: REQ-490
   title: Long-horizon polyglot benchmark and post-run weakness audit
   description: >-
-    GovernanceBench MUST include an evaluator-isolated long-horizon product task
-    that requires coordinated changes across a Python API, Go worker,
+    GovernanceBench MUST include evaluator-isolated long-horizon product tasks
+    that require coordinated changes across a Python API, Go worker,
     TypeScript/React UI, browser journey, shared schema, styling, tests, and
-    architecture documentation. Long-horizon tasks MUST declare their own bounded
-    turn budget. Every benchmark run MUST emit a structured weakness audit that
+    architecture documentation. At least one independent fresh-repository task
+    MUST use a distinct product domain, contract, validators, and hidden oracle
+    while retaining the same bounded controller controls used for comparison.
+    Long-horizon tasks MUST declare their own bounded turn budget. Every
+    benchmark run MUST emit a structured weakness audit that
     identifies incomplete evidence, undersampling, any failed governed cell,
     public-test/oracle disagreement, task-level correctness regressions, token
     amplification, and context dominance.

@@ -97,5 +97,27 @@
     "requirement_ids": [
       "REQ-490"
     ]
+  },
+  {
+    "approval_type": "implementation",
+    "work_item_id": "WI-CDF256053727",
+    "approver": "Tristen Pierson <98970594+tbitcs@users.noreply.github.com>",
+    "timestamp": "2026-07-29T11:13:13Z",
+    "scope": "T29 benchmark fixture, registry mapping, independent oracle, and REQ-490/TEST-516 traceability",
+    "rationale": "T29 is an evaluator-isolated fresh-repository replication with distinct release-domain contract, public validators, and hidden oracle; frozen v4 controller is unchanged; 2491 repository tests and all quality gates passed.",
+    "requirement_ids": [
+      "REQ-490"
+    ]
+  },
+  {
+    "approval_type": "implementation",
+    "work_item_id": "WI-581A70C30779",
+    "approver": "Tristen Pierson <98970594+tbitcs@users.noreply.github.com>",
+    "timestamp": "2026-07-29T11:24:00Z",
+    "scope": "REQ-027 verification input normalization and audit resilience",
+    "rationale": "Verification file evidence is normalized across CLI, governance logic, storage, and risk audit; malformed legacy/tampered nested paths cannot crash audit; 94 targeted tests pass.",
+    "requirement_ids": [
+      "REQ-027"
+    ]
   }
 ]

@@ -1177,6 +1177,7 @@ def verify_cmd(
         PreflightDecision,
         classify_retry_strategy,
     )
+    from specsmith.wi_store import normalize_files_touched
 
     root = Path(project_dir).resolve()
 
@@ -1211,6 +1212,7 @@ def verify_cmd(
     files_changed = payload_in.get("files_changed") or []
     if isinstance(files_changed, str):
         files_changed = [p.strip() for p in files_changed.split(",") if p.strip()]
+    files_changed = normalize_files_touched(files_changed)
 
     failed = 0
     for key in ("failed", "failures", "errors"):

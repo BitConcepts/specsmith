@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://specsmith.dev/schemas/release.json",
+  "title": "Release",
+  "type": "object",
+  "properties": {
+    "id": {"type": "string"},
+    "service": {"type": "string"}
+  },
+  "required": ["id", "service"],
+  "additionalProperties": false
+}

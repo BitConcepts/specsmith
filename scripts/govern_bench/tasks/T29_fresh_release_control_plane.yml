@@ -1,0 +1,180 @@
+# T29 — Fresh-repository release control plane replication
+
+id: T29
+title: "Build a polyglot release control plane across API, worker, contract, and UI"
+category: long_horizon_product
+difficulty: expert
+project: agentic-release-control-plane
+horizon: long
+max_turns: 20
+enforce_completion_validators: true
+languages:
+  - python
+  - go
+  - typescript
+  - json-schema
+  - css
+milestones:
+  - name: shared release contract and API
+    criteria:
+      - "Schema declares exactly the seven release fields, both enums, nullable approved_at, required fields, and rejects additional properties."
+      - "One resettable in-memory store powers create (201), composable environment/state filters, approve returning the updated release (404 when absent), and the unchanged health route."
+      - "Public backend tests cover create, filtering, approval, missing IDs, and isolated store state."
+    files:
+      - contracts/release.schema.json
+      - backend/main.py
+      - tests/test_backend.py
+    validators:
+      - "ruff check ."
+      - "pytest"
+      - "python tools/validate_api.py"
+  - name: release plan normalizer
+    criteria:
+      - "Exported NormalizePlan rejects missing service, version, or environment and rejects values outside the shared environment enum."
+      - "Normalized releases use every shared field name with state=draft and non-empty id and created_at defaults."
+      - "The worker remains package main, uses the standard library, and tests valid and invalid inputs."
+    files:
+      - worker/main.go
+      - worker/main_test.go
+    validators:
+      - "go -C worker test ./..."
+  - name: operator UI journey
+    criteria:
+      - "API requests compose environment and state filters without one replacing the other."
+      - "The React UI exposes accessible loading, error, empty, list, filter, and approve flows and refreshes after approval."
+      - "Playwright covers load, filtering, and approval against the shared contract."
+    files:
+      - ui/src/api.ts
+      - ui/src/App.tsx
+      - ui/src/styles.css
+      - ui/tests/release-control.spec.ts
+    validators:
+      - "python tools/validate_contract.py"
+      - "python tools/validate_ui.py"
+  - name: architecture evidence
+    criteria:
+      - "Architecture documentation explains ownership, end-to-end data flow, failure handling, contract alignment, and why storage remains in memory."
+    files:
+      - docs/architecture.md
+estimated_tokens_ungoverned: 32000
+estimated_tokens_specsmith_full: 28000
+
+task_prompt: |
+  Complete the starter release-control-plane as one coherent product slice.
+  This is an independent repository fixture with incomplete boundaries across
+  several languages.
+
+  Shared contract:
+  - contracts/release.schema.json is authoritative
+  - Release fields are id, service, version, environment, state, created_at, and approved_at
+  - environment is one of staging or production
+  - state is one of draft, approved, or paused
+  - approved_at is nullable until approval
+
+  Python API:
+  - POST /api/releases creates a release and returns HTTP 201
+  - GET /api/releases lists releases and supports optional environment and state filters
+  - PATCH /api/releases/{id}/approve returns the updated approved release and returns 404 for an unknown id
+  - preserve GET /health and keep state deterministic and testable
+  - public tests and API routes must exercise the same resettable in-memory release store
+  - keep query-filter defaults lint-safe; do not call Query(...) directly in a function default
+
+  Go worker:
+  - implement exported NormalizePlan(raw []byte) (Release, error) in worker/main.go
+  - preserve the starter package main boundary and prefer the existing standard library
+  - accept plan JSON with service, version, and environment
+  - reject missing fields and invalid environment
+  - emit the shared release field names with state=draft plus non-empty id and created_at defaults
+
+  TypeScript/React UI:
+  - load and display releases from /api/releases
+  - safely compose environment and state query parameters without discarding either filter
+  - show loading, empty, and error states
+  - provide an accessible approve action and refresh state after success
+  - add a Playwright user-flow test covering load, filter, and approve
+
+  Cross-boundary quality:
+  - update docs/architecture.md with component and data-flow decisions
+  - add meaningful public tests rather than weakening validators
+  - do not add network services, databases, generated bundles, or unrelated frameworks
+  - run ruff check ., pytest, and go -C worker test ./...
+
+acceptance_criteria: |
+  - [ ] Python create/list/filter/approve behavior matches the shared contract
+  - [ ] Go NormalizePlan validates input and emits the same field names/enums plus non-empty id and created_at defaults
+  - [ ] Go worker preserves the starter package main boundary
+  - [ ] React UI has accessible loading/error/empty/list/filter/approve flows
+  - [ ] UI safely composes environment and state query parameters
+  - [ ] Playwright covers the primary browser user journey
+  - [ ] JSON Schema, API, worker, and UI agree on release fields and enums
+  - [ ] Architecture documentation explains the end-to-end data flow
+  - [ ] Existing health behavior remains intact
+  - [ ] ruff check ., pytest, and go -C worker test ./... pass
+
+expected_files_changed:
+  - backend/main.py
+  - contracts/release.schema.json
+  - worker/main.go
+  - worker/main_test.go
+  - ui/src/App.tsx
+  - ui/src/api.ts
+  - ui/src/styles.css
+  - ui/tests/release-control.spec.ts
+  - tests/test_backend.py
+  - docs/architecture.md
+
+regression_risk: critical
+scope_discipline_metric: true
+
+known_failure_modes:
+  - "Components implement different field names or enum values"
+  - "Backend works but UI has only static markup"
+  - "UI filters overwrite rather than compose query parameters"
+  - "Approve changes the UI optimistically without persisting through the API"
+  - "Go normalizer accepts invalid environment or omits shared fields"
+  - "Agent edits tests or validators to accept an incomplete implementation"
+  - "Agent exhausts turns after polishing one component and leaves another as a stub"
+
+governance_signals:
+  preflight_expected_req_match: true
+  preflight_expected_intent: "change"
+  verify_expected_to_catch:
+    - "cross-language contract drift"
+    - "missing browser interaction coverage"
+    - "partial component completion"
+    - "public tests weaker than independent acceptance evidence"
+
+validator:
+  shell: auto
+  commands:
+    - "go -C worker test ./..."
+    - "python tools/validate_api.py"
+    - "python tools/validate_contract.py"
+    - "python tools/validate_ui.py"
+  boundaries:
+    "ruff check .":
+      - backend/main.py
+      - tests/test_backend.py
+    "pytest":
+      - backend/main.py
+      - tests/test_backend.py
+    "python tools/validate_api.py":
+      - backend/main.py
+    "go -C worker test ./...":
+      - worker/main.go
+      - worker/main_test.go
+    "python tools/validate_contract.py":
+      - contracts/release.schema.json
+      - backend/main.py
+      - worker/main.go
+      - ui/src/api.ts
+    "python tools/validate_ui.py":
+      - ui/src/App.tsx
+      - ui/src/api.ts
+      - ui/tests/release-control.spec.ts
+  allowed_patterns:
+    - "^pytest( .*)?$"
+    - "^go -C worker test( .*)?$"
+    - "^python tools/validate_contract.py$"
+    - "^python tools/validate_api.py$"
+    - "^python tools/validate_ui.py$"

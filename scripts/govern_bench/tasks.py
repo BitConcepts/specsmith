@@ -23,6 +23,7 @@ PROJECT_SUBDIR_MAP: dict[str, str] = {
     "agentic-shell-scripts": "shell_scripts",
     "agentic-patent-draft": "patent_draft",
     "agentic-incident-console": "incident_console",
+    "agentic-release-control-plane": "release_control_plane",
 }
 
 

@@ -452,3 +452,15 @@
 - **Type**: wi_close
 - **Status**: complete
 - **Chain hash**: `5a7f9d53076d5dcf...`
+
+## 2026-07-29T07:14 — wi_close WI-CDF256053727: Implemented T29 fresh-repository replication under REQ-490/TEST-516; full repository and benchmark integrity gates pass.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `e732d707c8148970...`
+
+## 2026-07-29T07:24 — wi_close WI-581A70C30779: REQ-027 path evidence normalization implemented and regression-tested.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `825d2e8f8c18a721...`

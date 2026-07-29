@@ -77,6 +77,32 @@ WI_TRANSITIONS: dict[str, frozenset[str]] = {
 }
 
 
+def normalize_files_touched(value: Any) -> list[str]:
+    """Return a flat, deduplicated path list from persisted verification input.
+
+    JSON-producing shells can accidentally wrap separately collected path lists
+    in another array.  Older or tampered governance state may contain the same
+    shape.  Keep valid strings, discard unsupported values, and preserve order
+    so downstream risk and audit checks remain deterministic.
+    """
+    normalized: list[str] = []
+    seen: set[str] = set()
+
+    def collect(item: Any) -> None:
+        if isinstance(item, str):
+            path = item.strip()
+            if path and path not in seen:
+                seen.add(path)
+                normalized.append(path)
+            return
+        if isinstance(item, (list, tuple)):
+            for child in item:
+                collect(child)
+
+    collect(value)
+    return normalized
+
+
 # ---------------------------------------------------------------------------
 # Data model
 # ---------------------------------------------------------------------------
@@ -150,7 +176,9 @@ class WorkItem:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> WorkItem:
         known = {f for f in cls.__dataclass_fields__}
-        return cls(**{k: v for k, v in data.items() if k in known})
+        values = {k: v for k, v in data.items() if k in known}
+        values["files_touched"] = normalize_files_touched(values.get("files_touched"))
+        return cls(**values)
 
     def can_transition_to(self, new_status: str) -> bool:
         """Return True if the transition ``self.status → new_status`` is allowed."""
@@ -352,7 +380,7 @@ class WorkItemStore:
         item = self.get(wi_id)
         if item is None:
             return None
-        item.files_touched = list(files)
+        item.files_touched = normalize_files_touched(files)
         item.updated_at = _now_iso()
         self.upsert(item)
         self._sync_to_esdb(item)
