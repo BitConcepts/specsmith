@@ -1857,6 +1857,7 @@ def test_milestone_packet_does_not_duplicate_optional_eager_context(
         ("scalar-milestone-packet-authority-v2", ["auto", "required", "auto"]),
         ("scalar-milestone-packet-authority-v3", ["auto", "required", "auto"]),
         ("scalar-milestone-packet-authority-v4", ["auto", "required", "auto"]),
+        ("scalar-milestone-packet-authority-v5", ["auto", "required", "auto"]),
     ],
 )
 def test_milestone_packet_requires_a_tool_for_only_one_recovery_turn(

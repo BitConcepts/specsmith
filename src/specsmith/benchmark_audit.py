@@ -325,9 +325,13 @@ def _focused_repair_events(row: dict[str, Any]) -> list[dict[str, Any]]:
 def _focused_repair_paths(row: dict[str, Any]) -> list[str]:
     paths: list[str] = []
     for event in _focused_repair_events(row):
+        # The first paragraph is the controller-owned repair boundary. Later
+        # paragraphs contain model-authored file bodies; parsing those bodies
+        # misattributed relative imports such as "./styles.css" as repairs.
+        boundary = str(event.get("focused_repair") or "").split("\n\n", 1)[0]
         for path in re.findall(
             r"(?<![\w.-])[\w.-]+(?:/[\w.-]+)+",
-            str(event.get("focused_repair") or "").replace("\\", "/"),
+            boundary.replace("\\", "/"),
         ):
             normalized = _normalized_path(path.rstrip(".,;:"))
             if "." in normalized.rsplit("/", 1)[-1] and not normalized.startswith(

@@ -103,6 +103,7 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
+        "scalar-milestone-packet-authority-v5",
     }
 )
 
@@ -356,6 +357,7 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
+        "scalar-milestone-packet-authority-v5",
     }
 
 
@@ -379,6 +381,7 @@ def _compact_context_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
+        "scalar-milestone-packet-authority-v5",
     }
 
 
@@ -397,6 +400,7 @@ def _native_edit_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
+        "scalar-milestone-packet-authority-v5",
     }
 
 
@@ -410,6 +414,7 @@ def _native_patch_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
+        "scalar-milestone-packet-authority-v5",
     }
 
 
@@ -425,6 +430,7 @@ def _scoped_read_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
+        "scalar-milestone-packet-authority-v5",
     }
 
 
@@ -516,6 +522,7 @@ def _milestone_bundle_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
+        "scalar-milestone-packet-authority-v5",
     }
 
 
@@ -529,6 +536,7 @@ def _milestone_packet_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
+        "scalar-milestone-packet-authority-v5",
     }
 
 
@@ -541,6 +549,7 @@ def _adaptive_required_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
+        "scalar-milestone-packet-authority-v5",
     }
 
 
@@ -557,12 +566,16 @@ def _stable_repair_schema_experiment(experiment: str) -> bool:
     return experiment in {
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
+        "scalar-milestone-packet-authority-v5",
     }
 
 
 def _native_milestone_schema_experiment(experiment: str) -> bool:
     """Use a compact strict object-array schema on native structured routes."""
-    return experiment == "scalar-milestone-packet-authority-v4"
+    return experiment in {
+        "scalar-milestone-packet-authority-v4",
+        "scalar-milestone-packet-authority-v5",
+    }
 
 
 def _validator_authority_experiment(experiment: str) -> bool:
@@ -572,6 +585,7 @@ def _validator_authority_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
+        "scalar-milestone-packet-authority-v5",
     }
 
 
@@ -1391,14 +1405,24 @@ def _repeated_write_recovery(
     remaining: list[str],
     *,
     active_repair: bool,
+    max_repeated_streak: int = 3,
 ) -> str:
     """Keep loop recovery inside an unresolved authoritative repair boundary."""
     if active_repair:
+        if repeated_write_streak >= max_repeated_streak:
+            return (
+                f"Loop guard: the same repair boundary ({boundary_label}) still failed "
+                f"after {repeated_write_streak + 1} consecutive turns. The bounded repair "
+                "budget is exhausted; fail closed without advancing or rewriting."
+            )
+        attempts_left = max_repeated_streak - repeated_write_streak
         return (
             f"Loop guard: the same repair boundary ({boundary_label}) was selected in "
             f"{repeated_write_streak + 1} consecutive turns and its authoritative "
-            "validator still fails. Do not advance to another milestone. Apply a "
-            "materially different exact patch from the latest failure and current content."
+            "validator still fails. Do not advance to another milestone or make a cosmetic "
+            "wording-only edit. Apply one criterion-changing exact patch from the latest "
+            f"failure and current content; {attempts_left} bounded repair attempt"
+            f"{'s remain' if attempts_left != 1 else ' remains'}."
         )
     return (
         f"Loop guard: the same write boundary ({boundary_label}) was selected in "
@@ -5257,6 +5281,9 @@ def _run_agent_loop(
                 repeated_write_streak,
                 remaining,
                 active_repair=bool(active_repair_focus),
+                max_repeated_streak=(
+                    2 if controller_experiment == "scalar-milestone-packet-authority-v5" else 3
+                ),
             )
             messages.append({"role": "user", "content": recovery})
             agent_transcript.append(
@@ -5269,7 +5296,10 @@ def _run_agent_loop(
             )
             rework_turns += 1
             force_tool_call_next_turn = True
-            if repeated_write_streak >= 3:
+            repeated_write_limit = (
+                2 if controller_experiment == "scalar-milestone-packet-authority-v5" else 3
+            )
+            if repeated_write_streak >= repeated_write_limit:
                 stop_reason = "repeated_tool_loop"
                 break
 

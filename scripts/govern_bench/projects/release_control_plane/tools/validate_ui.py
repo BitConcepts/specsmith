@@ -18,9 +18,15 @@ def main() -> int:
         (root / "ui" / "tests" / "release-control.spec.ts").read_text(encoding="utf-8").casefold()
     )
 
-    for term in ("loading", "error", "empty", "environment", "state", "approve"):
+    for term in ("loading", "error", "environment", "state", "approve"):
         if term not in app:
             return _fail(f"React operator flow is missing {term}")
+    if "empty" not in app and not (
+        "releases.length" in app
+        and "=== 0" in app
+        and ("no release" in app or "no matching release" in app)
+    ):
+        return _fail("React operator flow is missing a structural empty state")
     if "usestate" not in app or "useeffect" not in app:
         return _fail("React operator flow must load state with hooks")
     if "<label" not in app and "aria-label" not in app:

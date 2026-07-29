@@ -490,3 +490,17 @@
 - **Status**: complete
 - **Epistemic status**: high
 - **Chain hash**: `b18df1350c1ac302...`
+
+## 2026-07-29T08:27 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `71702a572ac732b3...`
+
+## 2026-07-29T08:54 — wi_close WI-44B637BE4AF7: Versioned v5 optimization verified under REQ-490/TEST-516; admission benchmark is the next evidence gate.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `d2ea906ab4f69c7e...`

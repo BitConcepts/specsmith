@@ -42,6 +42,7 @@ milestones:
     criteria:
       - "API requests compose environment and state filters without one replacing the other."
       - "The React UI exposes accessible loading, error, empty, list, filter, and approve flows and refreshes after approval."
+      - "CSS provides visible keyboard focus, disabled-action feedback, and a responsive small-screen layout."
       - "Playwright covers load, filtering, and approval against the shared contract."
     files:
       - ui/src/api.ts
@@ -51,6 +52,7 @@ milestones:
     validators:
       - "python tools/validate_contract.py"
       - "python tools/validate_ui.py"
+      - "python tools/validate_styles.py"
   - name: architecture evidence
     criteria:
       - "Architecture documentation explains ownership, end-to-end data flow, failure handling, contract alignment, and why storage remains in memory."
@@ -91,6 +93,7 @@ task_prompt: |
   - safely compose environment and state query parameters without discarding either filter
   - show loading, empty, and error states
   - provide an accessible approve action and refresh state after success
+  - style visible keyboard focus, disabled controls, and a responsive small-screen layout
   - add a Playwright user-flow test covering load, filter, and approve
 
   Cross-boundary quality:
@@ -104,6 +107,7 @@ acceptance_criteria: |
   - [ ] Go NormalizePlan validates input and emits the same field names/enums plus non-empty id and created_at defaults
   - [ ] Go worker preserves the starter package main boundary
   - [ ] React UI has accessible loading/error/empty/list/filter/approve flows
+  - [ ] CSS exposes visible keyboard focus, disabled-action feedback, and responsive layout
   - [ ] UI safely composes environment and state query parameters
   - [ ] Playwright covers the primary browser user journey
   - [ ] JSON Schema, API, worker, and UI agree on release fields and enums
@@ -151,6 +155,7 @@ validator:
     - "python tools/validate_api.py"
     - "python tools/validate_contract.py"
     - "python tools/validate_ui.py"
+    - "python tools/validate_styles.py"
   boundaries:
     "ruff check .":
       - backend/main.py
@@ -172,9 +177,12 @@ validator:
       - ui/src/App.tsx
       - ui/src/api.ts
       - ui/tests/release-control.spec.ts
+    "python tools/validate_styles.py":
+      - ui/src/styles.css
   allowed_patterns:
     - "^pytest( .*)?$"
     - "^go -C worker test( .*)?$"
     - "^python tools/validate_contract.py$"
     - "^python tools/validate_api.py$"
     - "^python tools/validate_ui.py$"
+    - "^python tools/validate_styles.py$"

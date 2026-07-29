@@ -9,6 +9,7 @@ import pytest
 from click.testing import CliRunner
 
 from specsmith.benchmark_audit import (
+    _focused_repair_paths,
     audit_benchmark_file,
     audit_benchmark_rows,
     load_benchmark_reference_envelopes,
@@ -269,6 +270,24 @@ def test_three_row_diagnostic_exposes_unanimous_repair_hotspot() -> None:
 
     assert "systematic_repair_hotspot" in {weakness.code for weakness in report.weaknesses}
     assert report.next_experiment.action == "optimize_and_rerun"
+
+
+def test_repair_path_parser_ignores_relative_imports_in_supplied_content() -> None:
+    row = {
+        "agent_transcript": [
+            {
+                "role": "controller",
+                "focused_repair": (
+                    "Active public-validator repair boundary: python tools/validate_ui.py "
+                    "-> ui/src/App.tsx.\n\n"
+                    "## ui/src/App.tsx\n"
+                    'import "./styles.css";\n'
+                ),
+            }
+        ]
+    }
+
+    assert _focused_repair_paths(row) == ["ui/src/app.tsx"]
 
 
 def test_default_run_bench_audit_path_tracks_json_output() -> None:

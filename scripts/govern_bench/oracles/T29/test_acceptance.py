@@ -176,6 +176,14 @@ def test_release_ui_has_accessible_flow_and_playwright_journey() -> None:
     assert "approve" in browser and "test.skip" not in browser
 
 
+def test_release_ui_css_has_accessible_responsive_states() -> None:
+    styles = (ROOT / "ui" / "src" / "styles.css").read_text(encoding="utf-8").casefold()
+
+    assert ":focus-visible" in styles
+    assert ":disabled" in styles or "[disabled]" in styles
+    assert "@media" in styles
+
+
 def test_release_architecture_records_cross_boundary_decisions() -> None:
     architecture = (ROOT / "docs" / "architecture.md").read_text(encoding="utf-8").casefold()
     concepts = (
