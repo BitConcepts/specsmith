@@ -46,10 +46,13 @@ def main() -> int:
         if not isinstance(created, dict) or required - set(created):
             return _fail("Created incident must contain every shared-contract field")
 
-        client.post(
+        second_response = client.post(
             "/api/incidents",
             json={"title": "Slow jobs", "service": "worker", "severity": "low"},
         )
+        if second_response.status_code != 201:
+            return _fail("POST /api/incidents must create the second filter-control incident")
+        second: Any = second_response.json()
         listed = client.get("/api/incidents").json()
         if not isinstance(listed, list) or len(listed) != 2:
             return _fail("GET /api/incidents must return a JSON list of incidents")
@@ -73,6 +76,11 @@ def main() -> int:
                 "PATCH acknowledge must return the incident with status=acknowledged "
                 "and a non-null acknowledged_at"
             )
+        still_open = client.get("/api/incidents?status=open")
+        if still_open.status_code != 200 or [item.get("id") for item in still_open.json()] != [
+            second["id"]
+        ]:
+            return _fail("GET /api/incidents?status=open must exclude acknowledged incidents")
         if client.patch("/api/incidents/unknown/ack").status_code != 404:
             return _fail("PATCH acknowledge must return 404 for an unknown incident")
         invalid = client.post(

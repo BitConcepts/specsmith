@@ -438,3 +438,17 @@
 - **Status**: complete
 - **Epistemic status**: high
 - **Chain hash**: `a207bf8325c99bb6...`
+
+## 2026-07-29T06:19 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `eea88deaacf31efb...`
+
+## 2026-07-29T06:36 — wi_close WI-939D991CDDEA: Closed the Terra n=5 acceptance gap by making status-only filtering part of immutable visible validation.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `5a7f9d53076d5dcf...`

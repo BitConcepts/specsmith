@@ -86,5 +86,16 @@
     "requirement_ids": [
       "REQ-491"
     ]
+  },
+  {
+    "approval_type": "implementation",
+    "work_item_id": "WI-939D991CDDEA",
+    "approver": "Tristen Pierson <98970594+tbitcs@users.noreply.github.com>",
+    "timestamp": "2026-07-29T10:36:16Z",
+    "scope": "T28 visible API validator and regression coverage",
+    "rationale": "The immutable public validator now checks the documented status query parameter after acknowledgement; targeted and linked TEST-516 suites pass 169/169 and Ruff is clean.",
+    "requirement_ids": [
+      "REQ-490"
+    ]
   }
 ]

@@ -1000,6 +1000,8 @@ def test_t28_visible_api_validator_reports_null_acknowledgement_actionably() -> 
     assert "acknowledged.json().get" not in validator
     assert "PATCH acknowledge must return the updated incident object" in validator
     assert "status=acknowledged" in validator
+    assert 'client.get("/api/incidents?status=open")' in validator
+    assert "must exclude acknowledged incidents" in validator
 
 
 def test_t28_validation_evidence_is_invalidated_by_declared_boundary() -> None:
