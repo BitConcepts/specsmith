@@ -34,6 +34,12 @@ consolidated into the next published release.
   writes, bounded empty-packet recovery, provider-stable repair tools, native
   named patch/completion choice, and active-packet lint guidance. Existing
   controller variants and locked benchmark controls remain unchanged.
+- Record v3 Sol workflow `30416984775` as correct but inefficient: 19,288
+  tokens, five turns, one stable schema hash, and 1.10× the release anchor.
+  The deterministic audit blocks repetition.
+- Add structured-milestone v4 with a provider-strict bounded object array and
+  atomic local validation, reducing fixed/null schema overhead without changing
+  task, milestone, validator, oracle, timeout, or turn controls.
 - Exclude authoritative milestone-packet paths from optional generic preload
   context so the model never receives a duplicate or stale copy of an active
   file while preserving the default just-in-time context policy.

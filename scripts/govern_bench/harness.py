@@ -102,6 +102,7 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
+        "scalar-milestone-packet-authority-v4",
     }
 )
 
@@ -353,6 +354,7 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
+        "scalar-milestone-packet-authority-v4",
     }
 
 
@@ -375,6 +377,7 @@ def _compact_context_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
+        "scalar-milestone-packet-authority-v4",
     }
 
 
@@ -392,6 +395,7 @@ def _native_edit_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
+        "scalar-milestone-packet-authority-v4",
     }
 
 
@@ -404,6 +408,7 @@ def _native_patch_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
+        "scalar-milestone-packet-authority-v4",
     }
 
 
@@ -418,6 +423,7 @@ def _scoped_read_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
+        "scalar-milestone-packet-authority-v4",
     }
 
 
@@ -508,6 +514,7 @@ def _milestone_bundle_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
+        "scalar-milestone-packet-authority-v4",
     }
 
 
@@ -520,6 +527,7 @@ def _milestone_packet_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
+        "scalar-milestone-packet-authority-v4",
     }
 
 
@@ -531,6 +539,7 @@ def _adaptive_required_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
+        "scalar-milestone-packet-authority-v4",
     }
 
 
@@ -544,7 +553,15 @@ def _repair_patch_only_experiment(experiment: str) -> bool:
 
 def _stable_repair_schema_experiment(experiment: str) -> bool:
     """Keep one provider-visible schema while the controller narrows repair actions."""
-    return experiment == "scalar-milestone-packet-authority-v3"
+    return experiment in {
+        "scalar-milestone-packet-authority-v3",
+        "scalar-milestone-packet-authority-v4",
+    }
+
+
+def _native_milestone_schema_experiment(experiment: str) -> bool:
+    """Use a compact strict object-array schema on native structured routes."""
+    return experiment == "scalar-milestone-packet-authority-v4"
 
 
 def _validator_authority_experiment(experiment: str) -> bool:
@@ -553,6 +570,7 @@ def _validator_authority_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
         "scalar-milestone-packet-authority-v3",
+        "scalar-milestone-packet-authority-v4",
     }
 
 
@@ -825,6 +843,45 @@ _MILESTONE_WRITE_TOOL: dict[str, Any] = {
             "required": [
                 key for index in range(1, 5) for key in (f"path_{index}", f"content_{index}")
             ],
+            "additionalProperties": False,
+        },
+    },
+}
+
+_NATIVE_MILESTONE_WRITE_TOOL: dict[str, Any] = {
+    "type": "function",
+    "function": {
+        "name": "write_milestone",
+        "description": (
+            "Atomically write every complete file for one coherent milestone. "
+            "Provide one bounded files array; use write_file for a one-file milestone."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 4,
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "path": {
+                                "type": "string",
+                                "minLength": 1,
+                                "description": "Project-relative file path",
+                            },
+                            "content": {
+                                "type": "string",
+                                "description": "Complete replacement file content",
+                            },
+                        },
+                        "required": ["path", "content"],
+                        "additionalProperties": False,
+                    },
+                }
+            },
+            "required": ["files"],
             "additionalProperties": False,
         },
     },
@@ -1137,9 +1194,14 @@ def _build_active_tools(
     scalar_tools = [tool for tool in tools if tool["function"]["name"] in stable_names]
     if _scalar_parallel_experiment(_controller_experiment()):
         if _milestone_bundle_experiment(_controller_experiment()):
+            milestone_tool = (
+                _NATIVE_MILESTONE_WRITE_TOOL
+                if _native_milestone_schema_experiment(_controller_experiment())
+                else _MILESTONE_WRITE_TOOL
+            )
             scalar_tools = [
                 *[tool for tool in scalar_tools if tool["function"]["name"] != "done"],
-                _MILESTONE_WRITE_TOOL,
+                milestone_tool,
                 *[tool for tool in scalar_tools if tool["function"]["name"] == "done"],
             ]
         if _native_edit_experiment(_controller_experiment()):
@@ -1195,6 +1257,16 @@ _WRITE_TOOL_NAMES = frozenset(
 
 def _milestone_file_items(args: dict[str, Any]) -> list[dict[str, Any]]:
     """Return fixed scalar milestone pairs in their declared order."""
+    native_files = args.get("files")
+    if isinstance(native_files, list):
+        return [
+            {
+                "slot": index,
+                "path": item.get("path") if isinstance(item, dict) else None,
+                "content": item.get("content") if isinstance(item, dict) else None,
+            }
+            for index, item in enumerate(native_files, start=1)
+        ]
     return [
         {
             "slot": index,
@@ -1406,7 +1478,10 @@ def _milestone_contract(task: BenchTask) -> str:
         lines.append(f"{index}. {name}: {', '.join(files)}")
     if _milestone_bundle_experiment(_controller_experiment()):
         write_instruction = (
-            "Finish one milestone coherently with one write_milestone call using fixed "
+            "Finish one milestone coherently with one write_milestone call using its "
+            "bounded files array; do not serialize one file per response."
+            if _native_milestone_schema_experiment(_controller_experiment())
+            else "Finish one milestone coherently with one write_milestone call using fixed "
             "path_N/content_N scalar pairs; do not serialize one file per response."
         )
     elif _scalar_parallel_experiment(_controller_experiment()):
@@ -2468,6 +2543,8 @@ def _exec_write_milestone(
     allowed_paths: list[str] | None = None,
 ) -> tuple[str, list[str]]:
     """Execute fixed scalar path/content pairs after validating the whole payload."""
+    if isinstance(args.get("files"), list) and len(args["files"]) > 4:
+        return "ERROR: at most 4 milestone files may be written at once", []
     items = _milestone_file_items(args)
     if not items:
         return "ERROR: at least path_1 and content_1 are required", []

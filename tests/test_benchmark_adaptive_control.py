@@ -371,6 +371,11 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
             ["write_file", "write_milestone", "patch_file", "done"],
             "auto",
         ),
+        (
+            "scalar-milestone-packet-authority-v4",
+            ["write_file", "write_milestone", "patch_file", "done"],
+            "auto",
+        ),
     ],
 )
 def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
@@ -391,19 +396,24 @@ def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
     contract = _milestone_contract(task)
     if experiment.startswith("scalar-milestone"):
         assert "one write_milestone call" in contract
-        assert "fixed path_N/content_N scalar pairs" in contract
         milestone_tool = next(
             tool
             for tool in _build_active_tools("SPECSMITH_FULL", task)
             if tool["function"]["name"] == "write_milestone"
         )
         properties = milestone_tool["function"]["parameters"]["properties"]
-        assert not any(spec.get("type") == "array" for spec in properties.values())
+        if experiment == "scalar-milestone-packet-authority-v4":
+            assert "bounded files array" in contract
+            assert set(properties) == {"files"}
+        else:
+            assert "fixed path_N/content_N scalar pairs" in contract
+            assert not any(spec.get("type") == "array" for spec in properties.values())
         if experiment.startswith("scalar-milestone-packet"):
             assert milestone_tool["function"]["strict"] is True
             parameters = milestone_tool["function"]["parameters"]
             assert set(parameters["required"]) == set(properties)
-            assert {"type": "null"} in properties["path_2"]["anyOf"]
+            if experiment != "scalar-milestone-packet-authority-v4":
+                assert {"type": "null"} in properties["path_2"]["anyOf"]
             native_tool = _openai_tools_to_responses([milestone_tool])[0]
             assert native_tool["strict"] is True
         if experiment == "scalar-milestone-packet-patch":
@@ -447,6 +457,7 @@ def test_benchmark_workflow_exposes_scoped_native_patch_experiment() -> None:
     assert "scalar-native-patch-scoped" in workflow
     assert "scalar-native-patch-scoped-required" in workflow
     assert "scalar-milestone-packet-authority-v3" in workflow
+    assert "scalar-milestone-packet-authority-v4" in workflow
     native_workflow = (
         Path(__file__).parent.parent / ".github" / "workflows" / "qwen-native-bench.yml"
     ).read_text(encoding="utf-8")
@@ -964,6 +975,50 @@ def test_single_file_milestone_packet_uses_unambiguous_write_tool() -> None:
     assert "Allowed write paths: docs/architecture.md" in packet
     assert "implement this one-file milestone now with write_file" in packet
     assert "one write_milestone call" not in packet
+
+
+def test_native_milestone_schema_is_compact_strict_and_atomic(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("BENCH_CONTROLLER_EXPERIMENT", "scalar-milestone-packet-authority-v4")
+    tools = _build_active_tools(
+        "SPECSMITH_FULL",
+        get_task("T28"),
+        composite_files=True,
+    )
+    milestone = next(tool for tool in tools if tool["function"]["name"] == "write_milestone")
+
+    assert milestone["function"]["strict"] is True
+    assert set(milestone["function"]["parameters"]["properties"]) == {"files"}
+    assert _openai_tools_to_responses([milestone])[0]["strict"] is True
+
+    written: list[str] = []
+    output, paths = _exec_write_milestone(
+        tmp_path,
+        {
+            "files": [
+                {"path": "a.py", "content": "A = 1\n"},
+                {"path": "b.py", "content": "B = 2\n"},
+            ]
+        },
+        written,
+        allowed_paths=["a.py", "b.py"],
+    )
+
+    assert output == "OK: wrote 6 bytes to a.py\nOK: wrote 6 bytes to b.py"
+    assert paths == ["a.py", "b.py"]
+    assert written == ["a.py", "b.py"]
+
+    rejected, rejected_paths = _exec_write_milestone(
+        tmp_path,
+        {"files": [{"path": "a.py", "content": "changed\n"}, {"path": "c.py"}]},
+        written,
+        allowed_paths=["a.py", "c.py"],
+    )
+    assert rejected == "ERROR: content_2 must be text"
+    assert rejected_paths == []
+    assert (tmp_path / "a.py").read_text(encoding="utf-8") == "A = 1\n"
 
 
 def test_full_completion_applies_one_bounded_ruff_safe_fix(

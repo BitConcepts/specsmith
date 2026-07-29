@@ -196,6 +196,13 @@ candidate. The causal lesson is narrower: provider-enforced serialization can
 recover correctness, while stable action schemas and first-pass semantic
 quality still determine token efficiency.
 
+The follow-up stable-schema Sol diagnostic
+[30416984775](https://github.com/layer1labs/specsmith/actions/runs/30416984775)
+was correct with one tool hash and no repairs, but used 19,288 tokens—1.10× the
+release anchor. The result rejects repetition and isolates provider-schema
+overhead as the next systems variable; it is negative screening evidence, not
+an improved frontier.
+
 ## Reproduction
 
 The cited workflow retains full traces for the repository's configured

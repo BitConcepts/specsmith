@@ -38,6 +38,7 @@ task-conditional substitution—not general small-model replacement.
 | [30210886840](https://github.com/layer1labs/specsmith/actions/runs/30210886840) | GPT-5.6 Terra + Sol | 10 per eight tasks × raw/FULL | 320 valid; mixed-suite substitution gates pass; coding-only gate is inconclusive |
 | [30413249488](https://github.com/layer1labs/specsmith/actions/runs/30413249488) | GPT-5.6 Terra / native Responses | 5 T28 FULL | 5/5 correct at 17.2k TPCA, $0.1176 mean cost, five turns, clean audit |
 | [30415451446](https://github.com/layer1labs/specsmith/actions/runs/30415451446) | GPT-5.6 Luna / strict native Responses | 5 T28 FULL | 5/5 correct, but 31.7k TPCA, 6.2 turns, 40% first-pass, and large variance; rejected |
+| [30416984775](https://github.com/layer1labs/specsmith/actions/runs/30416984775) | GPT-5.6 Sol / stable-schema native Responses v3 | 1 T28 FULL | Correct at 19.3k TPCA and five turns; 1.10× release anchor, so repetition rejected |
 | [30415300896](https://github.com/layer1labs/specsmith/actions/runs/30415300896) | GPT-5.6 Luna / strict native Responses | 1 T28 FULL | Correct at 18.8k TPCA after provider-strict schema repair; promoted to n=5 |
 | [30412913235](https://github.com/layer1labs/specsmith/actions/runs/30412913235) | GPT-5.6 Terra / native Responses | 1 T28 FULL | Correct at 17.0k TPCA; promoted to n=5 |
 | [30412677765](https://github.com/layer1labs/specsmith/actions/runs/30412677765) | GPT-5.6 Sol / native Responses | 1 T28 FULL | Correct at 18.5k TPCA; native tool/continuation route admitted |
@@ -421,13 +422,12 @@ rejected.
 
 The next managed admissions should remain bounded:
 
-1. **GPT-5.6 Sol stable-schema native admission** — screen controller v3 once
-   on T28/FULL. It removes the single-file milestone ambiguity, redirects one
-   empty milestone packet, keeps the provider-visible tool schema stable
-   through repair, and uses native named tool choice for the authorized patch
-   and completion. Preserve effort, verbosity, timeouts, validators, oracle,
-   and turn ceiling. Do not repeat unless the cell stays correct and improves
-   or preserves the current Sol envelope.
+1. **GPT-5.6 Sol structured-milestone native admission** — screen controller
+   v4 once on T28/FULL. Replace v3's eight fixed/null milestone slots with one
+   provider-strict bounded object array while retaining atomic local
+   validation, stable repair tools, effort, verbosity, timeouts, validators,
+   oracle, milestone sequencing, and turn ceiling. Do not repeat unless the
+   audit clears the current Sol envelope.
 2. **GPT-5.6 Terra native release confirmation** — expand the identical T28
    cell from five to ten repetitions before making a release-quality native
    route claim. Do not pool the earlier n=1 admission.

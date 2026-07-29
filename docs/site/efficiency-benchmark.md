@@ -743,6 +743,7 @@ Chat Completions compatibility mode to native Responses function tools.
 | [30414435928](https://github.com/layer1labs/specsmith/actions/runs/30414435928) | GPT-5.6 Luna | 0/1 | undefined (72,880 used) | undefined ($0.1823 spent) | 20 | reject repetition; repair schema |
 | [30415300896](https://github.com/layer1labs/specsmith/actions/runs/30415300896) | GPT-5.6 Luna, strict schema | 1/1 | 18,798 | $0.0532 | 5 | correct repair admission; repeat eligible |
 | [30415451446](https://github.com/layer1labs/specsmith/actions/runs/30415451446) | GPT-5.6 Luna, strict schema | 5/5 | 31,685 | $0.1137 | 6.2 | correct but token/first-pass regression; reject repetition |
+| [30416984775](https://github.com/layer1labs/specsmith/actions/runs/30416984775) | GPT-5.6 Sol, stable-schema v3 | 1/1 | 19,288 | $0.2597 | 5 | correct; 1.10× release anchor; reject repetition |
 
 Every successful Sol and Terra row passed public validators and the hidden
 oracle, completed all four milestones, and used one implementation attempt
@@ -774,15 +775,21 @@ and completed first-pass in only 2/5 rows. Repairs repeatedly targeted
 `backend/main.py`; two rows also emitted empty milestone packets, and repair
 phases changed the provider-visible tool hash. Luna is therefore not promoted.
 
-The preregistered v3 diagnostic changes only those controller boundaries. It
-repeats the public lint-safe query constraint inside the active API packet,
-uses `write_file` when one file remains, rejects and redirects one empty
-milestone packet, and preserves the full strict tool schema while native
-Responses chooses the authorized `patch_file` and `done` tools by name. The
-locked T28 task, hidden oracle, validators, 20-turn ceiling, low
-effort/verbosity, request deadlines, and zero provider retries are unchanged.
-The first paid screen uses GPT-5.6 Sol at n=1; no repeated spend is admitted
-unless it improves or preserves the current Sol envelope.
+Stable-schema v3 then passed its Sol diagnostic with one unchanged tool hash,
+all four milestones, and no repair. At 19,288 tokens it was nevertheless 10%
+above the 17,502-token release anchor, so the audit returned
+`optimize_and_rerun`. Compared with the earlier native Sol admission, strict
+fixed/null schemas added roughly 120–160 input tokens per turn without a repair
+benefit.
+
+The preregistered v4 diagnostic changes only that serialization boundary. It
+uses one provider-strict bounded array of `{path, content}` objects for
+multi-file milestones and retains `write_file` for the single-file milestone.
+Local execution still validates the complete payload before an atomic write.
+The T28 task file is restored byte-for-byte; hidden oracle, validators,
+milestone sequencing, 20-turn ceiling, low effort/verbosity, request deadlines,
+and zero provider retries remain unchanged. Start with one Sol cell and do not
+repeat unless the audit clears it.
 
 ## Benchmark-driven optimization loop
 

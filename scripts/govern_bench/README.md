@@ -53,11 +53,14 @@ full auditable request. Authoritative packet paths are excluded from optional
 generic preload context so a file body cannot be duplicated or retained after
 the active milestone advances. Fixed milestone and atomic-patch slots are
 provider-strict: every slot is present, unused slots are null, and used content
-must be text. The next isolated v3 admission keeps that schema stable during
-repair, uses native named tool choice for the controller-authorized patch and
-completion actions, recovers an empty milestone packet once, and uses
-`write_file` unambiguously when only one milestone file remains. It retains
-every task and validation control and starts with one GPT-5.6 Sol native cell.
+must be text. The isolated v3 admission `30416984775` stayed correct at 19,288
+tokens and five turns with one provider-visible schema hash, but regressed 10%
+above the release anchor and was blocked from repetition. Its trace showed
+strict fixed/null slots adding input overhead on every turn. The preregistered
+v4 admission keeps the same local atomicity and provider strictness while
+replacing those eight slots with one bounded array of strict `{path, content}`
+objects. It restores the byte-identical T28 task control and starts with one
+GPT-5.6 Sol native cell.
 
 ---
 

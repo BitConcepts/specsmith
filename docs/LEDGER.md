@@ -418,3 +418,9 @@
 - **Type**: wi_close
 - **Status**: complete
 - **Chain hash**: `becc6b43068afd65...`
+
+## 2026-07-28T22:47 — wi_close WI-31CFA7A6D269: Implemented and verified native structured-milestone v4 under REQ-491.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `29c8d63cc8d3f03b...`
