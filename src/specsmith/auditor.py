@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from specsmith.console_utils import make_console
+from specsmith.identifiers import REQ_ID_PATTERN
 
 console = make_console()
 
@@ -461,13 +462,13 @@ def check_governance_yaml_content(root: Path) -> list[AuditResult]:
 # REQ/TEST IDs: support both numeric-only (REQ-001) and namespaced (REQ-CTT-001).
 # Pattern: REQ- followed by zero or more UPPERCASE- prefix segments, then digits.
 # Examples: REQ-001, REQ-CTT-001, REQ-AUTH-023, TEST-042, TEST-CORE-007
-_REQ_PATTERN = re.compile(r"\b(REQ-(?:[A-Z]+-)*\d+)\b")
+_REQ_PATTERN = re.compile(r"\b(" + REQ_ID_PATTERN + r")\b")
 # Match 'Covers: REQ-xxx',
 # 'Requirement: REQ-xxx', 'Requirement ID: REQ-xxx'
 # Also handles numeric-only IDs (REQ-001) via the updated _REQ_PATTERN.
 _TEST_COVERS_PATTERN = re.compile(
     r"(?:Covers|\*\*Requirement(?:\s+ID)?:?\*\*|Requirement(?:\s+ID)?):?\s*"
-    r"(REQ-(?:[A-Z]+-)*\d+(?:\s*,\s*REQ-(?:[A-Z]+-)*\d+)*)",
+    r"(" + REQ_ID_PATTERN + r"(?:\s*,\s*" + REQ_ID_PATTERN + r")*)",
 )
 
 

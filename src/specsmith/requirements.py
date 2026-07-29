@@ -8,27 +8,21 @@ import re
 from pathlib import Path
 from typing import cast
 
-# Flexible patterns that handle both two-part (REQ-001) and three-part
-# (REQ-CLI-001, REG-012) identifiers used across projects.
-# Letter suffixes (e.g. TEST-NN-002a, TEST-NN-002b) are supported via [a-z]* —
-# without this, the \b word boundary after \d+ would not match when a letter
-# follows digits, causing the ID to be silently skipped (#183).
-_FLEX_REQ = r"REQ-(?:[A-Z][A-Z0-9_]*-)?\d+"
-_FLEX_TEST = r"TEST-(?:[A-Z][A-Z0-9_]*-)?\d+[a-z]*"
+from specsmith.identifiers import REQ_ID_PATTERN, TEST_ID_PATTERN
 
-_REQ_PATTERN = re.compile(r"\b(" + _FLEX_REQ + r")\b")
+_REQ_PATTERN = re.compile(r"\b(" + REQ_ID_PATTERN + r")\b")
 _TEST_COVERS_PATTERN = re.compile(
     r"(?:Covers|\*\*Requirement(?:\s+ID)?:?\*\*|Requirement(?:\s+ID)?):?\s*"
-    r"(" + _FLEX_REQ + r"(?:\s*,\s*" + _FLEX_REQ + r")*)",
+    r"(" + REQ_ID_PATTERN + r"(?:\s*,\s*" + REQ_ID_PATTERN + r")*)",
 )
-_TEST_ID_PATTERN = re.compile(r"\b(" + _FLEX_TEST + r")\b")
+_TEST_ID_PATTERN = re.compile(r"\b(" + TEST_ID_PATTERN + r")\b")
 
 # Heading detectors for REQUIREMENTS.md (two styles supported):
 #   Style A: ## REQ-001 or ## REQ-CLI-001
 #   Style B: ## 1. Some Title  (id comes from a - **ID:** field)
-_DIRECT_REQ_HEADING = re.compile(r"^#{2,3}\s+(" + _FLEX_REQ + r")")
+_DIRECT_REQ_HEADING = re.compile(r"^#{2,3}\s+(" + REQ_ID_PATTERN + r")")
 _NUMBERED_HEADING = re.compile(r"^#{2,3}\s+\d+\.\s+(.+)$")
-_ID_FIELD = re.compile(r"^-\s+\*\*ID:\*\*\s+(" + _FLEX_REQ + r")\s*$")
+_ID_FIELD = re.compile(r"^-\s+\*\*ID:\*\*\s+(" + REQ_ID_PATTERN + r")\s*$")
 _FIELD_LINE = re.compile(r"^-\s+\*\*(.+?)\*\*:\s*(.+)")
 
 

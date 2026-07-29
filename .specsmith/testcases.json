@@ -4587,10 +4587,10 @@
     "id": "TEST-428",
     "version": 1,
     "title": "Preflight CLI Accepts Explicit REQ Reference",
-    "description": "Invoking `specsmith preflight \"Implement REQ-NNN: ...\" --json` for a REQ that exists in the synced requirements.json MUST return decision=accepted with a work_item_id, matching the payload returned by run_preflight() for the same utterance. A vague utterance MUST return needs_clarification with exit code 2, and --predict-only on such an utterance MUST emit predicted_refinement without persisting a work item.",
+    "description": "Invoking `specsmith preflight \"Implement REQ-NNN: ...\" --json` for a REQ that exists in the synced requirements.json MUST return decision=accepted with a work_item_id, matching the payload returned by run_preflight() for the same utterance. Numeric, one-segment, and multi-segment namespace IDs use the same grammar across preflight, sync, audit, validation, requirement parsing, and broker scope handling. Explicit TEST IDs preserve canonical letter suffixes. Unknown IDs fail closed. A vague utterance MUST return needs_clarification with exit code 2, and --predict-only on such an utterance MUST emit predicted_refinement without persisting a work item.",
     "requirement_id": "REQ-418",
     "type": "cli",
-    "verification_method": "pytest (test_preflight_cli_parity.py)",
+    "verification_method": "PYTHONPATH=src pytest tests/test_issue_364.py tests/test_wi_lifecycle.py -k preflight",
     "input": {},
     "expected_behavior": {},
     "confidence": 1.0

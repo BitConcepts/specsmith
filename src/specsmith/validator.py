@@ -8,6 +8,8 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from specsmith.identifiers import REQ_ID_PATTERN
+
 
 @dataclass
 class ValidationResult:
@@ -37,7 +39,7 @@ class ValidationReport:
         return self.failed == 0
 
 
-_REQ_PATTERN = re.compile(r"\b(REQ-[A-Z]+-\d+)\b")
+_REQ_PATTERN = re.compile(r"\b(" + REQ_ID_PATTERN + r")\b")
 
 # Infinite-loop patterns (Python, PowerShell, shell)
 _INFINITE_LOOP_PATTERNS = (
@@ -199,7 +201,7 @@ def _check_req_ids_unique(root: Path) -> list[ValidationResult]:
     text = req_path.read_text(encoding="utf-8")
     # Match only canonical ID declarations, not heading or cross-references (#171).
     # Pattern matches '- **ID:** REQ-XXX' or '**ID:** REQ-XXX' lines.
-    _ID_FIELD = re.compile(r"\*\*ID:\*\*\s*(REQ-(?:[A-Z]+-)*\d+)")
+    _ID_FIELD = re.compile(r"\*\*ID:\*\*\s*(" + REQ_ID_PATTERN + r")")
     id_field_matches = _ID_FIELD.findall(text)
     # Fall back to full scan if the markdown has no **ID:** fields (legacy format).
     req_ids = id_field_matches or _REQ_PATTERN.findall(text)

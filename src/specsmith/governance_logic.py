@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from specsmith import __version__
+from specsmith.identifiers import REQ_ID_PATTERN, TEST_ID_PATTERN
 
 
 def _is_environment_only_specsmith_upgrade(utterance: str) -> bool:
@@ -167,8 +168,8 @@ def run_preflight(
     # If the utterance contains explicit REQ-*/TEST-* IDs, look them up in the
     # JSON machine state and merge them in — this handles project-prefixed IDs
     # (e.g. REQ-NN-001, TEST-NN-002a) that token overlap may not catch.
-    _EXPLICIT_REQ = _re.compile(r"\b(REQ-(?:[A-Z][A-Z0-9_]*-)?\d+)\b", _re.IGNORECASE)
-    _EXPLICIT_TEST = _re.compile(r"\b(TEST-(?:[A-Z][A-Z0-9_]*-)?\d+[A-Za-z]*)\b", _re.IGNORECASE)
+    _EXPLICIT_REQ = _re.compile(rf"\b({REQ_ID_PATTERN})\b", _re.IGNORECASE)
+    _EXPLICIT_TEST = _re.compile(rf"\b({TEST_ID_PATTERN})\b", _re.IGNORECASE)
     explicit_req_ids = [m.upper() for m in _EXPLICIT_REQ.findall(utterance)]
     explicit_test_ids = [m.upper() for m in _EXPLICIT_TEST.findall(utterance)]
 
@@ -187,10 +188,15 @@ def run_preflight(
             rq_records = []
 
     if explicit_req_ids:
-        known_req_ids = {r["id"] for r in rq_records if isinstance(r, dict) and r.get("id")}
+        known_req_ids = {
+            str(r["id"]).upper(): str(r["id"])
+            for r in rq_records
+            if isinstance(r, dict) and r.get("id")
+        }
         for eid in explicit_req_ids:
-            if eid in known_req_ids and eid not in requirement_ids:
-                requirement_ids.append(eid)
+            canonical_id = known_req_ids.get(eid)
+            if canonical_id is not None and canonical_id not in requirement_ids:
+                requirement_ids.append(canonical_id)
 
     # Read test-case machine-state (same rationale as above).
     test_case_ids: list[str] = []
@@ -208,10 +214,15 @@ def run_preflight(
 
     if explicit_test_ids:
         tc_explicit = tc_records
-        known_tc_ids = {r["id"] for r in tc_explicit if isinstance(r, dict) and r.get("id")}
+        known_tc_ids = {
+            str(r["id"]).upper(): str(r["id"])
+            for r in tc_explicit
+            if isinstance(r, dict) and r.get("id")
+        }
         for eid in explicit_test_ids:
-            if eid in known_tc_ids:
-                test_case_ids.append(eid)
+            canonical_id = known_tc_ids.get(eid)
+            if canonical_id is not None:
+                test_case_ids.append(canonical_id)
     if requirement_ids:
         records = tc_records
         req_set = set(requirement_ids)

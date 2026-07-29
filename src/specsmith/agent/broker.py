@@ -42,6 +42,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from specsmith.identifiers import REQ_ID_PATTERN, TEST_ID_PATTERN
+
 
 def _safe_file_read(path: Path, encoding: str = "utf-8") -> str:
     """Read a file after validating it contains no path-traversal components.
@@ -179,11 +181,11 @@ def classify_intent(utterance: str) -> Intent:
 
 
 # Extended to match project-prefixed IDs e.g. REQ-NN-001, REQ-CLI-042
-_REQ_ID = re.compile(r"-\s*\*\*ID:\*\*\s*(REQ-(?:[A-Z][A-Z0-9_]*-)?\d+)")
+_REQ_ID = re.compile(r"-\s*\*\*ID:\*\*\s*(" + REQ_ID_PATTERN + r")")
 _REQ_DESC = re.compile(r"-\s*\*\*Description:\*\*\s*(.+)")
 # Style A heading: ## REQ-001  or  ## REQ-CLI-001: Title
 _STYLE_A_HEADING = re.compile(
-    r"^#{1,3}\s+(REQ-(?:[A-Z][A-Z0-9_]*-)?\d+)(?::\s*(.+))?\s*$",
+    r"^#{1,3}\s+(" + REQ_ID_PATTERN + r")(?::\s*(.+))?\s*$",
     re.MULTILINE,
 )
 
@@ -504,7 +506,7 @@ def run_preflight(
 
 # Extended to handle project-prefixed IDs (e.g. REQ-NN-001, TEST-NN-002a) and WI tokens
 _GOVERNANCE_ID = re.compile(
-    r"\b(REQ-(?:[A-Z][A-Z0-9_]*-)?\d+|TEST-(?:[A-Z][A-Z0-9_]*-)?\d+[A-Za-z]*|WI-[A-Z0-9-]+)\b",
+    r"\b(" + REQ_ID_PATTERN + r"|" + TEST_ID_PATTERN + r"|WI-[A-Z0-9-]+)\b",
 )
 
 

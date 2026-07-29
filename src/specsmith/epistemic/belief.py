@@ -42,6 +42,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 
+from specsmith.identifiers import REQ_ID_PATTERN
+
 
 class ConfidenceLevel(str, Enum):
     """Epistemic confidence assigned to a BeliefArtifact.
@@ -192,17 +194,15 @@ class BeliefArtifact:
 #   Style B (numbered):     ## 1. Title\n- **ID:** REQ-001\n...
 #   Style C (dot-suffix):   ## REQ-001. Title  (YAML-generated format)
 #
-# The flexible REQ id regex handles both two-part (REQ-001) and three-part
-# (REQ-CLI-001 / REG-012) identifiers.
-_FLEX_REQ_ID = r"REQ-(?:[A-Z][A-Z0-9_]*-)?\d+"
-
 # Style A/C: heading IS the REQ id, separated by ` — `, ` - `, or `.`
 # Matches: ## REQ-001 — Title  AND  ## REQ-001. Title  AND  ## REQ-001
-_REQ_HEADING_DIRECT = re.compile(r"^#{1,3}\s+(" + _FLEX_REQ_ID + r")\s*(?:[.\-\u2014]\s*(.+))?$")
+_REQ_HEADING_DIRECT = re.compile(
+    r"^#{1,3}\s+(" + REQ_ID_PATTERN + r")\s*(?:[.\-\u2014]\s*(.+))?$",
+)
 # Style B: numbered section heading (title only, id comes from an inline field)
 _REQ_HEADING_NUMBERED = re.compile(r"^#{1,3}\s+\d+\.\s+(.+?)\s*$")
 # Inline id field inside a Style B section: - **ID:** REQ-001
-_INLINE_ID_FIELD = re.compile(r"^-\s+\*\*ID:\*\*\s+(" + _FLEX_REQ_ID + r")\s*$")
+_INLINE_ID_FIELD = re.compile(r"^-\s+\*\*ID:\*\*\s+(" + REQ_ID_PATTERN + r")\s*$")
 # Matches two markdown field formats:
 #   - **Key:** value   (colon inside bold — YAML-generated format)
 #   - **Key**: value   (colon outside bold — legacy format)
