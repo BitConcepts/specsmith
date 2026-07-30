@@ -74,7 +74,12 @@ consolidated into the next published release.
 - Add versioned T29 controller v7, preserving v6 while making its two observed
   milestone-one Python repair constraints explicit: avoid FastAPI `Query()`
   calls in defaults under Ruff B008, and assert dynamic fields without
-  nonexistent `pytest.ANY` or `pytest.anything` sentinels. V7 is unmeasured.
+  nonexistent `pytest.ANY` or `pytest.anything` sentinels. Admission
+  `30546766992` and n=5 `30546999004` passed first-pass in every row. The
+  independent n=10 workflow `30547516220` passed 10/10 at 17,589.9 mean TPCA,
+  $0.120940 mean cost, five turns, 100% first-pass, and 1.62% CV. Relative to
+  v5 n=10, tokens fell 12.5%, cost 5.3%, and turns 12.3%, while first-pass
+  rose 70 percentage points.
 - Normalize nested verification file-path evidence at CLI, governance,
   persistence, and risk-audit boundaries so malformed legacy or tampered work
   items cannot crash `specsmith audit`.

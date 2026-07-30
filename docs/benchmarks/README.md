@@ -52,7 +52,9 @@ See the [current executable results](../site/efficiency-benchmark.md) and the
   rows. Versioned v6 made that invariant explicit: admission `30545048843`
   passed first-pass at 17.4k tokens and n=5 `30545401727` passed 5/5 at 18.7k
   TPCA, 60% first-pass, and zero UI repairs. Two milestone-one Python repairs
-  remain; v7 targets them but is not yet measured.
+  remained. V7 made those constraints explicit: admission `30546766992`, n=5
+  `30546999004`, and independent n=10 `30547516220` all passed every row
+  first-pass. The n=10 result was 17.6k TPCA, five turns, and 1.62% CV.
 - Current frontier screen: GPT-5.6 Sol runs `29963772623` and `29963515885`,
   eight exact task types, Cursor rules/FULL, and five repetitions per cell.
   FULL passed 40/40 at 9.0k TPCA; Cursor rules passed 34/40 at 33.8k TPCA.

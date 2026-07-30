@@ -757,6 +757,9 @@ Chat Completions compatibility mode to native Responses function tools.
 | [30457360342](https://github.com/layer1labs/specsmith/actions/runs/30457360342) | GPT-5.6 Terra, structured v5, fresh T29 | 10/10 | 20,100 | $0.1277 | 5.7 | 30% first-pass; optimize and rerun |
 | [30545048843](https://github.com/layer1labs/specsmith/actions/runs/30545048843) | GPT-5.6 Terra, structured v6, fresh T29 | 1/1 | 17,373 | $0.1181 | 5 | first-pass admission; repeat eligible |
 | [30545401727](https://github.com/layer1labs/specsmith/actions/runs/30545401727) | GPT-5.6 Terra, structured v6, fresh T29 | 5/5 | 18,734 | $0.1229 | 5.4 | 60% first-pass; zero UI repairs; optimize milestone one |
+| [30546766992](https://github.com/layer1labs/specsmith/actions/runs/30546766992) | GPT-5.6 Terra, structured v7, fresh T29 | 1/1 | 17,408 | $0.1182 | 5 | first-pass admission; repeat eligible |
+| [30546999004](https://github.com/layer1labs/specsmith/actions/runs/30546999004) | GPT-5.6 Terra, structured v7, fresh T29 | 5/5 | 17,405 | $0.1182 | 5 | 100% first-pass; expand to n=10 |
+| [30547516220](https://github.com/layer1labs/specsmith/actions/runs/30547516220) | GPT-5.6 Terra, structured v7, fresh T29 | 10/10 | 17,590 | $0.1209 | 5 | 100% first-pass; 1.62% CV; publish or expand |
 
 Every correct listed row passed public validators and the hidden oracle and
 completed all four milestones; repair cycles and first-pass rates are reported
@@ -874,8 +877,14 @@ The earned n=5 screen `30545401727` passed 5/5 at 18,734.4 mean TPCA,
 $0.122941 mean cost, 5.4 turns, and 60% first-pass, with zero UI repairs. Its
 two repairs moved to milestone one: one FastAPI `Query()` default violated
 Ruff B008 and one model-authored test used nonexistent `pytest.ANY`.
-Versioned v7 makes those public toolchain constraints explicit but is
-unmeasured.
+Versioned v7 makes those public toolchain constraints explicit. Admission
+`30546766992` passed first-pass at 17,408 tokens. N=5 `30546999004` passed
+5/5 first-pass at 17,405.2 TPCA and $0.118218 mean cost. Independent n=10
+`30547516220` passed 10/10 first-pass at 17,589.9 TPCA, $0.120940 mean cost,
+five turns, and 1.62% sample CV. No row entered repair. Relative to v5 n=10,
+mean tokens fell 12.5%, cost 5.3%, and turns 12.3%, while first-pass rose 70
+percentage points. The audit selects `publish_or_expand`; these deltas remain
+specific to T29, Terra Responses, FULL, and the versioned controller package.
 
 Relative to the favorable n=5 point estimate, n=10 used 11.3% more mean tokens,
 6.5% more estimated cost, and 9.6% more turns while first-pass completion fell

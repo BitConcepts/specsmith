@@ -80,8 +80,11 @@ attribute the recurring hotspot to `ui/tests/release-control.spec.ts` in 6/10
 rows. Versioned v6 makes that existing visibility criterion explicit in
 milestone three. Admission `30545048843` passed first-pass at 17,373 tokens;
 n=5 `30545401727` passed 5/5 at 18,734.4 TPCA, 60% first-pass, and zero UI
-repairs. Two milestone-one Python toolchain repairs remain. V7 makes those
-constraints explicit and is not yet measured.
+repairs. Two milestone-one Python toolchain repairs remained. V7 makes those
+constraints explicit: admission `30546766992`, n=5 `30546999004`, and n=10
+`30547516220` all passed every row first-pass. The n=10 confirmation used
+17,589.9 TPCA, $0.120940 mean cost, five turns, and 1.62% sample CV; the audit
+selects `publish_or_expand`.
 
 ---
 

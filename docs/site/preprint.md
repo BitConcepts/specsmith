@@ -256,7 +256,14 @@ The earned n=5 screen `30545401727` passed 5/5 at 18,734.4 TPCA, $0.122941
 mean cost, 5.4 turns, and 60% first-pass; no row repaired the UI boundary.
 The remaining repairs were Ruff B008 on FastAPI `Query()` defaults and a
 nonexistent `pytest.ANY` sentinel at milestone one. Trace-derived v7 makes
-those public toolchain constraints explicit, but remains unmeasured.
+those public toolchain constraints explicit. Admission `30546766992` and n=5
+`30546999004` passed every row first-pass. Independent n=10
+`30547516220` passed 10/10 first-pass at 17,589.9 TPCA, $0.120940 mean cost,
+five turns, and 1.62% sample CV. No row entered repair. Compared with v5 n=10,
+mean tokens fell 12.5%, estimated cost 5.3%, and turns 12.3%, while
+first-pass completion rose 70 percentage points. The deterministic audit
+selects `publish_or_expand`; inference remains bounded to T29, Terra
+Responses, FULL governance, and the versioned controller package.
 
 ## Reproduction
 

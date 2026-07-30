@@ -44,6 +44,9 @@ task-conditional substitution—not general small-model replacement.
 | [30457360342](https://github.com/layer1labs/specsmith/actions/runs/30457360342) | GPT-5.6 Terra / structured native Responses v5 | 10 fresh T29 FULL | 10/10 at 20.1k TPCA, 30% first-pass, 9.8% CV; recurring UI test-contract repair blocks promotion |
 | [30545401727](https://github.com/layer1labs/specsmith/actions/runs/30545401727) | GPT-5.6 Terra / structured native Responses v6 | 5 fresh T29 FULL | 5/5 at 18.7k TPCA, 60% first-pass, zero UI repairs; two milestone-one Python repairs remain |
 | [30545048843](https://github.com/layer1labs/specsmith/actions/runs/30545048843) | GPT-5.6 Terra / structured native Responses v6 | 1 fresh T29 FULL | First-pass at 17.4k TPCA; admitted to n=5 |
+| [30547516220](https://github.com/layer1labs/specsmith/actions/runs/30547516220) | GPT-5.6 Terra / structured native Responses v7 | 10 fresh T29 FULL | 10/10 first-pass at 17.6k TPCA, five turns, 1.62% CV; audit clear |
+| [30546999004](https://github.com/layer1labs/specsmith/actions/runs/30546999004) | GPT-5.6 Terra / structured native Responses v7 | 5 fresh T29 FULL | 5/5 first-pass at 17.4k TPCA and five turns; promoted to n=10 |
+| [30546766992](https://github.com/layer1labs/specsmith/actions/runs/30546766992) | GPT-5.6 Terra / structured native Responses v7 | 1 fresh T29 FULL | First-pass at 17.4k TPCA; admitted to n=5 |
 | [30454018932](https://github.com/layer1labs/specsmith/actions/runs/30454018932) | GPT-5.6 Terra / structured native Responses v5 | 5 fresh T29 FULL | 5/5 at 18.1k TPCA, 80% first-pass, zero loop recoveries; promoted to n=10 |
 | [30453721376](https://github.com/layer1labs/specsmith/actions/runs/30453721376) | GPT-5.6 Terra / structured native Responses v5 | 1 fresh T29 FULL | First-pass at 17.4k TPCA; admitted to n=5 |
 | [30447789765](https://github.com/layer1labs/specsmith/actions/runs/30447789765) | GPT-5.6 Terra / structured native Responses v4 | 5 fresh T29 FULL | 5/5 at 22.0k TPCA, but 0% first-pass and systematic App empty-state repair; n=10 blocked |
@@ -116,8 +119,13 @@ Versioned v6 makes that existing invariant explicit at milestone three.
 Admission `30545048843` passed first-pass at 17,373 tokens; n=5
 `30545401727` passed 5/5 at 18,734.4 TPCA, $0.122941 mean cost, 5.4 turns,
 and 60% first-pass with no UI repair. The only repairs were Ruff B008 and a
-nonexistent pytest sentinel at milestone one. V7 targets both and remains
-unmeasured.
+nonexistent pytest sentinel at milestone one. V7 makes both public constraints
+explicit. Admission `30546766992` and n=5 `30546999004` passed first-pass in
+every row. Independent n=10 `30547516220` passed 10/10 first-pass at 17,589.9
+TPCA, $0.120940 mean cost, five turns, and 1.62% sample CV. Relative to v5
+n=10, tokens fell 12.5%, cost 5.3%, and turns 12.3%, while first-pass rose 70
+percentage points. This is exact-route T29 evidence, not a universal model or
+repository claim.
 
 Results are never combined across incompatible commits, task grids, routes, or
 repetition sets. GPT-5.6 uses Chat Completions with `reasoning_effort=none` for

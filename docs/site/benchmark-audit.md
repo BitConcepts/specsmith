@@ -123,9 +123,18 @@ passed 5/5 at 18,734.4 TPCA, $0.122941 mean cost, 5.4 turns, and 60%
 first-pass. No row repaired the UI boundary. The two repairs were instead
 milestone-one Python mistakes: Ruff B008 on FastAPI `Query()` defaults and a
 nonexistent `pytest.ANY` sentinel. Versioned v7 makes those public toolchain
-constraints explicit; it remains unmeasured.
-T29 therefore increases evaluator diversity and supplies an exact-route n=10
-sample without establishing clean promotion or real-repository
+constraints explicit. Admission
+[30546766992](https://github.com/layer1labs/specsmith/actions/runs/30546766992)
+passed first-pass at 17,408 tokens. Its
+[n=5 screen 30546999004](https://github.com/layer1labs/specsmith/actions/runs/30546999004)
+passed 5/5 first-pass at 17,405.2 TPCA. The independent
+[n=10 confirmation 30547516220](https://github.com/layer1labs/specsmith/actions/runs/30547516220)
+passed 10/10 first-pass at 17,589.9 TPCA, $0.120940 mean cost, five turns,
+and 1.62% sample CV. No row entered repair. The audit reports no correctness
+or efficiency blocker and selects `publish_or_expand`; its only weakness is a
+low-severity provider-cache discontinuity note.
+T29 therefore increases evaluator diversity and supplies a clean exact-route
+v7 n=10 controller result without establishing real-repository
 generalization.
 
 ## Current broad audit

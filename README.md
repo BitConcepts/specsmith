@@ -159,8 +159,9 @@ test-contract repair in 6/10 observed patch receipts and requires optimization
 before another confirmation. Versioned v6 made that invariant explicit:
 admission `30545048843` passed first-pass at 17.4k tokens, and n=5
 `30545401727` passed 5/5 at 18.7k TPCA with 60% first-pass and no UI repair.
-The remaining two repairs were milestone-one Python toolchain mistakes; v7
-targets them but remains unmeasured.
+The remaining two repairs were milestone-one Python toolchain mistakes.
+Versioned v7 made those constraints explicit and passed an independent 10/10
+confirmation at 17.6k TPCA, five turns, 100% first-pass, and 1.62% CV.
 These results are task- and route-specific. Managed
 20B–32B and Qwen native-tool candidates have useful correct diagnostics but
 have not passed the repeated replacement gates, so Specsmith does not claim
