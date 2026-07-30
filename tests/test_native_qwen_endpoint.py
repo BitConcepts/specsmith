@@ -17,6 +17,7 @@ from govern_bench.native_endpoint import (  # noqa: E402
     DEFAULT_IMAGE,
     DEFAULT_MODEL,
     DEFAULT_TOOL_PARSER,
+    NATIVE_PROBE_MAX_TOKENS,
     _pause_and_delete,
     deployment_kwargs,
     guarded_endpoint_name,
@@ -189,6 +190,7 @@ def test_native_parser_probe_requires_exact_structured_tool_call() -> None:
     assert captured["url"] == "https://native.example/v1/chat/completions"
     assert captured["timeout_s"] == 12
     assert captured["payload"]["tool_choice"] == "auto"
+    assert captured["payload"]["max_tokens"] == NATIVE_PROBE_MAX_TOKENS == 2_048
     assert captured["payload"]["messages"][0]["role"] == "system"
 
 

@@ -25,6 +25,7 @@ DEFAULT_IMAGE = "vllm/vllm-openai:v0.24.0"
 DEFAULT_TOOL_PARSER = "qwen3_xml"
 DEFAULT_HOURLY_COST_USD = 1.80
 DEFAULT_MAX_MODEL_LEN = 32_768
+NATIVE_PROBE_MAX_TOKENS = 2_048
 ALLOWED_INSTANCE_TYPES = frozenset({"nvidia-l40s", "nvidia-a100"})
 ALLOWED_INSTANCE_SIZES = frozenset({"x1", "x2"})
 ALLOWED_REASONING_PARSERS = frozenset({"qwen3"})
@@ -233,7 +234,7 @@ def probe_native_tool_parser(
         # instruction still makes a missing call fail this admission gate.
         "tool_choice": "auto",
         "temperature": 0,
-        "max_tokens": 128,
+        "max_tokens": NATIVE_PROBE_MAX_TOKENS,
     }
     data = post(
         f"{base_url.rstrip('/')}/chat/completions",
@@ -332,6 +333,7 @@ def deploy(
         "reasoning_parser": reasoning_parser,
         "language_model_only": language_model_only,
         "max_model_len": max_model_len,
+        "native_probe_max_tokens": NATIVE_PROBE_MAX_TOKENS,
         "instance_type": spec["instance_type"],
         "instance_size": spec["instance_size"],
         "hourly_cost_usd": hourly_cost_usd,
