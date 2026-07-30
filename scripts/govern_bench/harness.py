@@ -95,6 +95,7 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-native-patch-scoped-required",
         "scalar-parallel-write-only",
         "scalar-parallel-validator-authority",
+        "scalar-parallel-hybrid-v1",
         "scalar-milestone-bundle",
         "scalar-milestone-packet",
         "scalar-milestone-packet-adaptive",
@@ -351,6 +352,7 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-native-patch-scoped-required",
         "scalar-parallel-write-only",
         "scalar-parallel-validator-authority",
+        "scalar-parallel-hybrid-v1",
         "scalar-milestone-bundle",
         "scalar-milestone-packet",
         "scalar-milestone-packet-adaptive",
@@ -378,6 +380,7 @@ def _compact_context_experiment(experiment: str) -> bool:
     return experiment in {
         "scalar-parallel-compact",
         "scalar-parallel-compact-auto",
+        "scalar-parallel-hybrid-v1",
         "scalar-milestone-packet",
         "scalar-milestone-packet-adaptive",
         "scalar-milestone-packet-patch",
@@ -398,6 +401,7 @@ def _write_only_experiment(experiment: str) -> bool:
 def _native_edit_experiment(experiment: str) -> bool:
     return experiment in {
         "scalar-parallel-edit",
+        "scalar-parallel-hybrid-v1",
         "scalar-native-patch",
         "scalar-native-patch-scoped",
         "scalar-native-patch-scoped-required",
@@ -417,6 +421,7 @@ def _native_patch_experiment(experiment: str) -> bool:
         "scalar-native-patch",
         "scalar-native-patch-scoped",
         "scalar-native-patch-scoped-required",
+        "scalar-parallel-hybrid-v1",
         "scalar-milestone-packet-patch",
         "scalar-milestone-packet-authority",
         "scalar-milestone-packet-authority-v2",
@@ -433,6 +438,7 @@ def _scoped_read_experiment(experiment: str) -> bool:
     return experiment in {
         "scalar-native-patch-scoped",
         "scalar-native-patch-scoped-required",
+        "scalar-parallel-hybrid-v1",
         "scalar-milestone-packet",
         "scalar-milestone-packet-adaptive",
         "scalar-milestone-packet-patch",
@@ -553,6 +559,7 @@ def _milestone_packet_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
+        "scalar-parallel-hybrid-v1",
     }
 
 
@@ -568,6 +575,7 @@ def _adaptive_required_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
+        "scalar-parallel-hybrid-v1",
     }
 
 
@@ -587,6 +595,7 @@ def _stable_repair_schema_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
+        "scalar-parallel-hybrid-v1",
     }
 
 
@@ -610,6 +619,7 @@ def _validator_authority_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
+        "scalar-parallel-hybrid-v1",
     }
 
 
@@ -1624,7 +1634,14 @@ def _versioned_milestone_criteria(task: BenchTask, index: int) -> list[str]:
         return []
 
     criteria: list[str] = []
-    if experiment == "scalar-milestone-packet-authority-v7" and index == 1:
+    if (
+        experiment
+        in {
+            "scalar-milestone-packet-authority-v7",
+            "scalar-parallel-hybrid-v1",
+        }
+        and index == 1
+    ):
         criteria.extend(
             [
                 "Ruff B008 is enforced: use plain optional FastAPI parameters, not "
@@ -1638,6 +1655,7 @@ def _versioned_milestone_criteria(task: BenchTask, index: int) -> list[str]:
         in {
             "scalar-milestone-packet-authority-v6",
             "scalar-milestone-packet-authority-v7",
+            "scalar-parallel-hybrid-v1",
         }
         and index == 3
     ):
@@ -1667,7 +1685,13 @@ def _milestone_work_packet(task: BenchTask, files_written: list[str]) -> str:
         (
             "Execution contract: implement this one-file milestone now with write_file. "
             if len(remaining) == 1
-            else "Execution contract: implement this milestone now in one write_milestone call. "
+            else (
+                "Execution contract: implement this milestone now with independent "
+                "write_file calls together in one assistant response. "
+                if _controller_experiment() == "scalar-parallel-hybrid-v1"
+                else "Execution contract: implement this milestone now in one "
+                "write_milestone call. "
+            )
         )
         + "The controller owns validation; do not run or inspect validators and do not write "
         "outside the allowed paths.",
@@ -5345,6 +5369,7 @@ def _run_agent_loop(
                         "scalar-milestone-packet-authority-v5",
                         "scalar-milestone-packet-authority-v6",
                         "scalar-milestone-packet-authority-v7",
+                        "scalar-parallel-hybrid-v1",
                     }
                     else 3
                 ),
@@ -5367,6 +5392,7 @@ def _run_agent_loop(
                     "scalar-milestone-packet-authority-v5",
                     "scalar-milestone-packet-authority-v6",
                     "scalar-milestone-packet-authority-v7",
+                    "scalar-parallel-hybrid-v1",
                 }
                 else 3
             )

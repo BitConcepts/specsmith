@@ -41,6 +41,7 @@ on:
           - scalar-native-patch-scoped-required
           - scalar-parallel-write-only
           - scalar-parallel-validator-authority
+          - scalar-parallel-hybrid-v1
           - scalar-milestone-bundle
           - scalar-milestone-packet
           - scalar-milestone-packet-adaptive

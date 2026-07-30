@@ -337,6 +337,11 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
         ("scalar-parallel-write-only", ["write_file", "done"], "auto"),
         ("scalar-parallel-validator-authority", ["read_file", "write_file", "done"], "auto"),
         (
+            "scalar-parallel-hybrid-v1",
+            ["write_file", "patch_file", "done"],
+            "auto",
+        ),
+        (
             "scalar-milestone-bundle",
             ["read_file", "write_file", "write_milestone", "done"],
             "auto",
@@ -486,6 +491,7 @@ def test_benchmark_workflow_exposes_scoped_native_patch_experiment() -> None:
     assert "scalar-milestone-packet-authority-v5" in workflow
     assert "scalar-milestone-packet-authority-v6" in workflow
     assert "scalar-milestone-packet-authority-v7" in workflow
+    assert "scalar-parallel-hybrid-v1" in workflow
     native_workflow = (
         Path(__file__).parent.parent / ".github" / "workflows" / "qwen-native-bench.yml"
     ).read_text(encoding="utf-8")
@@ -652,6 +658,33 @@ def test_v7_adds_t29_python_toolchain_invariants_and_inherits_v6_ui_boundary(
     assert "pytest has no ANY or anything sentinel" in milestone_one
     assert "assert dynamic response fields separately" in milestone_one
     assert "toBeVisible()" in milestone_three
+
+
+def test_qwen_hybrid_uses_parallel_scalar_construction_and_v7_t29_invariants(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task = get_task("T29")
+    monkeypatch.setenv("BENCH_CONTROLLER_EXPERIMENT", "scalar-parallel-hybrid-v1")
+
+    contract = _milestone_contract(task)
+    milestone_one = _milestone_work_packet(task, [])
+    completed = [str(path) for milestone in task.milestones[:2] for path in milestone["files"]]
+    milestone_three = _milestone_work_packet(task, completed)
+    tools = _build_active_tools("SPECSMITH_FULL", task)
+
+    assert "Issue independent write_file calls together" in contract
+    assert "one write_milestone call" not in contract
+    assert [tool["function"]["name"] for tool in tools] == [
+        "write_file",
+        "patch_file",
+        "done",
+    ]
+    assert all(tool["function"]["strict"] is True for tool in tools)
+    assert "independent write_file calls together" in milestone_one
+    assert "Ruff B008 is enforced" in milestone_one
+    assert "pytest has no ANY or anything sentinel" in milestone_one
+    assert "toBeVisible()" in milestone_three
+    assert _stable_repair_schema_experiment("scalar-parallel-hybrid-v1")
 
 
 def test_native_edit_interface_is_exact_bounded_and_tracks_changes(tmp_path: Path) -> None:
