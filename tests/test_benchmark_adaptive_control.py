@@ -24,6 +24,7 @@ from govern_bench.harness import (  # noqa: E402
     _cell_timeout_seconds,
     _compact_completed_boundary_context,
     _completed_milestone_count,
+    _completion_token_param,
     _consolidate_write_receipts,
     _controller_experiment,
     _controller_tool_choice,
@@ -342,6 +343,11 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
             "auto",
         ),
         (
+            "scalar-parallel-hybrid-v2",
+            ["write_file", "patch_file", "done"],
+            "auto",
+        ),
+        (
             "scalar-milestone-bundle",
             ["read_file", "write_file", "write_milestone", "done"],
             "auto",
@@ -492,6 +498,7 @@ def test_benchmark_workflow_exposes_scoped_native_patch_experiment() -> None:
     assert "scalar-milestone-packet-authority-v6" in workflow
     assert "scalar-milestone-packet-authority-v7" in workflow
     assert "scalar-parallel-hybrid-v1" in workflow
+    assert "scalar-parallel-hybrid-v2" in workflow
     native_workflow = (
         Path(__file__).parent.parent / ".github" / "workflows" / "qwen-native-bench.yml"
     ).read_text(encoding="utf-8")
@@ -685,6 +692,24 @@ def test_qwen_hybrid_uses_parallel_scalar_construction_and_v7_t29_invariants(
     assert "pytest has no ANY or anything sentinel" in milestone_one
     assert "toBeVisible()" in milestone_three
     assert _stable_repair_schema_experiment("scalar-parallel-hybrid-v1")
+
+
+def test_qwen_hybrid_v2_only_expands_the_qwen_completion_allowance(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("BENCH_CONTROLLER_EXPERIMENT", "scalar-parallel-hybrid-v1")
+    assert _completion_token_param("huggingface", "Qwen/Qwen3.6-27B:deepinfra") == {
+        "max_tokens": 4096
+    }
+
+    monkeypatch.setenv("BENCH_CONTROLLER_EXPERIMENT", "scalar-parallel-hybrid-v2")
+    assert _completion_token_param("huggingface", "Qwen/Qwen3.6-27B:deepinfra") == {
+        "max_tokens": 8192
+    }
+    assert _completion_token_param("huggingface", "Qwen/Qwen3-Coder-30B:route") == {
+        "max_tokens": 4096
+    }
+    assert _completion_token_param("openai", "gpt-4o-mini") == {"max_tokens": 4096}
 
 
 def test_native_edit_interface_is_exact_bounded_and_tracks_changes(tmp_path: Path) -> None:
