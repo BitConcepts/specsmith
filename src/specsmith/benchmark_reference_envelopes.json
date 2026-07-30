@@ -32,6 +32,14 @@
       "repetitions": 10,
       "commit": "71b316fd9b4d857bf07d913cdc0fe33b5732f38e",
       "source": "https://github.com/layer1labs/specsmith/actions/runs/30199359636"
+    },
+    "T29": {
+      "condition": "SPECSMITH_FULL",
+      "model": "gpt-5.6-terra",
+      "tokens_per_correct_answer": 17589.9,
+      "repetitions": 10,
+      "commit": "56a53464d3cc5a0ae7b5ba7b876c2ca05a684912",
+      "source": "https://github.com/layer1labs/specsmith/actions/runs/30547516220"
     }
   }
 }

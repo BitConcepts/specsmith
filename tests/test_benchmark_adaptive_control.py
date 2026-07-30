@@ -5,7 +5,10 @@ from pathlib import Path
 
 import pytest
 
-from specsmith.benchmark_audit import audit_benchmark_rows
+from specsmith.benchmark_audit import (
+    audit_benchmark_rows,
+    load_benchmark_reference_envelopes,
+)
 
 _SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
 if str(_SCRIPTS_DIR) not in sys.path:
@@ -1814,6 +1817,19 @@ def test_audit_reports_native_tool_batch_and_patch_payload_recoveries() -> None:
     assert {"tool_call_amplification", "malformed_patch_payload"} <= set(
         report.next_experiment.evidence_codes
     )
+
+
+def test_shipped_t29_reference_uses_independent_v7_release_sample() -> None:
+    reference = load_benchmark_reference_envelopes()["T29"]
+
+    assert reference == {
+        "condition": "SPECSMITH_FULL",
+        "model": "gpt-5.6-terra",
+        "tokens_per_correct_answer": pytest.approx(17_589.9),
+        "repetitions": 10,
+        "commit": "56a53464d3cc5a0ae7b5ba7b876c2ca05a684912",
+        "source": "https://github.com/layer1labs/specsmith/actions/runs/30547516220",
+    }
 
 
 def test_qwen_agentic_coding_candidates_have_hf_routes_pricing_and_tiers() -> None:
