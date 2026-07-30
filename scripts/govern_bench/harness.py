@@ -166,27 +166,57 @@ class NormalizedLLMResponse:
 def _sanitize_completion_tool_calls(
     tool_calls: list[NormalizedToolCall],
 ) -> tuple[list[NormalizedToolCall], dict[str, Any] | None]:
-    """Bound redundant completion signals without changing actionable calls.
+    """Bound redundant native-parser calls without changing distinct actions.
 
-    Some native tool parsers can emit the same ``done`` call many times at the
-    end of a long response. Retaining every call and result needlessly expands
-    provider-visible history. A completion signal is never actionable beside
-    another tool call, so defer it until the model's next turn; when a response
-    contains only completion signals, one is sufficient to run the deterministic
-    completion gate.
+    Some native tool parsers can emit the same action or ``done`` call many
+    times at the end of a long response. Retaining every call and result
+    needlessly expands provider-visible history. Collapse only calls with the
+    same tool name and canonical JSON arguments, preserving the first occurrence,
+    all distinct actions, and their order. A completion signal is never
+    actionable beside another tool call, so defer it until the model's next turn;
+    when a response contains only completion signals, one is sufficient to run
+    the deterministic completion gate.
     """
     done_calls = [call for call in tool_calls if call.name == "done"]
-    if not done_calls:
-        return tool_calls, None
-
     actionable_calls = [call for call in tool_calls if call.name != "done"]
+    distinct_actions: list[NormalizedToolCall] = []
+    action_keys: set[tuple[str, str]] = set()
+    for call in actionable_calls:
+        parsed_arguments = _json_loads_maybe(call.arguments)
+        canonical_arguments = (
+            json.dumps(
+                parsed_arguments,
+                ensure_ascii=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            )
+            if isinstance(parsed_arguments, (dict, list))
+            else call.arguments.strip()
+        )
+        key = (call.name, canonical_arguments)
+        if key not in action_keys:
+            action_keys.add(key)
+            distinct_actions.append(call)
+
+    duplicate_actions_dropped = len(actionable_calls) - len(distinct_actions)
     if actionable_calls:
-        return actionable_calls, {
-            "reason": "completion_deferred_until_after_actions",
+        if not done_calls and not duplicate_actions_dropped:
+            return tool_calls, None
+        reasons: list[str] = []
+        if done_calls:
+            reasons.append("completion_deferred_until_after_actions")
+        if duplicate_actions_dropped:
+            reasons.append("exact_duplicate_actions_collapsed")
+        telemetry = {
+            "reason": "+".join(reasons),
             "original_call_count": len(tool_calls),
-            "effective_call_count": len(actionable_calls),
-            "dropped_done_calls": len(done_calls),
+            "effective_call_count": len(distinct_actions),
         }
+        if done_calls:
+            telemetry["dropped_done_calls"] = len(done_calls)
+        if duplicate_actions_dropped:
+            telemetry["dropped_duplicate_action_calls"] = duplicate_actions_dropped
+        return distinct_actions, telemetry
     if len(done_calls) > 1:
         return [done_calls[0]], {
             "reason": "duplicate_completion_signals_collapsed",
@@ -4453,7 +4483,7 @@ def _run_agent_loop(
                 {
                     "turn": turn + 1,
                     "role": "controller",
-                    "completion_signal_sanitization": completion_sanitization,
+                    "tool_batch_sanitization": completion_sanitization,
                 }
             )
 

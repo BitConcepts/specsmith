@@ -1495,6 +1495,71 @@ def test_duplicate_completion_only_signals_collapse_to_one() -> None:
     }
 
 
+def test_semantically_identical_action_calls_collapse_without_losing_order() -> None:
+    first = NormalizedToolCall(
+        id="patch-1",
+        name="patch_file",
+        arguments='{"path":"backend/main.py","patch":"@@ first"}',
+    )
+    duplicate_with_reordered_json = NormalizedToolCall(
+        id="patch-2",
+        name="patch_file",
+        arguments='{"patch":"@@ first", "path":"backend/main.py"}',
+    )
+    distinct_same_target = NormalizedToolCall(
+        id="patch-3",
+        name="patch_file",
+        arguments='{"path":"backend/main.py","patch":"@@ second"}',
+    )
+
+    sanitized, telemetry = _sanitize_completion_tool_calls(
+        [first, duplicate_with_reordered_json, distinct_same_target]
+    )
+
+    assert sanitized == [first, distinct_same_target]
+    assert telemetry == {
+        "reason": "exact_duplicate_actions_collapsed",
+        "original_call_count": 3,
+        "effective_call_count": 2,
+        "dropped_duplicate_action_calls": 1,
+    }
+
+
+def test_duplicate_actions_and_completion_signals_are_bounded_together() -> None:
+    action = NormalizedToolCall(
+        id="patch-1",
+        name="patch_file",
+        arguments='{"path":"backend/main.py","patch":"@@ repair"}',
+    )
+    calls = [
+        action,
+        *[
+            NormalizedToolCall(
+                id=f"patch-{index}",
+                name="patch_file",
+                arguments='{"path":"backend/main.py","patch":"@@ repair"}',
+            )
+            for index in range(2, 66)
+        ],
+        NormalizedToolCall(
+            id="done-1",
+            name="done",
+            arguments='{"explanation":"complete","refused":false}',
+        ),
+    ]
+
+    sanitized, telemetry = _sanitize_completion_tool_calls(calls)
+
+    assert sanitized == [action]
+    assert telemetry == {
+        "reason": ("completion_deferred_until_after_actions+exact_duplicate_actions_collapsed"),
+        "original_call_count": 66,
+        "effective_call_count": 1,
+        "dropped_done_calls": 1,
+        "dropped_duplicate_action_calls": 64,
+    }
+
+
 def test_ordinary_tool_batches_are_not_rewritten() -> None:
     calls = [
         NormalizedToolCall(
