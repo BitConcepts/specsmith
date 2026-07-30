@@ -572,15 +572,18 @@ def test_benchmark_deadlines_and_retry_policy_are_bounded(
         _provider_max_retries()
 
 
-def test_native_endpoint_compute_is_not_double_counted_as_api_token_cost() -> None:
-    assert (
-        estimate_cost(
-            "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8",
-            1_000_000,
-            1_000_000,
-        )
-        == 0
-    )
+@pytest.mark.parametrize(
+    "model",
+    (
+        "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8",
+        "Qwen/Qwen3.6-27B-FP8",
+        "Qwen/Qwen3.6-35B-A3B-FP8",
+    ),
+)
+def test_native_endpoint_compute_is_not_double_counted_as_api_token_cost(
+    model: str,
+) -> None:
+    assert estimate_cost(model, 1_000_000, 1_000_000) == 0
 
 
 def test_compact_experiment_evicts_completed_boundary_bodies_and_write_history(

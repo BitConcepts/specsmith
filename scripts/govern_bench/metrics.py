@@ -96,6 +96,10 @@ MODEL_PRICING_PER_1M: dict[str, tuple[float, float]] = {
     # lifecycle workflow rather than represented as per-token API pricing.
     "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8": (0.0, 0.0),
     "qwen/qwen3-coder-30b-a3b-instruct-fp8": (0.0, 0.0),
+    "Qwen/Qwen3.6-27B-FP8": (0.0, 0.0),
+    "qwen/qwen3.6-27b-fp8": (0.0, 0.0),
+    "Qwen/Qwen3.6-35B-A3B-FP8": (0.0, 0.0),
+    "qwen/qwen3.6-35b-a3b-fp8": (0.0, 0.0),
     "Qwen/Qwen3.6-27B": (0.32, 3.20),
     "qwen/qwen3.6-27b": (0.32, 3.20),
     "Qwen/Qwen3-32B": (0.08, 0.28),

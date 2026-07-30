@@ -3,6 +3,15 @@ name: Native Qwen Governance Benchmark
 on:
   workflow_dispatch:
     inputs:
+      model_profile:
+        description: "Pinned native Qwen model, parser, and accelerator profile."
+        required: true
+        type: choice
+        options:
+          - qwen3-coder-30b-fp8
+          - qwen3.6-27b-fp8
+          - qwen3.6-35b-a3b-fp8
+        default: qwen3.6-27b-fp8
       experiment_set:
         description: "Select the bounded native-parser controller cells to execute."
         required: true
@@ -15,7 +24,17 @@ on:
           - milestone-patch-only
           - milestone-authority-only
           - milestone-authority-v2-only
+          - hybrid-v2-only
         default: atomic-and-scoped
+      repetitions:
+        description: "Matched repetitions; promote from 1 to 5 to 10 only after passing."
+        required: true
+        type: choice
+        options:
+          - "1"
+          - "5"
+          - "10"
+        default: "1"
       deploy_timeout_seconds:
         description: "Hard deployment deadline."
         required: false
@@ -28,6 +47,15 @@ on:
         description: "Hard deadline for each benchmark cell."
         required: false
         default: "900"
+      run_timeout_seconds:
+        description: "Hard deadline for the complete bounded experiment."
+        required: true
+        type: choice
+        options:
+          - "1800"
+          - "3600"
+          - "5400"
+        default: "3600"
 
 permissions: {}
 
@@ -38,12 +66,18 @@ env:
   NATIVE_QWEN_MODEL: "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8"
   NATIVE_QWEN_IMAGE: "vllm/vllm-openai:v0.24.0"
   NATIVE_QWEN_TOOL_PARSER: "qwen3_xml"
+  NATIVE_QWEN_INSTANCE_TYPE: "nvidia-l40s"
+  NATIVE_QWEN_INSTANCE_SIZE: "x1"
+  NATIVE_QWEN_MAX_MODEL_LEN: "32768"
+  NATIVE_QWEN_HOURLY_COST_USD: "1.80"
+  NATIVE_QWEN_TASK: "T28"
+  NATIVE_QWEN_LANGUAGE_MODEL_ONLY: "false"
 
 jobs:
   native-qwen:
-    name: Qwen 30B FP8 / native qwen3_xml
+    name: ${{ inputs.model_profile }} / native parser
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 110
     permissions:
       contents: read
     steps:
@@ -63,20 +97,75 @@ jobs:
       - name: Install demo-project dependencies
         run: python scripts/govern_bench/install_demo_deps.py
 
+      - name: Select the pinned native Qwen profile
+        shell: bash
+        run: |
+          case "${{ inputs.model_profile }}" in
+            qwen3-coder-30b-fp8)
+              {
+                echo "NATIVE_QWEN_MODEL=Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8"
+                echo "NATIVE_QWEN_TOOL_PARSER=qwen3_xml"
+                echo "NATIVE_QWEN_REASONING_PARSER="
+                echo "NATIVE_QWEN_INSTANCE_TYPE=nvidia-l40s"
+                echo "NATIVE_QWEN_HOURLY_COST_USD=1.80"
+                echo "NATIVE_QWEN_TASK=T28"
+                echo "NATIVE_QWEN_LANGUAGE_MODEL_ONLY=false"
+              } >> "$GITHUB_ENV"
+              ;;
+            qwen3.6-27b-fp8)
+              {
+                echo "NATIVE_QWEN_MODEL=Qwen/Qwen3.6-27B-FP8"
+                echo "NATIVE_QWEN_TOOL_PARSER=qwen3_coder"
+                echo "NATIVE_QWEN_REASONING_PARSER=qwen3"
+                echo "NATIVE_QWEN_INSTANCE_TYPE=nvidia-a100"
+                echo "NATIVE_QWEN_HOURLY_COST_USD=2.50"
+                echo "NATIVE_QWEN_TASK=T29"
+                echo "NATIVE_QWEN_LANGUAGE_MODEL_ONLY=true"
+              } >> "$GITHUB_ENV"
+              ;;
+            qwen3.6-35b-a3b-fp8)
+              {
+                echo "NATIVE_QWEN_MODEL=Qwen/Qwen3.6-35B-A3B-FP8"
+                echo "NATIVE_QWEN_TOOL_PARSER=qwen3_coder"
+                echo "NATIVE_QWEN_REASONING_PARSER=qwen3"
+                echo "NATIVE_QWEN_INSTANCE_TYPE=nvidia-a100"
+                echo "NATIVE_QWEN_HOURLY_COST_USD=2.50"
+                echo "NATIVE_QWEN_TASK=T29"
+                echo "NATIVE_QWEN_LANGUAGE_MODEL_ONLY=true"
+              } >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "::error::Unsupported native Qwen profile."
+              exit 2
+              ;;
+          esac
+
       - name: Deploy and prove the native Qwen parser
         id: endpoint
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           ENDPOINT_NAME="specsmith-qwen-native-${{ github.run_id }}"
-          python scripts/govern_bench/native_endpoint.py deploy \
-            --name "$ENDPOINT_NAME" \
-            --output native-endpoint.json \
-            --model "$NATIVE_QWEN_MODEL" \
-            --image "$NATIVE_QWEN_IMAGE" \
-            --tool-parser "$NATIVE_QWEN_TOOL_PARSER" \
-            --deploy-timeout-s "${{ inputs.deploy_timeout_seconds }}" \
+          deploy_args=(
+            --name "$ENDPOINT_NAME"
+            --output native-endpoint.json
+            --model "$NATIVE_QWEN_MODEL"
+            --image "$NATIVE_QWEN_IMAGE"
+            --tool-parser "$NATIVE_QWEN_TOOL_PARSER"
+            --instance-type "$NATIVE_QWEN_INSTANCE_TYPE"
+            --instance-size "$NATIVE_QWEN_INSTANCE_SIZE"
+            --max-model-len "$NATIVE_QWEN_MAX_MODEL_LEN"
+            --hourly-cost-usd "$NATIVE_QWEN_HOURLY_COST_USD"
+            --deploy-timeout-s "${{ inputs.deploy_timeout_seconds }}"
             --probe-timeout-s "${{ inputs.request_timeout_seconds }}"
+          )
+          if [ -n "${NATIVE_QWEN_REASONING_PARSER:-}" ]; then
+            deploy_args+=(--reasoning-parser "$NATIVE_QWEN_REASONING_PARSER")
+          fi
+          if [ "$NATIVE_QWEN_LANGUAGE_MODEL_ONLY" = "true" ]; then
+            deploy_args+=(--language-model-only)
+          fi
+          python scripts/govern_bench/native_endpoint.py deploy "${deploy_args[@]}"
           echo "name=$ENDPOINT_NAME" >> "$GITHUB_OUTPUT"
           echo "base_url=$(jq -r '.base_url' native-endpoint.json)" >> "$GITHUB_OUTPUT"
 
@@ -94,6 +183,8 @@ jobs:
         run: |
           if [ "${{ inputs.experiment_set }}" = "milestone-packets" ]; then
             EXPERIMENTS="scalar-milestone-packet scalar-milestone-packet-adaptive"
+          elif [ "${{ inputs.experiment_set }}" = "hybrid-v2-only" ]; then
+            EXPERIMENTS="scalar-parallel-hybrid-v2"
           elif [ "${{ inputs.experiment_set }}" = "milestone-authority-v2-only" ]; then
             EXPERIMENTS="scalar-milestone-packet-authority-v2"
           elif [ "${{ inputs.experiment_set }}" = "milestone-authority-only" ]; then
@@ -113,12 +204,13 @@ jobs:
           : > native-run-status.tsv
           for experiment in $EXPERIMENTS; do
             set +e
-            timeout --signal=TERM 17m env BENCH_CONTROLLER_EXPERIMENT="$experiment" \
+            timeout --signal=TERM "${{ inputs.run_timeout_seconds }}s" \
+              env BENCH_CONTROLLER_EXPERIMENT="$experiment" \
               python scripts/govern_bench/run_bench.py \
                 --profile custom \
-                --task T28 \
+                --task "$NATIVE_QWEN_TASK" \
                 --condition SPECSMITH_FULL \
-                --reps 1 \
+                --reps "${{ inputs.repetitions }}" \
                 --provider openai-compat \
                 --base-url "$BENCH_OPENAI_BASE_URL" \
                 --model "$NATIVE_QWEN_MODEL" \

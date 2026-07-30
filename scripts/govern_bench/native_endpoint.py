@@ -24,6 +24,10 @@ DEFAULT_MODEL = "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8"
 DEFAULT_IMAGE = "vllm/vllm-openai:v0.24.0"
 DEFAULT_TOOL_PARSER = "qwen3_xml"
 DEFAULT_HOURLY_COST_USD = 1.80
+DEFAULT_MAX_MODEL_LEN = 32_768
+ALLOWED_INSTANCE_TYPES = frozenset({"nvidia-l40s", "nvidia-a100"})
+ALLOWED_INSTANCE_SIZES = frozenset({"x1", "x2"})
+ALLOWED_REASONING_PARSERS = frozenset({"qwen3"})
 TERMINAL_FAILURE_STATES = frozenset(
     {
         "failed",
@@ -59,10 +63,45 @@ def deployment_kwargs(
     tool_parser: str = DEFAULT_TOOL_PARSER,
     instance_type: str = "nvidia-l40s",
     instance_size: str = "x1",
+    max_model_len: int = DEFAULT_MAX_MODEL_LEN,
+    reasoning_parser: str | None = None,
+    language_model_only: bool = False,
 ) -> dict[str, Any]:
     """Build the pinned, auditable native parser deployment specification."""
     if tool_parser not in {"qwen3_xml", "qwen3_coder"}:
         raise ValueError("tool parser must be qwen3_xml or qwen3_coder")
+    if instance_type not in ALLOWED_INSTANCE_TYPES:
+        raise ValueError(f"instance type must be one of {sorted(ALLOWED_INSTANCE_TYPES)}")
+    if instance_size not in ALLOWED_INSTANCE_SIZES:
+        raise ValueError(f"instance size must be one of {sorted(ALLOWED_INSTANCE_SIZES)}")
+    if not 4_096 <= max_model_len <= 65_536:
+        raise ValueError("max model length must be between 4096 and 65536")
+    if reasoning_parser is not None and reasoning_parser not in ALLOWED_REASONING_PARSERS:
+        raise ValueError(f"reasoning parser must be one of {sorted(ALLOWED_REASONING_PARSERS)}")
+    container_args = [
+        "/repository",
+        "--served-model-name",
+        model,
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "80",
+        "--max-model-len",
+        str(max_model_len),
+        "--gpu-memory-utilization",
+        "0.90",
+    ]
+    if language_model_only:
+        container_args.append("--language-model-only")
+    if reasoning_parser is not None:
+        container_args.extend(["--reasoning-parser", reasoning_parser])
+    container_args.extend(
+        [
+            "--enable-auto-tool-choice",
+            "--tool-call-parser",
+            tool_parser,
+        ]
+    )
     return {
         "repository": model,
         "framework": "custom",
@@ -81,22 +120,7 @@ def deployment_kwargs(
         },
         # vllm/vllm-openai uses `vllm serve` as its entrypoint. Hugging Face
         # mounts the selected model at /repository.
-        "container_args": [
-            "/repository",
-            "--served-model-name",
-            model,
-            "--host",
-            "0.0.0.0",
-            "--port",
-            "80",
-            "--max-model-len",
-            "32768",
-            "--gpu-memory-utilization",
-            "0.90",
-            "--enable-auto-tool-choice",
-            "--tool-call-parser",
-            tool_parser,
-        ],
+        "container_args": container_args,
         "tags": [
             "specsmith",
             "governancebench",
@@ -234,6 +258,12 @@ def deploy(
     model: str,
     image: str,
     tool_parser: str,
+    instance_type: str,
+    instance_size: str,
+    max_model_len: int,
+    reasoning_parser: str | None,
+    language_model_only: bool,
+    hourly_cost_usd: float,
     deploy_timeout_s: float,
     probe_timeout_s: float,
     token: str,
@@ -247,7 +277,18 @@ def deploy(
     if not namespace:
         raise RuntimeError("could not resolve the Hugging Face token namespace")
     created_at = _utc_now()
-    spec = deployment_kwargs(model=model, image=image, tool_parser=tool_parser)
+    if not 0 < hourly_cost_usd <= 100:
+        raise ValueError("hourly endpoint cost must be greater than zero and at most $100")
+    spec = deployment_kwargs(
+        model=model,
+        image=image,
+        tool_parser=tool_parser,
+        instance_type=instance_type,
+        instance_size=instance_size,
+        max_model_len=max_model_len,
+        reasoning_parser=reasoning_parser,
+        language_model_only=language_model_only,
+    )
     api.create_inference_endpoint(
         safe_name,
         namespace=namespace,
@@ -276,9 +317,12 @@ def deploy(
         "engine": "vllm",
         "engine_image": image,
         "tool_parser": tool_parser,
+        "reasoning_parser": reasoning_parser,
+        "language_model_only": language_model_only,
+        "max_model_len": max_model_len,
         "instance_type": spec["instance_type"],
         "instance_size": spec["instance_size"],
-        "hourly_cost_usd": DEFAULT_HOURLY_COST_USD,
+        "hourly_cost_usd": hourly_cost_usd,
         "created_at": _iso(created_at),
         "running_at": _iso(running_at),
         "deployment_seconds": round((running_at - created_at).total_seconds(), 3),
@@ -335,11 +379,13 @@ def cleanup(
 
     cleaned_at = _utc_now()
     created_at: datetime | None = None
+    hourly_cost_usd = DEFAULT_HOURLY_COST_USD
     if deployment_receipt is not None and deployment_receipt.exists():
         prior = json.loads(deployment_receipt.read_text(encoding="utf-8"))
         raw_created = str(prior.get("created_at") or "").replace("Z", "+00:00")
         if raw_created:
             created_at = datetime.fromisoformat(raw_created)
+        hourly_cost_usd = float(prior.get("hourly_cost_usd") or DEFAULT_HOURLY_COST_USD)
     billed_seconds = max(0.0, (cleaned_at - created_at).total_seconds()) if created_at else None
     receipt = {
         "endpoint_name": safe_name,
@@ -351,7 +397,7 @@ def cleanup(
         if billed_seconds is not None
         else None,
         "approximate_endpoint_cost_usd": round(
-            billed_seconds / 3_600 * DEFAULT_HOURLY_COST_USD,
+            billed_seconds / 3_600 * hourly_cost_usd,
             6,
         )
         if billed_seconds is not None
@@ -385,6 +431,31 @@ def _parser() -> argparse.ArgumentParser:
         choices=("qwen3_xml", "qwen3_coder"),
         default=DEFAULT_TOOL_PARSER,
     )
+    deploy_parser.add_argument(
+        "--reasoning-parser",
+        choices=tuple(sorted(ALLOWED_REASONING_PARSERS)),
+    )
+    deploy_parser.add_argument(
+        "--instance-type",
+        choices=tuple(sorted(ALLOWED_INSTANCE_TYPES)),
+        default="nvidia-l40s",
+    )
+    deploy_parser.add_argument(
+        "--instance-size",
+        choices=tuple(sorted(ALLOWED_INSTANCE_SIZES)),
+        default="x1",
+    )
+    deploy_parser.add_argument(
+        "--max-model-len",
+        type=int,
+        default=DEFAULT_MAX_MODEL_LEN,
+    )
+    deploy_parser.add_argument("--language-model-only", action="store_true")
+    deploy_parser.add_argument(
+        "--hourly-cost-usd",
+        type=float,
+        default=DEFAULT_HOURLY_COST_USD,
+    )
     deploy_parser.add_argument("--deploy-timeout-s", type=float, default=1_200)
     deploy_parser.add_argument("--probe-timeout-s", type=float, default=120)
 
@@ -404,6 +475,12 @@ def main() -> int:
             model=args.model,
             image=args.image,
             tool_parser=args.tool_parser,
+            instance_type=args.instance_type,
+            instance_size=args.instance_size,
+            max_model_len=args.max_model_len,
+            reasoning_parser=args.reasoning_parser,
+            language_model_only=args.language_model_only,
+            hourly_cost_usd=args.hourly_cost_usd,
             deploy_timeout_s=args.deploy_timeout_s,
             probe_timeout_s=args.probe_timeout_s,
             token=_token(),

@@ -36,6 +36,45 @@ def test_deployment_spec_pins_native_parser_and_bounded_context() -> None:
     assert spec["container_args"][7:9] == ["--max-model-len", "32768"]
 
 
+@pytest.mark.parametrize(
+    "model",
+    (
+        "Qwen/Qwen3.6-27B-FP8",
+        "Qwen/Qwen3.6-35B-A3B-FP8",
+    ),
+)
+def test_qwen36_spec_uses_official_parser_and_bounded_a100_profile(model: str) -> None:
+    spec = deployment_kwargs(
+        model=model,
+        tool_parser="qwen3_coder",
+        reasoning_parser="qwen3",
+        language_model_only=True,
+        instance_type="nvidia-a100",
+        max_model_len=32_768,
+    )
+
+    assert spec["instance_type"] == "nvidia-a100"
+    assert spec["instance_size"] == "x1"
+    assert spec["container_args"][7:9] == ["--max-model-len", "32768"]
+    assert "--language-model-only" in spec["container_args"]
+    assert spec["container_args"][
+        spec["container_args"].index("--reasoning-parser") : spec["container_args"].index(
+            "--reasoning-parser"
+        )
+        + 2
+    ] == ["--reasoning-parser", "qwen3"]
+    assert spec["container_args"][-2:] == ["--tool-call-parser", "qwen3_coder"]
+
+
+def test_deployment_spec_rejects_unbounded_compute_and_context() -> None:
+    with pytest.raises(ValueError, match="instance type"):
+        deployment_kwargs(instance_type="unbounded-gpu")
+    with pytest.raises(ValueError, match="model length"):
+        deployment_kwargs(max_model_len=1_000_000)
+    with pytest.raises(ValueError, match="reasoning parser"):
+        deployment_kwargs(reasoning_parser="untrusted")
+
+
 def test_endpoint_name_guard_rejects_unscoped_mutation_targets() -> None:
     assert guarded_endpoint_name("specsmith-qwen-native-123") == "specsmith-qwen-native-123"
     with pytest.raises(ValueError, match="must start"):
@@ -181,8 +220,16 @@ def test_native_workflow_always_cleans_up_and_fails_closed() -> None:
 
     assert "huggingface_hub==1.25.1" in workflow
     assert 'NATIVE_QWEN_TOOL_PARSER: "qwen3_xml"' in workflow
+    assert "Qwen/Qwen3.6-27B-FP8" in workflow
+    assert "Qwen/Qwen3.6-35B-A3B-FP8" in workflow
+    assert "NATIVE_QWEN_REASONING_PARSER=qwen3" in workflow
+    assert "NATIVE_QWEN_INSTANCE_TYPE=nvidia-a100" in workflow
+    assert "--language-model-only" in workflow
     assert 'BENCH_PROVIDER_MAX_RETRIES: "0"' in workflow
     assert "- required-only" in workflow
+    assert "- hybrid-v2-only" in workflow
+    assert 'EXPERIMENTS="scalar-parallel-hybrid-v2"' in workflow
+    assert '--reps "${{ inputs.repetitions }}"' in workflow
     assert 'EXPERIMENTS="scalar-native-patch-scoped-required"' in workflow
     assert "if: always()" in workflow
     assert "native_endpoint.py cleanup" in workflow
