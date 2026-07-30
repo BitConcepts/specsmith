@@ -161,5 +161,14 @@
     "scope": "Versioned T29 v7 controller criteria, tests, and benchmark workflow only",
     "rationale": "User explicitly approved the trace-derived controller work and instructed us to run the Qwen3.6-27B/35B hybrid-controller experiment built on it.",
     "requirement_ids": []
+  },
+  {
+    "approval_type": "implementation",
+    "work_item_id": "WI-8F2B394F90E4",
+    "approver": "Tristen Pierson <98970594+tbitcs@users.noreply.github.com>",
+    "timestamp": "2026-07-30T15:19:37Z",
+    "scope": ".gitignore repository-local generated .tmp artifacts",
+    "rationale": "User explicitly requested immediate completion of the Qwen hybrid experiment; .tmp ignore hygiene is independently verified by git check-ignore and all public CI, CodeQL, and benchmark smoke gates passed.",
+    "requirement_ids": []
   }
 ]
