@@ -152,11 +152,10 @@ jobs:
       - name: Verify demo-dependency provisioning + test collection
         run: |
           python scripts/govern_bench/install_demo_deps.py
-          # Mirror the grader (harness.py): run pytest from each project root with
-          # PYTHONPATH=project root so first-party packages (e.g. `pipeline`) import.
+          # Mirror the grader with src-layout and root-level imports.
           for d in scripts/govern_bench/projects/*/; do
             set +e
-            ( cd "$d" && PYTHONPATH="$PWD" python -m pytest --collect-only -q . )
+            ( cd "$d" && PYTHONPATH="$PWD/src:$PWD" python -m pytest --collect-only -q . )
             rc=$?
             set -e
             if [ "$rc" -ne 0 ] && [ "$rc" -ne 5 ]; then
@@ -345,11 +344,10 @@ jobs:
 
       - name: Sanity-check demo test collection
         run: |
-          # Mirror the grader (harness.py): run pytest from each project root with
-          # PYTHONPATH=project root so first-party packages (e.g. `pipeline`) import.
+          # Mirror the grader with src-layout and root-level imports.
           for d in scripts/govern_bench/projects/*/; do
             set +e
-            ( cd "$d" && PYTHONPATH="$PWD" python -m pytest --collect-only -q . )
+            ( cd "$d" && PYTHONPATH="$PWD/src:$PWD" python -m pytest --collect-only -q . )
             rc=$?
             set -e
             if [ "$rc" -ne 0 ] && [ "$rc" -ne 5 ]; then

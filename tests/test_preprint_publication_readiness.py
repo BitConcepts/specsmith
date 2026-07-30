@@ -2,12 +2,17 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 from pathlib import Path
 
 import pytest
 
-from scripts.govern_bench.export_evidence import export_evidence
-from scripts.govern_bench.harness import (
+_SCRIPTS_DIR = Path(__file__).parents[1] / "scripts"
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+
+from govern_bench.export_evidence import export_evidence  # noqa: E402
+from govern_bench.harness import (  # noqa: E402
     _copy_project_fixture,
     _exec_run_command,
     _exec_run_validator,
@@ -15,16 +20,16 @@ from scripts.govern_bench.harness import (
     _install_acceptance_oracle,
     _project_pythonpath,
 )
-from scripts.govern_bench.install_demo_deps import collect_requirements
-from scripts.govern_bench.metrics import RunResult, SliceStats
-from scripts.govern_bench.profiles import PROFILES
-from scripts.govern_bench.protocol import (
+from govern_bench.install_demo_deps import collect_requirements  # noqa: E402
+from govern_bench.metrics import RunResult, SliceStats  # noqa: E402
+from govern_bench.profiles import PROFILES  # noqa: E402
+from govern_bench.protocol import (  # noqa: E402
     DEFAULT_PROTOCOL_PATH,
     load_protocol,
     protocol_sha256,
     validate_run_contract,
 )
-from scripts.govern_bench.tasks import get_task
+from govern_bench.tasks import get_task  # noqa: E402
 
 
 def test_frozen_protocol_has_exact_publication_contracts() -> None:
@@ -181,6 +186,14 @@ def test_upstream_dependency_group_is_provisioned() -> None:
     assert "freezegun" in requirements
     assert "pytest" in requirements
     assert "tox" not in requirements
+
+
+def test_github_collection_matches_src_layout_runtime_path() -> None:
+    workflow = (Path(__file__).parents[1] / ".github/workflows/bench.yml").read_text(
+        encoding="utf-8"
+    )
+
+    assert workflow.count('PYTHONPATH="$PWD/src:$PWD"') == 2
 
 
 def test_failed_run_expenditure_is_explicit_and_inclusive() -> None:

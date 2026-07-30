@@ -86,7 +86,7 @@
     weaknesses with project governance health and write a machine-readable report.
   source: Maintainer request for long-horizon benchmarking and outcome auditing
   status: implemented
-- id: REQ-491
+- id: REQ-492
   title: Preregistered real-repository publication evidence
   description: >-
     GovernanceBench publication runs MUST fail closed against a byte-hashed,
