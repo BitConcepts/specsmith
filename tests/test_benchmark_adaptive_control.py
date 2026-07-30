@@ -381,6 +381,11 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
             ["write_file", "write_milestone", "patch_file", "done"],
             "auto",
         ),
+        (
+            "scalar-milestone-packet-authority-v6",
+            ["write_file", "write_milestone", "patch_file", "done"],
+            "auto",
+        ),
     ],
 )
 def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
@@ -410,6 +415,7 @@ def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
         if experiment in {
             "scalar-milestone-packet-authority-v4",
             "scalar-milestone-packet-authority-v5",
+            "scalar-milestone-packet-authority-v6",
         }:
             assert "bounded files array" in contract
             assert set(properties) == {"files"}
@@ -423,6 +429,7 @@ def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
             if experiment not in {
                 "scalar-milestone-packet-authority-v4",
                 "scalar-milestone-packet-authority-v5",
+                "scalar-milestone-packet-authority-v6",
             }:
                 assert {"type": "null"} in properties["path_2"]["anyOf"]
             native_tool = _openai_tools_to_responses([milestone_tool])[0]
@@ -470,6 +477,7 @@ def test_benchmark_workflow_exposes_scoped_native_patch_experiment() -> None:
     assert "scalar-milestone-packet-authority-v3" in workflow
     assert "scalar-milestone-packet-authority-v4" in workflow
     assert "scalar-milestone-packet-authority-v5" in workflow
+    assert "scalar-milestone-packet-authority-v6" in workflow
     native_workflow = (
         Path(__file__).parent.parent / ".github" / "workflows" / "qwen-native-bench.yml"
     ).read_text(encoding="utf-8")
@@ -593,6 +601,29 @@ def test_milestone_packet_compiles_only_the_active_public_boundary(tmp_path: Pat
     )
     assert packet in context
     assert "starter backend/main.py" in context
+
+
+def test_v6_makes_t29_visibility_invariant_explicit_without_changing_v5(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task = get_task("T29")
+    completed = [str(path) for milestone in task.milestones[:2] for path in milestone["files"]]
+
+    monkeypatch.setenv(
+        "BENCH_CONTROLLER_EXPERIMENT",
+        "scalar-milestone-packet-authority-v5",
+    )
+    v5_packet = _milestone_work_packet(task, completed)
+    monkeypatch.setenv(
+        "BENCH_CONTROLLER_EXPERIMENT",
+        "scalar-milestone-packet-authority-v6",
+    )
+    v6_packet = _milestone_work_packet(task, completed)
+
+    assert "Active work packet 3/4: operator UI journey" in v6_packet
+    assert "toBeVisible()" not in v5_packet
+    assert "toBeVisible()" in v6_packet
+    assert "before filter and approve interactions" in v6_packet
 
 
 def test_native_edit_interface_is_exact_bounded_and_tracks_changes(tmp_path: Path) -> None:

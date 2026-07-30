@@ -63,6 +63,12 @@ consolidated into the next published release.
   and 9.8% CV, but first-pass fell to 30%. Six rows repaired a missing
   Playwright visibility assertion and one repaired an invalid self-authored
   pytest assertion; the audit selects `optimize_and_rerun`.
+- Add versioned T29 controller v6, which preserves v5 controls while making the
+  existing Playwright `toBeVisible()` criterion explicit at milestone three.
+  Repair-hotspot attribution now prefers observed modifying-tool receipts over
+  the first path in a broad validator boundary; corrected re-audit of workflow
+  `30457360342` names `ui/tests/release-control.spec.ts` in 6/10 rows. No v6
+  performance gain is claimed before a completed run.
 - Normalize nested verification file-path evidence at CLI, governance,
   persistence, and risk-audit boundaries so malformed legacy or tampered work
   items cannot crash `specsmith audit`.

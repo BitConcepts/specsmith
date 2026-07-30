@@ -863,8 +863,12 @@ Only 3/10 rows were first-pass. Six rows repaired the UI boundary because the
 generated Playwright journey omitted `toBeVisible`; one repaired a
 self-authored backend test that used the nonexistent `pytest.anything`.
 Retained traces show the repeated invariant belongs to
-`ui/tests/release-control.spec.ts`, although the aggregate audit groups the
-boundary under its first scoped path, `ui/src/App.tsx`.
+`ui/tests/release-control.spec.ts`. Re-audit with observed modifying-tool
+receipts now attributes that file as the systematic hotspot in 6/10 rows,
+rather than inferring the first path from the broader validator boundary.
+Versioned v6 places the already-public `toBeVisible()` criterion directly in
+milestone three. No v6 efficiency or correctness gain is claimed before a
+completed run.
 
 Relative to the favorable n=5 point estimate, n=10 used 11.3% more mean tokens,
 6.5% more estimated cost, and 9.6% more turns while first-pass completion fell

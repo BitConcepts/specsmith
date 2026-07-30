@@ -322,12 +322,62 @@ def _focused_repair_events(row: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
-def _focused_repair_paths(row: dict[str, Any]) -> list[str]:
+def _modifying_tool_paths(event: dict[str, Any]) -> list[str]:
+    """Return content-free file targets from one observed modifying assistant turn."""
     paths: list[str] = []
-    for event in _focused_repair_events(row):
+    for raw_target in event.get("tool_targets") or []:
+        tool, separator, payload = str(raw_target).partition(":")
+        if not separator or tool not in {
+            "edit_file",
+            "patch_file",
+            "write_file",
+            "write_files",
+            "write_milestone",
+        }:
+            continue
+        raw_paths = payload.split(",") if tool in {"write_files", "write_milestone"} else [payload]
+        for raw_path in raw_paths:
+            normalized = _normalized_path(raw_path.rstrip(".,;:"))
+            if (
+                normalized
+                and "." in normalized.rsplit("/", 1)[-1]
+                and not normalized.startswith(("tools/", ".venv/"))
+            ):
+                paths.append(normalized)
+    return paths
+
+
+def _focused_repair_paths(row: dict[str, Any]) -> list[str]:
+    transcript = row.get("agent_transcript") or []
+    paths: list[str] = []
+    for index, event in enumerate(transcript):
+        if not isinstance(event, dict) or not event.get("focused_repair"):
+            continue
+
+        # Prefer the content-free target receipt from the first modifying turn
+        # after this controller repair instruction. The controller boundary is
+        # an allowlist and may contain several files; its first path is not
+        # necessarily the file the model actually repaired.
+        observed_paths: list[str] = []
+        for candidate in transcript[index + 1 :]:
+            if not isinstance(candidate, dict):
+                continue
+            if candidate.get("focused_repair"):
+                break
+            if candidate.get("role") != "assistant":
+                continue
+            observed_paths = _modifying_tool_paths(candidate)
+            if observed_paths:
+                break
+        if observed_paths:
+            paths.extend(observed_paths)
+            continue
+
         # The first paragraph is the controller-owned repair boundary. Later
         # paragraphs contain model-authored file bodies; parsing those bodies
         # misattributed relative imports such as "./styles.css" as repairs.
+        # Retain this parser only as a fallback for legacy traces that predate
+        # content-free assistant tool-target receipts.
         boundary = str(event.get("focused_repair") or "").split("\n\n", 1)[0]
         for path in re.findall(
             r"(?<![\w.-])[\w.-]+(?:/[\w.-]+)+",

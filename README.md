@@ -155,7 +155,9 @@ independent synthetic repository task initially passed 5/5 at 22.0k TPCA with
 0% first-pass completion. A trace-derived v5 screen then passed 5/5 at 18.1k
 TPCA and 80% first-pass. Its independent n=10 sample passed 10/10 at 20.1k
 TPCA, but first-pass completion fell to 30%; the audit found a recurring UI
-test-contract repair and requires optimization before another confirmation.
+test-contract repair in 6/10 observed patch receipts and requires optimization
+before another confirmation. The next versioned controller makes that existing
+milestone invariant explicit; its effect remains unmeasured.
 These results are task- and route-specific. Managed
 20B–32B and Qwen native-tool candidates have useful correct diagnostics but
 have not passed the repeated replacement gates, so Specsmith does not claim

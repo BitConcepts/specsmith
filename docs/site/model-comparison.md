@@ -108,7 +108,10 @@ and one repaired an invalid self-authored pytest assertion. Compared with n=5,
 mean tokens rose 11.3%, cost 6.5%, and turns 9.6%, while first-pass fell 50
 percentage points. The audit selects `optimize_and_rerun`; this exact-route
 sample is release-sized, but it is neither a clean promotion nor
-real-repository generalization.
+real-repository generalization. Corrected hotspot attribution follows observed
+patch receipts and names `ui/tests/release-control.spec.ts` in 6/10 rows.
+Versioned v6 makes that existing invariant explicit at milestone three, but is
+unmeasured until its admission run completes.
 
 Results are never combined across incompatible commits, task grids, routes, or
 repetition sets. GPT-5.6 uses Chat Completions with `reasoning_effort=none` for

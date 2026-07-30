@@ -247,6 +247,11 @@ pytest assertion. Relative to n=5, mean tokens rose 11.3%, cost 6.5%, and
 turns 9.6%. The deterministic audit selects `optimize_and_rerun`, not
 publication as a clean promotion. This is release-sized evidence for one
 synthetic fixture and exact route, not real-repository generalization.
+Re-audit using observed modifying-tool receipts attributes the recurring
+hotspot to `ui/tests/release-control.spec.ts` in 6/10 rows; the earlier
+aggregate label inferred the first path in a broader validator boundary.
+Versioned v6 makes the existing `toBeVisible()` criterion explicit at
+milestone three. It remains an unmeasured intervention pending admission.
 
 ## Reproduction
 

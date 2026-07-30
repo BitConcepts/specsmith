@@ -272,7 +272,32 @@ def test_three_row_diagnostic_exposes_unanimous_repair_hotspot() -> None:
     assert report.next_experiment.action == "optimize_and_rerun"
 
 
-def test_repair_path_parser_ignores_relative_imports_in_supplied_content() -> None:
+def test_repair_path_parser_prefers_observed_patch_and_ignores_supplied_imports() -> None:
+    row = {
+        "agent_transcript": [
+            {
+                "turn": 3,
+                "role": "controller",
+                "focused_repair": (
+                    "Active public-validator repair boundary: python tools/validate_ui.py -> "
+                    "ui/src/App.tsx, ui/src/api.ts, ui/tests/release-control.spec.ts.\n\n"
+                    "## ui/src/App.tsx\n"
+                    'import "./styles.css";\n'
+                ),
+            },
+            {
+                "turn": 4,
+                "role": "assistant",
+                "tool_calls": ["patch_file"],
+                "tool_targets": ["patch_file:ui/tests/release-control.spec.ts"],
+            },
+        ]
+    }
+
+    assert _focused_repair_paths(row) == ["ui/tests/release-control.spec.ts"]
+
+
+def test_repair_path_parser_falls_back_to_legacy_boundary_header() -> None:
     row = {
         "agent_transcript": [
             {
@@ -288,6 +313,42 @@ def test_repair_path_parser_ignores_relative_imports_in_supplied_content() -> No
     }
 
     assert _focused_repair_paths(row) == ["ui/src/app.tsx"]
+
+
+def test_repair_hotspot_names_the_observed_patched_file() -> None:
+    rows = []
+    for rep in range(1, 4):
+        row = _row(
+            condition="SPECSMITH_FULL",
+            passed=True,
+            input_tokens=10_000,
+            rep=rep,
+            task="T29",
+        )
+        row["rework_turns"] = 2
+        row["agent_transcript"] = [
+            {
+                "turn": 3,
+                "role": "controller",
+                "focused_repair": (
+                    "Active public-validator repair boundary: python tools/validate_ui.py -> "
+                    "ui/src/App.tsx, ui/src/api.ts, ui/tests/release-control.spec.ts."
+                ),
+            },
+            {
+                "turn": 4,
+                "role": "assistant",
+                "tool_calls": ["patch_file"],
+                "tool_targets": ["patch_file:ui/tests/release-control.spec.ts"],
+            },
+        ]
+        rows.append(row)
+
+    report = audit_benchmark_rows(rows)
+    weakness = next(item for item in report.weaknesses if item.code == "systematic_repair_hotspot")
+
+    assert "ui/tests/release-control.spec.ts" in weakness.evidence
+    assert "ui/src/app.tsx" not in weakness.evidence
 
 
 def test_default_run_bench_audit_path_tracks_json_output() -> None:

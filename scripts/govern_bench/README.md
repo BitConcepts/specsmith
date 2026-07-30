@@ -75,7 +75,10 @@ $0.1277 mean cost, 5.7 turns, and 9.8% CV, but first-pass fell to 30%. Six
 rows repaired a missing Playwright visibility assertion and one repaired an
 invalid model-authored pytest assertion. The audit selects
 `optimize_and_rerun`, so this is exact-route, synthetic release-sized evidence
-rather than a clean promotion or real-repository claim.
+rather than a clean promotion or real-repository claim. Observed patch receipts
+attribute the recurring hotspot to `ui/tests/release-control.spec.ts` in 6/10
+rows. Versioned v6 makes that existing visibility criterion explicit in
+milestone three; it has no measured result yet.
 
 ---
 

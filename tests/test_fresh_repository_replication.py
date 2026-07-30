@@ -2,12 +2,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from scripts.govern_bench.harness import (
     _copy_project_fixture,
     _exec_run_command,
     _exec_run_validator,
     _get_project_dir,
     _install_acceptance_oracle,
+    _milestone_work_packet,
     _validator_boundaries_for_task,
 )
 from scripts.govern_bench.tasks import get_task
@@ -56,6 +59,23 @@ def test_t29_milestone_three_validates_css_as_its_own_boundary() -> None:
     assert _validator_boundaries_for_task(task, "python tools/validate_styles.py") == [
         "ui/src/styles.css"
     ]
+
+
+def test_t29_v6_milestone_three_names_the_playwright_visibility_invariant(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task = get_task("T29")
+    completed = [str(path) for milestone in task.milestones[:2] for path in milestone["files"]]
+    monkeypatch.setenv(
+        "BENCH_CONTROLLER_EXPERIMENT",
+        "scalar-milestone-packet-authority-v6",
+    )
+
+    packet = _milestone_work_packet(task, completed)
+
+    assert "Active work packet 3/4: operator UI journey" in packet
+    assert "toBeVisible()" in packet
+    assert "before filter and approve interactions" in packet
 
 
 def test_t29_ui_validator_accepts_structural_empty_state_and_css_contract(

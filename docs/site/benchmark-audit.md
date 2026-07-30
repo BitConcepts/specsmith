@@ -111,8 +111,11 @@ focused repairs addressed a missing Playwright `toBeVisible` assertion; a
 seventh replaced the nonexistent `pytest.anything` in a model-authored test.
 The audit reports no high or critical weakness, but selects
 `optimize_and_rerun` because the repeated UI boundary added about 4,060 tokens
-to repaired rows. It groups that boundary under `ui/src/App.tsx`; the retained
-traces locate the repeated invariant in `ui/tests/release-control.spec.ts`.
+to repaired rows. Re-audit with observed patch-target receipts attributes the
+systematic hotspot to `ui/tests/release-control.spec.ts` in 6/10 rows instead
+of inferring the first path from the broader validator boundary. Versioned v6
+makes the existing `toBeVisible()` requirement explicit in milestone three.
+That controller change is not a measured gain until a new run completes.
 T29 therefore increases evaluator diversity and supplies an exact-route n=10
 sample without establishing clean promotion or real-repository
 generalization.
