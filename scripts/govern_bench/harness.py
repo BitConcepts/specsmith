@@ -163,6 +163,40 @@ class NormalizedLLMResponse:
     provider_metadata: dict[str, Any] = field(default_factory=dict)
 
 
+def _sanitize_completion_tool_calls(
+    tool_calls: list[NormalizedToolCall],
+) -> tuple[list[NormalizedToolCall], dict[str, Any] | None]:
+    """Bound redundant completion signals without changing actionable calls.
+
+    Some native tool parsers can emit the same ``done`` call many times at the
+    end of a long response. Retaining every call and result needlessly expands
+    provider-visible history. A completion signal is never actionable beside
+    another tool call, so defer it until the model's next turn; when a response
+    contains only completion signals, one is sufficient to run the deterministic
+    completion gate.
+    """
+    done_calls = [call for call in tool_calls if call.name == "done"]
+    if not done_calls:
+        return tool_calls, None
+
+    actionable_calls = [call for call in tool_calls if call.name != "done"]
+    if actionable_calls:
+        return actionable_calls, {
+            "reason": "completion_deferred_until_after_actions",
+            "original_call_count": len(tool_calls),
+            "effective_call_count": len(actionable_calls),
+            "dropped_done_calls": len(done_calls),
+        }
+    if len(done_calls) > 1:
+        return [done_calls[0]], {
+            "reason": "duplicate_completion_signals_collapsed",
+            "original_call_count": len(tool_calls),
+            "effective_call_count": 1,
+            "dropped_done_calls": len(done_calls) - 1,
+        }
+    return tool_calls, None
+
+
 @dataclass(slots=True)
 class OpenAIResponsesState:
     """Per-cell Responses API state with safe, prefix-checked continuation."""
@@ -4371,6 +4405,14 @@ def _run_agent_loop(
                 if serialized_done is not None:
                     msg = NormalizedAssistantMessage(content="", tool_calls=[serialized_done])
                     serialized_done_recovered = True
+        sanitized_tool_calls, completion_sanitization = _sanitize_completion_tool_calls(
+            msg.tool_calls
+        )
+        if completion_sanitization is not None:
+            msg = NormalizedAssistantMessage(
+                content=msg.content,
+                tool_calls=sanitized_tool_calls,
+            )
         assistant_message = _normalized_message_to_openai_dict(msg)
         tc_names = [tc.name for tc in msg.tool_calls]
         tc_targets = [_tool_call_target(tc) for tc in msg.tool_calls]
@@ -4404,6 +4446,14 @@ def _run_agent_loop(
                     "serialized_function_recovered": True,
                     "reason": "exact_active_function_schema",
                     "tool": msg.tool_calls[0].name,
+                }
+            )
+        if completion_sanitization is not None:
+            agent_transcript.append(
+                {
+                    "turn": turn + 1,
+                    "role": "controller",
+                    "completion_signal_sanitization": completion_sanitization,
                 }
             )
 

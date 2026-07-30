@@ -53,6 +53,7 @@ from govern_bench.harness import (  # noqa: E402
     _replace_adaptive_progress_message,
     _request_timeout_seconds,
     _run_missing_completion_validators,
+    _sanitize_completion_tool_calls,
     _scope_contract,
     _scope_progress,
     _serialized_done_tool_call,
@@ -1445,6 +1446,73 @@ def test_write_boundary_signature_covers_scalar_and_composite_calls() -> None:
         )
         is None
     )
+
+
+def test_completion_signals_are_deferred_when_actions_coexist() -> None:
+    patch = NormalizedToolCall(
+        id="patch-1",
+        name="patch_file",
+        arguments='{"path":"ui/src/App.tsx","patch":"@@ ..."}',
+    )
+    done_calls = [
+        NormalizedToolCall(
+            id=f"done-{index}",
+            name="done",
+            arguments='{"explanation":"complete","refused":false}',
+        )
+        for index in range(64)
+    ]
+
+    sanitized, telemetry = _sanitize_completion_tool_calls([patch, *done_calls])
+
+    assert sanitized == [patch]
+    assert telemetry == {
+        "reason": "completion_deferred_until_after_actions",
+        "original_call_count": 65,
+        "effective_call_count": 1,
+        "dropped_done_calls": 64,
+    }
+
+
+def test_duplicate_completion_only_signals_collapse_to_one() -> None:
+    calls = [
+        NormalizedToolCall(
+            id=f"done-{index}",
+            name="done",
+            arguments='{"explanation":"complete","refused":false}',
+        )
+        for index in range(3)
+    ]
+
+    sanitized, telemetry = _sanitize_completion_tool_calls(calls)
+
+    assert sanitized == [calls[0]]
+    assert telemetry == {
+        "reason": "duplicate_completion_signals_collapsed",
+        "original_call_count": 3,
+        "effective_call_count": 1,
+        "dropped_done_calls": 2,
+    }
+
+
+def test_ordinary_tool_batches_are_not_rewritten() -> None:
+    calls = [
+        NormalizedToolCall(
+            id="write-1",
+            name="write_file",
+            arguments='{"path":"service.py","content":"VALUE = 1\\n"}',
+        ),
+        NormalizedToolCall(
+            id="test-1",
+            name="run_command",
+            arguments='{"command":"pytest"}',
+        ),
+    ]
+
+    sanitized, telemetry = _sanitize_completion_tool_calls(calls)
+
+    assert sanitized is calls
+    assert telemetry is None
 
 
 def _audit_row(*, condition: str, passed: bool, transcript: list[dict] | None = None) -> dict:
