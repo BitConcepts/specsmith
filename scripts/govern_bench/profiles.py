@@ -65,6 +65,37 @@ PROFILES: dict[str, BenchmarkProfile] = {
             "the complete versioned task grid."
         ),
     ),
+    "publication-matched": BenchmarkProfile(
+        name="publication-matched",
+        tasks=("T28", "T29", "T30"),
+        conditions=("UNGOVERNED", "CURSOR_RULES", "SPECSMITH_FULL"),
+        repetitions=10,
+        purpose=(
+            "Preregistered publication grid across two synthetic polyglot repositories "
+            "and one pinned independent upstream repository."
+        ),
+    ),
+    "publication-open-admission": BenchmarkProfile(
+        name="publication-open-admission",
+        tasks=("T30",),
+        conditions=("SPECSMITH_FULL",),
+        repetitions=1,
+        purpose="One frozen real-repository admission per 20B-35B open-model route.",
+    ),
+    "publication-open-screen": BenchmarkProfile(
+        name="publication-open-screen",
+        tasks=("T30",),
+        conditions=("SPECSMITH_FULL",),
+        repetitions=5,
+        purpose="Matched n=5 screen for an open route that cleared frozen admission.",
+    ),
+    "publication-open-release": BenchmarkProfile(
+        name="publication-open-release",
+        tasks=("T30",),
+        conditions=("SPECSMITH_FULL",),
+        repetitions=10,
+        purpose="Independent n=10 confirmation for an open route that cleared n=5.",
+    ),
 }
 
 

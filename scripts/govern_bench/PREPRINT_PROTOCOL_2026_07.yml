@@ -1,0 +1,156 @@
+schema: governancebench-preregistration-v1
+protocol_id: GB-PREPRINT-2026-07-30-V1
+status: frozen
+frozen_at: "2026-07-30T19:27:56Z"
+publication_status: unpublished
+
+objective: >-
+  Test whether Specsmith governance improves correctness-adjusted token
+  efficiency on frozen repository tasks and whether a governed 20B-35B open
+  model can earn repeated real-repository evidence without weakening hidden
+  acceptance gates.
+
+task_suite:
+  - id: T28
+    kind: synthetic-polyglot
+  - id: T29
+    kind: independent-synthetic-polyglot
+  - id: T30
+    kind: pinned-upstream-repository
+    repository: https://github.com/pallets/itsdangerous
+    commit: 672971d66a2ef9f85151e53283113f33d642dabd
+    license: BSD-3-Clause
+
+conditions:
+  - UNGOVERNED
+  - CURSOR_RULES
+  - SPECSMITH_FULL
+
+contracts:
+  publication-matched:
+    tasks: [T28, T29, T30]
+    conditions: [UNGOVERNED, CURSOR_RULES, SPECSMITH_FULL]
+    repetitions: 10
+    routes:
+      - provider: openai-responses
+        model: gpt-5.6-terra
+      - provider: openai-responses
+        model: gpt-5.6-sol
+  publication-open-admission:
+    tasks: [T30]
+    conditions: [SPECSMITH_FULL]
+    repetitions: 1
+    routes:
+      - provider: huggingface
+        model: Qwen/Qwen3.6-27B:deepinfra
+      - provider: huggingface
+        model: openai/gpt-oss-20b:nscale
+      - provider: huggingface
+        model: Qwen/Qwen3-32B:deepinfra
+      - provider: huggingface
+        model: Qwen/Qwen3-Coder-30B-A3B-Instruct:scaleway
+      - provider: huggingface
+        model: zai-org/GLM-4.7-Flash:deepinfra
+      - provider: huggingface
+        model: Qwen/Qwen3.6-35B-A3B:deepinfra
+  publication-open-screen:
+    tasks: [T30]
+    conditions: [SPECSMITH_FULL]
+    repetitions: 5
+    routes:
+      - provider: huggingface
+        model: Qwen/Qwen3.6-27B:deepinfra
+      - provider: huggingface
+        model: openai/gpt-oss-20b:nscale
+      - provider: huggingface
+        model: Qwen/Qwen3-32B:deepinfra
+      - provider: huggingface
+        model: Qwen/Qwen3-Coder-30B-A3B-Instruct:scaleway
+      - provider: huggingface
+        model: zai-org/GLM-4.7-Flash:deepinfra
+      - provider: huggingface
+        model: Qwen/Qwen3.6-35B-A3B:deepinfra
+  publication-open-release:
+    tasks: [T30]
+    conditions: [SPECSMITH_FULL]
+    repetitions: 10
+    routes:
+      - provider: huggingface
+        model: Qwen/Qwen3.6-27B:deepinfra
+      - provider: huggingface
+        model: openai/gpt-oss-20b:nscale
+      - provider: huggingface
+        model: Qwen/Qwen3-32B:deepinfra
+      - provider: huggingface
+        model: Qwen/Qwen3-Coder-30B-A3B-Instruct:scaleway
+      - provider: huggingface
+        model: zai-org/GLM-4.7-Flash:deepinfra
+      - provider: huggingface
+        model: Qwen/Qwen3.6-35B-A3B:deepinfra
+
+hypotheses:
+  - id: H1
+    statement: >-
+      SPECSMITH_FULL is non-inferior in correctness and lower in tokens per
+      correct answer than UNGOVERNED for the same model and task suite.
+  - id: H2
+    statement: >-
+      SPECSMITH_FULL is non-inferior in correctness and lower in tokens per
+      correct answer than CURSOR_RULES for the same model and task suite.
+  - id: H3
+    statement: >-
+      Governed Terra is non-inferior in correctness and lower in tokens per
+      correct answer than ungoverned Sol on the frozen three-task suite.
+  - id: H4
+    statement: >-
+      At least one 20B-35B open-model route can pass T30 repeatedly under
+      SPECSMITH_FULL while respecting the frozen promotion gates.
+
+metrics:
+  primary: tokens_per_correct_answer
+  secondary:
+    - pass_rate
+    - cost_of_pass
+    - first_pass_rate
+    - failed_run_tokens
+    - failed_run_cost_usd
+    - wall_clock_s
+  uncertainty:
+    pass_rate: wilson_95
+    cost_of_pass: deterministic_bootstrap_95_1000
+    substitution: paired_hierarchical_bootstrap_95_10000
+  failed_runs: included_in_all_token_and_cost_denominators
+
+controls:
+  hidden_oracle: installed_after_agent_completion
+  provider_retries: 0
+  task_repetition_ids: 1-through-N
+  controller: scalar-milestone-packet-authority-v7
+  tool_schema: stable-five-tool
+  benchmark_commit: recorded_from_workflow
+  model_sampling: pinned_model_card_defaults
+  task_budgets: task_metadata_max_turns
+  compare_same_provider_route: true
+
+promotion_gates:
+  admission:
+    correctness: public_and_hidden_pass
+    maximum_total_tokens: 30000
+  screen_n5:
+    prerequisite: admission_pass
+    minimum_passes: 5
+    maximum_mean_tpca: 30000
+  release_n10:
+    prerequisite: screen_n5_pass
+    minimum_passes: 9
+    report_task_and_repetition_uncertainty: true
+  replacement_claim:
+    correctness_margin: -0.05
+    tpca_ratio_upper_95_max: 1.0
+
+analysis_rules:
+  - No controller, prompt, task, oracle, budget, or scoring change after freeze.
+  - Infrastructure failures remain censored and are rerun only on the identical contract.
+  - Model failures count toward token and cost expenditure and cannot be discarded.
+  - Open candidates advance sequentially from admission to n=5 to n=10.
+  - Results support only the frozen tasks, models, routes, and conditions.

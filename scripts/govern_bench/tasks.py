@@ -24,6 +24,7 @@ PROJECT_SUBDIR_MAP: dict[str, str] = {
     "agentic-patent-draft": "patent_draft",
     "agentic-incident-console": "incident_console",
     "agentic-release-control-plane": "release_control_plane",
+    "upstream-itsdangerous-rotation": "itsdangerous_rotation",
 }
 
 

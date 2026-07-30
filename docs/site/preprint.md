@@ -30,12 +30,19 @@ favorable point estimate.
 | The result is robust to resampling the eight named tasks | Task-cluster correctness and TPCA confidence gates both pass | Supported within the benchmark distribution; this is not evidence on fresh repositories |
 | A lower-tier governed system substitutes on coding-only work | Prespecified coding slice clears the same correctness and TPCA gates | Not confirmed: observed results favor Terra FULL, but the correctness lower bound missed the margin by 0.7 pp |
 | The result generalizes to new repositories and task families | Independent replication across fresh real repositories, languages, providers, and task distributions | Not established: synthetic T29 v7 passed 10/10 first-pass at n=10, but no fresh real repository was tested |
+| The result transfers to a pinned independent upstream repository | Frozen same-commit T30 raw/Cursor/FULL n=10 grid with isolated hidden acceptance | Preregistered as `GB-PREPRINT-2026-07-30-V1`; results pending |
 | Published 8B or mini models replace frontier models | A small-model admission, matched n=5 screen, and n=10 release gate all pass | Rejected for current routes: Llama 3.1 8B and GPT-4o mini T28 admissions failed |
 | A reasoning-capable 20B–32B model can complete governed T28 | Correct public checks and independent oracle in admission | Supported at n=1 for Qwen3.6-27B/DeepInfra; the best controller diagnostic used 26,850 tokens and 6 turns |
 | A 20B–32B governed model replaces frontier Sol efficiently | Correct admission inside the versioned Sol envelope, then matched n=5 and n=10 gates | Not supported: the best correct 27B cell still used 1.53× the Sol token envelope and has no matched n=5 confirmation |
 | Qwen3.6-27B/35B completes fresh T29 under hybrid/native governance | Complete public and hidden correctness at admission, followed by matched n=5 and n=10 gates | Rejected on tested routes: managed v2 remained incomplete; native 35B FP8 reached 3/4 milestones but failed at 105,087 tokens and 20 turns |
 | Native Responses tools improve the governed T28 model/cost frontier | Same-controller route admission followed by matched n=5 and n=10 confirmation | Route-specific support: structured-schema Sol passed an independent 10/10 confirmation at 17,907 TPCA and 1.77% CV; Terra's separate fixed-schema n=5 remains lower-cost at 17,213 TPCA; no cross-task native claim |
 | Small models universally replace frontier models | Broad external replication across fresh repositories, languages, providers, and task distributions | Not claimed |
+
+The new preregistration does not retroactively strengthen any claim. T30 uses
+Pallets ItsDangerous commit `672971d…`, while the open-model lane fixes six
+exact 20B–35B hosted routes. Candidates advance from n=1 to n=5 to n=10 only
+after the previous correctness and efficiency gate passes. Failed runs remain
+in all token and cost totals.
 
 The decisive
 [workflow 30210886840](https://github.com/layer1labs/specsmith/actions/runs/30210886840)

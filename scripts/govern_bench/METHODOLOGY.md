@@ -45,11 +45,20 @@ counts cannot drift between experiments:
 | `broad-release` | 8 tasks × Cursor/FULL × 10 | One same-commit aggregate release claim |
 | `substitution-screen` | T1/T10/T13/T28 × raw/FULL × 5 | Fair model-capability substitution screen |
 | `substitution-release` | 8 tasks × raw/FULL × 10 | Release-grade lower-tier/frontier 2×2 claim |
+| `publication-matched` | T28/T29/T30 × raw/Cursor/FULL × 10 | Frozen synthetic-plus-upstream publication grid |
+| `publication-open-admission` | T30/FULL × 1 | Frozen 20B–35B real-repository admission |
+| `publication-open-screen` | T30/FULL × 5 | Repeated screen after admission |
+| `publication-open-release` | T30/FULL × 10 | Confirmation after a passing screen |
 
 The promotion funnel is `n=1 admission → n=5 screening → n=10 release
 replication`. A failed admission is repaired or rejected; it is not made
 publishable by spending on more repetitions. Locked-profile task, condition,
 or repetition overrides fail closed.
+
+Publication protocol `GB-PREPRINT-2026-07-30-V1` is byte-hashed before paid
+inference. Publication profiles additionally fail closed on model/provider
+route drift. Raw rows retain the protocol ID and SHA-256; compact evidence
+manifests retain the unique protocol identities represented by their sources.
 
 Model-substitution release claims use a paired hierarchical bootstrap with
 10,000 deterministic resamples. The fixed-suite interval resamples repetitions
@@ -265,6 +274,11 @@ Do not publish comparative claims when intervals overlap substantially without c
   and DeepSeek-V4 Pro `1.0/1.0`. Provider routes remain pinned and priced
   separately.
 - Preserve raw benchmark output JSON for auditability.
+- Include every failed model run in token and cost denominators and report its
+  absolute tokens, estimated dollars, and share of total expenditure.
+- For a pinned upstream fixture, preserve repository URL, commit, license, and
+  starter-file SHA-256 values. Public validators remain model-visible; the
+  independent acceptance oracle is injected only after completion.
 
 ## 8) Limitations
 

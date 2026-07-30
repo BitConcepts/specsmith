@@ -148,6 +148,11 @@ task-, route-, and benchmark-specific results. Published-size open models have
 not passed the repeated frontier-replacement gates, so Specsmith does not claim
 that small models generally replace frontier models.
 
+The next publication round is frozen as `GB-PREPRINT-2026-07-30-V1`. It adds a
+commit-pinned independent upstream repository, matched raw/Cursor/Specsmith
+conditions, explicit failed-run expenditure, and sequential 20B–35B open-model
+admission. Results remain unpublished until those frozen gates finish.
+
 See the
 [full benchmark report](https://specsmith.readthedocs.io/stable/efficiency-benchmark/),
 [preprint and claim guide](https://specsmith.readthedocs.io/stable/preprint/),

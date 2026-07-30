@@ -66,3 +66,18 @@
   input: T28 and fresh-repository fixtures plus complete, incomplete, and verification-disagreement result artifacts
   expected_behavior: No-op long-horizon work fails and post-run reports expose actionable weaknesses without an LLM judge
   confidence: 1.0
+- id: TEST-517
+  title: Frozen real-repository publication protocol
+  description: >-
+    Tests verify the byte-exact preregistration, locked three-task and
+    open-model profiles, exact model/provider routes, fail-closed drift
+    handling before inference, pinned upstream file hashes and license,
+    src-layout execution, hidden acceptance isolation, compact evidence
+    provenance, PEP 735 test dependency provisioning, and explicit failed-run
+    token and cost expenditure.
+  requirement_id: REQ-491
+  type: integration
+  verification_method: pytest tests/test_preprint_publication_readiness.py
+  input: Frozen protocol, T30 upstream snapshot, clean starter, representative pass/fail rows
+  expected_behavior: Publication evidence cannot drift, hide failed spend, or claim unearned open-model replication
+  confidence: 1.0

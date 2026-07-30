@@ -402,6 +402,24 @@ def main() -> int:
     else:
         conditions = CONDITIONS
 
+    protocol_id = ""
+    protocol_digest = ""
+    if args.profile.startswith("publication-"):
+        from govern_bench.protocol import validate_run_contract  # noqa: E402, PLC0415
+
+        try:
+            protocol_id, protocol_digest = validate_run_contract(
+                profile=args.profile,
+                tasks=[task.id for task in tasks],
+                conditions=[condition.id for condition in conditions],
+                repetitions=args.reps,
+                provider=args.provider,
+                model=args.model,
+            )
+        except ValueError as exc:
+            print(f"\n[FATAL] Frozen publication protocol mismatch: {exc}", file=sys.stderr)
+            return 2
+
     total_runs = len(tasks) * len(conditions) * args.reps
     print(
         f"Benchmark [{args.profile}]: "
@@ -467,6 +485,8 @@ def main() -> int:
     rows = _result_rows(report, args.provider, tasks, dry_run=args.dry_run)
     for row in rows:
         row["benchmark_profile"] = args.profile
+        row["protocol_id"] = protocol_id
+        row["protocol_sha256"] = protocol_digest
 
     # Write JSON output if requested
     if args.json_output:

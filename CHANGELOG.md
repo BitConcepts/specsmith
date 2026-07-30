@@ -11,6 +11,14 @@ consolidated into the next published release.
 ## [Unreleased]
 
 ### Added
+- Freeze preregistration `GB-PREPRINT-2026-07-30-V1` before paid inference.
+  It adds the locked T28/T29/T30 three-condition n=10 publication grid,
+  sequential n=1/n=5/n=10 admissions for six exact 20B-35B open-model routes,
+  byte-exact protocol identities in raw and compact evidence, and explicit
+  failed-run token and dollar expenditure.
+- Add T30, a commit-pinned BSD-3-Clause snapshot of Pallets ItsDangerous with
+  upstream file hashes, unchanged 297-test baseline, a key-rotation maintenance
+  task, public validators, and an evaluator-isolated hidden oracle.
 - Add separately labeled OpenAI Responses benchmark lanes for GPT-5.6 Sol,
   Terra, and Luna with native function tools, low-effort/low-verbosity controls,
   bounded requests, exact-prefix state continuation, provider-visible schema

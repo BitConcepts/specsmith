@@ -145,9 +145,18 @@ def export_evidence(
 
     source_artifacts: list[dict[str, Any]] = []
     cells: list[dict[str, Any]] = []
+    protocols: set[tuple[str, str]] = set()
     for path in sorted((item.resolve() for item in inputs), key=lambda item: item.name):
         raw = path.read_bytes()
         rows = _load_rows(path)
+        protocols.update(
+            (
+                str(row.get("protocol_id") or ""),
+                str(row.get("protocol_sha256") or ""),
+            )
+            for row in rows
+            if row.get("protocol_id") or row.get("protocol_sha256")
+        )
         source_artifacts.append(
             {
                 "name": path.name,
@@ -192,6 +201,10 @@ def export_evidence(
         "cell_fields": list(CELL_FIELDS),
         "excluded_fields": list(EXCLUDED_FIELDS),
         "source_artifacts": source_artifacts,
+        "protocols": [
+            {"protocol_id": protocol_id, "protocol_sha256": digest}
+            for protocol_id, digest in sorted(protocols)
+        ],
         "cells_canonical_sha256": _digest_bytes(canonical_cells),
         "cells_csv_sha256": _digest_bytes(cells_path.read_bytes()),
     }

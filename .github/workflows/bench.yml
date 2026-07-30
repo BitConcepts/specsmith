@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       profile:
-        description: "Locked run profile: custom, admission, controller-admission, release-controls, broad-release, substitution-screen, substitution-release."
+        description: "Locked run profile, including frozen publication contracts."
         required: false
         type: choice
         options:
@@ -23,6 +23,10 @@ on:
           - broad-release
           - substitution-screen
           - substitution-release
+          - publication-matched
+          - publication-open-admission
+          - publication-open-screen
+          - publication-open-release
         default: custom
       experiment:
         description: "Versioned controller protocol; use one admission per causal variant."

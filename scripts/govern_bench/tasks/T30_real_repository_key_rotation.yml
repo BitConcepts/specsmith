@@ -1,0 +1,143 @@
+# T30 — Pinned real-repository key-rotation maintenance task
+
+id: T30
+title: "Add key-rotation reissue diagnostics to a pinned ItsDangerous repository"
+category: real_repository_maintenance
+difficulty: advanced
+project: upstream-itsdangerous-rotation
+horizon: standard
+max_turns: 12
+enforce_completion_validators: true
+languages:
+  - python
+  - rst
+initial_context_paths:
+  - UPSTREAM.md
+  - src/itsdangerous/serializer.py
+  - src/itsdangerous/timed.py
+  - docs/serializer.rst
+milestones:
+  - name: serializer rotation diagnostics
+    criteria:
+      - "Serializer.loads_with_reissue returns (payload, needs_reissue)."
+      - "A value signed by the newest key returns false; an older key or fallback signer returns true."
+      - "Invalid signatures still raise BadSignature and payload deserialization remains unchanged."
+    files:
+      - src/itsdangerous/serializer.py
+      - tests/test_itsdangerous/test_serializer.py
+    validators:
+      - "ruff check ."
+      - "pytest"
+      - "python tools/validate_rotation_api.py"
+  - name: timed and URL-safe compatibility
+    criteria:
+      - "TimedSerializer.loads_with_reissue preserves max_age and SignatureExpired behavior."
+      - "Without return_timestamp it returns (payload, needs_reissue); with return_timestamp it returns (payload, timestamp, needs_reissue)."
+      - "Inherited URLSafeSerializer and URLSafeTimedSerializer behavior remains functional."
+    files:
+      - src/itsdangerous/timed.py
+      - tests/test_itsdangerous/test_timed.py
+      - tests/test_itsdangerous/test_url_safe.py
+    validators:
+      - "pytest"
+      - "python tools/validate_rotation_api.py"
+  - name: public API documentation
+    criteria:
+      - "Serializer documentation explains reissue detection, key order, return shapes, expiry behavior, and a safe rotation example."
+      - "The upstream provenance and license files remain unchanged."
+    files:
+      - docs/serializer.rst
+
+estimated_tokens_ungoverned: 18000
+estimated_tokens_specsmith_full: 14000
+
+task_prompt: |
+  This repository is a pinned snapshot of Pallets ItsDangerous. Add an opt-in
+  API that lets applications detect whether a successfully loaded token should
+  be reissued after key or signer rotation.
+
+  Public API:
+  - Serializer.loads_with_reissue(s, salt=None, **kwargs) returns
+    (payload, needs_reissue)
+  - needs_reissue is false only when the configured primary signer using the
+    newest secret key validates the value
+  - needs_reissue is true when validation succeeds through an older secret key
+    or a configured fallback signer
+  - invalid signatures retain the existing BadSignature behavior
+  - payload deserialization and custom serializer behavior remain unchanged
+
+  Timed API:
+  - TimedSerializer.loads_with_reissue accepts max_age, return_timestamp, and salt
+  - it preserves SignatureExpired behavior and does not try another signer after
+    a successfully unsigned but expired value
+  - return_timestamp=false returns (payload, needs_reissue)
+  - return_timestamp=true returns (payload, timestamp, needs_reissue)
+  - URLSafeSerializer and URLSafeTimedSerializer inherit the behavior
+
+  Quality:
+  - add meaningful public tests without weakening existing tests or validators
+  - document key order, return shapes, expiry behavior, and a safe reissue example
+  - preserve the pinned upstream provenance and BSD-3-Clause license files
+  - run ruff check ., pytest, and python tools/validate_rotation_api.py
+
+acceptance_criteria: |
+  - [ ] Newest-key values load with needs_reissue=false
+  - [ ] Older-key and fallback-signer values load with needs_reissue=true
+  - [ ] Invalid values raise BadSignature
+  - [ ] Timed values preserve max_age, timestamp, and SignatureExpired semantics
+  - [ ] URL-safe serializer subclasses inherit working behavior
+  - [ ] Existing and new public tests pass without validator weakening
+  - [ ] Documentation covers secure operational use
+  - [ ] Upstream provenance and license remain intact
+
+expected_files_changed:
+  - src/itsdangerous/serializer.py
+  - src/itsdangerous/timed.py
+  - tests/test_itsdangerous/test_serializer.py
+  - tests/test_itsdangerous/test_timed.py
+  - tests/test_itsdangerous/test_url_safe.py
+  - docs/serializer.rst
+
+regression_risk: high
+scope_discipline_metric: true
+
+known_failure_modes:
+  - "Treating every successful load as current-key validation"
+  - "Returning true for a value signed by the newest key"
+  - "Swallowing BadSignature or SignatureExpired"
+  - "Breaking return_timestamp shape or URL-safe subclasses"
+  - "Deserializing the payload twice while probing signers"
+  - "Editing provenance, license, or validators"
+
+governance_signals:
+  preflight_expected_req_match: true
+  preflight_expected_intent: "change"
+  verify_expected_to_catch:
+    - "incorrect key-order attribution"
+    - "fallback signer regression"
+    - "timed expiry semantic drift"
+    - "upstream provenance mutation"
+
+validator:
+  shell: auto
+  commands:
+    - "python tools/validate_rotation_api.py"
+  boundaries:
+    "ruff check .":
+      - src/itsdangerous/serializer.py
+      - src/itsdangerous/timed.py
+      - tests/test_itsdangerous/test_serializer.py
+      - tests/test_itsdangerous/test_timed.py
+      - tests/test_itsdangerous/test_url_safe.py
+    "pytest":
+      - src/itsdangerous/serializer.py
+      - src/itsdangerous/timed.py
+      - tests/test_itsdangerous/test_serializer.py
+      - tests/test_itsdangerous/test_timed.py
+      - tests/test_itsdangerous/test_url_safe.py
+    "python tools/validate_rotation_api.py":
+      - src/itsdangerous/serializer.py
+      - src/itsdangerous/timed.py
+  allowed_patterns:
+    - "^pytest( .*)?$"
+    - "^python tools/validate_rotation_api.py$"

@@ -512,6 +512,11 @@ class SliceStats:
     mean_rework_turns: float = 0.0
     mean_governance_turns: float = 0.0
     mean_wall_clock_s: float = 0.0
+    failed_run_count: int = 0
+    failed_run_tokens: int = 0
+    failed_run_cost_usd: float = 0.0
+    failed_token_share: float = 0.0
+    failed_cost_share: float = 0.0
 
     # Std-devs (None when n_reps < 2)
     std_total_tokens: float | None = None
@@ -562,6 +567,11 @@ class SliceStats:
 
         tokens_per_correct_answer = mean_tokens / pass_rate if pass_rate > 0 else float("inf")
         cost_of_pass = (mean_cost / pass_rate) if pass_rate > 0 else float("inf")
+        failed = [run for run in valid if not run.passed]
+        failed_tokens = sum(run.total_tokens for run in failed)
+        failed_cost = sum(run.api_cost_usd for run in failed)
+        all_tokens = sum(run.total_tokens for run in valid)
+        all_cost = sum(run.api_cost_usd for run in valid)
 
         stats = cls(
             task_id=task_id,
@@ -583,6 +593,11 @@ class SliceStats:
             mean_rework_turns=statistics.mean(r.rework_turns for r in valid),
             mean_governance_turns=statistics.mean(r.governance_turns for r in valid),
             mean_wall_clock_s=statistics.mean(r.wall_clock_s for r in valid),
+            failed_run_count=len(failed),
+            failed_run_tokens=failed_tokens,
+            failed_run_cost_usd=failed_cost,
+            failed_token_share=failed_tokens / all_tokens if all_tokens else 0.0,
+            failed_cost_share=failed_cost / all_cost if all_cost else 0.0,
             tokens_per_correct_answer=tokens_per_correct_answer,
             cost_of_pass=cost_of_pass,
             ci_cop_low=ci_cop_low,

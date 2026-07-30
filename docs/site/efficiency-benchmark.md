@@ -13,6 +13,9 @@ Benchmark spend now follows locked, versioned profiles:
 5. `release-controls`: T10/T13/T28, Cursor-style and FULL, n=10;
 6. `broad-release`: the eight-task Cursor/FULL matrix at n=10 for one aggregate
    same-commit release claim.
+7. `publication-matched`: T28/T29/T30 under raw, Cursor, and FULL at n=10;
+8. `publication-open-admission`, `publication-open-screen`, and
+   `publication-open-release`: sequential T30 FULL gates at n=1, n=5, and n=10.
 
 Profile task, condition, and repetition overrides fail closed. A failed n=1
 admission is repaired or rejected instead of repeated. The lower-tier-governed
@@ -35,6 +38,21 @@ retrieval-driven because its matching preload increased token use in
 admission. T28 still receives only its active milestone. These changes target
 retrieval turns without widening model-visible context or exposing evaluator
 evidence.
+
+## Frozen preprint-readiness replication
+
+Protocol `GB-PREPRINT-2026-07-30-V1` was frozen before its paid calls. It fixes
+the T28/T29/T30 task suite, raw/Cursor/FULL conditions, n=10 replication,
+OpenAI Responses Terra and Sol routes, six exact Hugging Face 20B–35B routes,
+controller v7, hidden-oracle policy, token budgets, failure accounting,
+uncertainty methods, and sequential promotion gates.
+
+T30 is a byte-hashed BSD-3-Clause snapshot of
+[Pallets ItsDangerous](https://github.com/pallets/itsdangerous) at commit
+`672971d66a2ef9f85151e53283113f33d642dabd`. Its untouched upstream test suite
+passes 297 tests. The starter fails the new rotation validator and hidden
+oracle, preventing no-op credit. Results are pending and no claim is changed
+until the frozen workflows complete.
 
 ## July 26 preregistered model-substitution release
 

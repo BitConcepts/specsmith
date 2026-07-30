@@ -247,10 +247,19 @@ code-only benchmarks.
 | Wave 1 expansion | `T14`–`T22` | `todo_api`, `data_pipeline`, `verilog_module`, `patent_draft` | Definitions available; hidden oracles pending |
 | Shell hardening suite | `T23`–`T27` | `shell_scripts` | Definitions available; hidden oracles pending |
 | Long-horizon product | `T28` | Python API, Go worker, React UI, Playwright, shared schema | Available with hidden oracle |
+| Fresh polyglot replication | `T29` | Independent release-control API, Go worker, React UI, schema | Available with hidden oracle |
+| Pinned upstream maintenance | `T30` | Pallets ItsDangerous at commit `672971d…`, Python and RST | Available with hidden oracle and file-hash manifest |
 | Wave 2 expansion | TBD | `ee_schematic`, `business_requirements`, `regulatory_doc`, `fpga_constraints` | Planned |
 
 Task availability does not imply empirical coverage. Claims must identify the exact
 tasks included in the matched run.
+
+The frozen preprint-readiness contract is
+`PREPRINT_PROTOCOL_2026_07.yml` (`GB-PREPRINT-2026-07-30-V1`). Its
+`publication-matched` profile runs T28, T29, and T30 under raw, Cursor-style,
+and Specsmith FULL conditions at n=10. Open routes use separate locked
+admission, n=5, and n=10 profiles and advance only after the prior gate passes.
+Raw rows and compact manifests carry the protocol digest.
 
 The current publication-eligible screen is `T1`, `T2`, `T6`, `T7`, `T10`,
 `T11`, `T13`, and `T28`. Its coding tasks have evaluator-only acceptance tests that

@@ -408,6 +408,27 @@ def render_report(
                 "",
             ]
 
+    lines += [
+        "## Failed-run expenditure",
+        "",
+        "Failed cells remain in every primary token and cost denominator. This table "
+        "makes their absolute expenditure visible rather than treating failures as free.",
+        "",
+        "| Task | Condition | Failed runs | Failed tokens | Failed cost "
+        "| Token share | Cost share |",
+        "|------|-----------|------------:|--------------:|------------:|------------:|-----------:|",
+    ]
+    for task in tasks:
+        for stats in slices_by_task.get(task.id, []):
+            lines.append(
+                f"| {task.id} | {stats.condition_id} | {stats.failed_run_count} | "
+                f"{_fmt_tokens(stats.failed_run_tokens)} | "
+                f"{_fmt_cost(stats.failed_run_cost_usd)} | "
+                f"{_fmt_pct(stats.failed_token_share)} | "
+                f"{_fmt_pct(stats.failed_cost_share)} |"
+            )
+    lines.append("")
+
     # ------------------------------------------------------------------
     # Section 3: Key findings and leaderboard narrative
     # ------------------------------------------------------------------

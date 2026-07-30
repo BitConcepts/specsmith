@@ -280,6 +280,7 @@ PROJECT_DIR_MAP: dict[str, str] = {
     "agentic-patent-draft": "patent_draft",
     "agentic-incident-console": "incident_console",
     "agentic-release-control-plane": "release_control_plane",
+    "upstream-itsdangerous-rotation": "itsdangerous_rotation",
 }
 
 
@@ -306,6 +307,18 @@ def _copy_project_fixture(source: Path, destination: Path) -> None:
             "*.pyc",
         ),
     )
+
+
+def _project_pythonpath(project_root: Path) -> str:
+    """Prefer a src-layout package while retaining root-level imports."""
+    paths = [project_root]
+    src = project_root / "src"
+    if src.is_dir():
+        paths.insert(0, src)
+    existing = os.environ.get("PYTHONPATH")
+    if existing:
+        paths.append(Path(existing))
+    return os.pathsep.join(str(path) for path in paths)
 
 
 def _openai_completion_token_param(model: str) -> dict[str, int]:
@@ -2826,7 +2839,7 @@ def _exec_list_files(project_root: Path, directory: str = ".") -> str:
 
 def _exec_run_command(project_root: Path, command: str) -> tuple[bool, str]:
     """Run ruff or pytest in the project root. Returns (passed, output)."""
-    env = {**os.environ, "PYTHONPATH": str(project_root)}
+    env = {**os.environ, "PYTHONPATH": _project_pythonpath(project_root)}
     if command == "ruff check . && pytest":
         lint_ok, lint_out = _exec_run_command(project_root, "ruff check .")
         if not lint_ok:
@@ -2927,7 +2940,7 @@ def _try_exec_with_specsmith_shell(
 def _run_validator_subprocess(
     project_root: Path, command: str, timeout_s: int = 90
 ) -> tuple[bool, str]:
-    env = {**os.environ, "PYTHONPATH": str(project_root)}
+    env = {**os.environ, "PYTHONPATH": _project_pythonpath(project_root)}
     if "&&" in command:
         parts = [part.strip() for part in command.split("&&") if part.strip()]
         all_output: list[str] = []

@@ -22,7 +22,7 @@ _PROJECTS = Path(__file__).with_name("projects")
 
 
 def collect_requirements(projects_dir: Path) -> list[str]:
-    """Return the de-duplicated runtime + optional deps across all demo projects."""
+    """Return de-duplicated runtime and test deps across all benchmark projects."""
     reqs: list[str] = []
     for pyproject in sorted(projects_dir.glob("*/pyproject.toml")):
         data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
@@ -30,6 +30,9 @@ def collect_requirements(projects_dir: Path) -> list[str]:
         reqs.extend(project.get("dependencies", []) or [])
         for deps in (project.get("optional-dependencies") or {}).values():
             reqs.extend(deps or [])
+        # PEP 735 dependency groups are used by pinned upstream repositories.
+        # Only the test group belongs in the benchmark grader environment.
+        reqs.extend((data.get("dependency-groups") or {}).get("tests", []) or [])
     return sorted(set(reqs))
 
 
