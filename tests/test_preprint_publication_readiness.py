@@ -13,6 +13,8 @@ if str(_SCRIPTS_DIR) not in sys.path:
 
 from govern_bench.export_evidence import export_evidence  # noqa: E402
 from govern_bench.harness import (  # noqa: E402
+    _build_provider_client,
+    _call_huggingface_provider,
     _copy_project_fixture,
     _exec_run_command,
     _exec_run_validator,
@@ -186,6 +188,68 @@ def test_upstream_dependency_group_is_provisioned() -> None:
     assert "freezegun" in requirements
     assert "pytest" in requirements
     assert "tox" not in requirements
+
+
+def test_huggingface_native_transport_normalizes_structured_content(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("HF_TOKEN", "test-token")
+    provider, client = _build_provider_client("huggingface")
+    captured: dict[str, object] = {}
+
+    def fake_post(
+        url: str,
+        *,
+        body: dict[str, object],
+        headers: dict[str, str] | None = None,
+        timeout_s: float = 120,
+    ) -> dict[str, object]:
+        captured.update(url=url, body=body, headers=headers, timeout_s=timeout_s)
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": {"text": "structured provider content"},
+                        "tool_calls": [
+                            {
+                                "id": "call-1",
+                                "function": {
+                                    "name": "read_file",
+                                    "arguments": {"path": "README.md"},
+                                },
+                            }
+                        ],
+                    },
+                    "finish_reason": "tool_calls",
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 10,
+                "completion_tokens": 4,
+                "prompt_tokens_details": {"cached_tokens": 2},
+            },
+        }
+
+    monkeypatch.setattr("govern_bench.harness._http_post_json", fake_post)
+    response = _call_huggingface_provider(
+        client,
+        "Qwen/Qwen3-Coder-30B-A3B-Instruct:scaleway",
+        [{"role": "user", "content": "inspect"}],
+        [],
+        tool_choice="auto",
+        timeout_s=30,
+    )
+
+    assert provider == "huggingface"
+    assert response.message.content == '{"text": "structured provider content"}'
+    assert response.message.tool_calls[0].name == "read_file"
+    assert response.message.tool_calls[0].arguments == '{"path": "README.md"}'
+    assert response.usage.prompt_tokens == 10
+    assert response.usage.completion_tokens == 4
+    assert response.usage.cached_tokens == 2
+    assert captured["url"] == "https://router.huggingface.co/v1/chat/completions"
+    assert captured["headers"] == {"Authorization": "Bearer test-token"}
+    assert captured["timeout_s"] == 30
 
 
 def test_github_collection_matches_src_layout_runtime_path() -> None:

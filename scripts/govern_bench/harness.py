@@ -3023,6 +3023,8 @@ def _stringify_content(content: Any) -> str:
             else:
                 parts.append(str(item))
         return "\n".join(parts).strip()
+    if isinstance(content, dict):
+        return json.dumps(content, ensure_ascii=False, sort_keys=True)
     return str(content)
 
 
@@ -3137,25 +3139,20 @@ def _build_provider_client(provider: str, base_url: str | None = None) -> tuple[
         return provider_key, {"api_key": api_key}
 
     if provider_key == "huggingface":
-        try:
-            import openai  # noqa: PLC0415
-        except ImportError as exc:
-            raise RuntimeError(
-                "openai package not installed; pip install openai to use provider=huggingface"
-            ) from exc
         hf_token = os.environ.get("HF_TOKEN", "")
         if not hf_token:
             raise RuntimeError(
                 "HF_TOKEN environment variable not set for provider=huggingface. "
                 "Get a token at https://huggingface.co/settings/tokens"
             )
-        # HF Inference API is OpenAI-compatible; we just point the OpenAI client at it.
-        return "openai-compat", openai.OpenAI(
-            api_key=hf_token,
-            base_url=_HF_INFERENCE_BASE_URL,
-            timeout=_request_timeout_seconds(),
-            max_retries=_provider_max_retries(),
-        )
+        # Use the router's native JSON transport. Some inference providers return
+        # response metadata that the OpenAI SDK assumes is scalar; parsing the
+        # documented OpenAI-compatible payload here keeps the frozen request
+        # contract while making provider normalization deterministic.
+        return provider_key, {
+            "api_key": hf_token,
+            "base_url": _HF_INFERENCE_BASE_URL,
+        }
 
     raise RuntimeError(f"Unsupported provider: {provider_key}")
 
@@ -3411,6 +3408,77 @@ def _call_openai_provider(
             ),
         ),
         finish_reason=str(getattr(response.choices[0], "finish_reason", "") or ""),
+    )
+
+
+def _call_huggingface_provider(
+    client: dict[str, str],
+    model: str,
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]],
+    *,
+    tool_choice: str | dict[str, Any] = "auto",
+    timeout_s: float | None = None,
+) -> NormalizedLLMResponse:
+    """Call the HF router without depending on SDK response coercion."""
+    payload: dict[str, Any] = {
+        "model": model,
+        "messages": messages,
+        "tools": tools,
+        "tool_choice": tool_choice,
+        **_openai_sampling_params(model),
+        **_completion_token_param("huggingface", model),
+    }
+    data = _http_post_json(
+        f"{client['base_url'].rstrip('/')}/chat/completions",
+        body=payload,
+        headers={"Authorization": f"Bearer {client['api_key']}"},
+        timeout_s=timeout_s if timeout_s is not None else _request_timeout_seconds(),
+    )
+    choices = data.get("choices") or []
+    if not choices or not isinstance(choices[0], dict):
+        raise RuntimeError("HF router returned no chat-completion choice")
+    choice = choices[0]
+    message = choice.get("message") or {}
+    if not isinstance(message, dict):
+        raise RuntimeError("HF router returned a non-object assistant message")
+
+    normalized_calls: list[NormalizedToolCall] = []
+    for raw_call in message.get("tool_calls") or []:
+        if not isinstance(raw_call, dict):
+            continue
+        function = raw_call.get("function") or {}
+        if not isinstance(function, dict):
+            continue
+        normalized_calls.append(
+            NormalizedToolCall(
+                id=str(raw_call.get("id") or f"tool_{uuid4().hex}"),
+                name=str(function.get("name") or ""),
+                arguments=_stringify_content(function.get("arguments") or "{}"),
+            )
+        )
+
+    usage = data.get("usage") or {}
+    if not isinstance(usage, dict):
+        usage = {}
+    prompt_details = usage.get("prompt_tokens_details") or {}
+    if not isinstance(prompt_details, dict):
+        prompt_details = {}
+    return NormalizedLLMResponse(
+        message=NormalizedAssistantMessage(
+            content=_stringify_content(message.get("content")),
+            tool_calls=normalized_calls,
+        ),
+        usage=NormalizedUsage(
+            prompt_tokens=_safe_int(usage.get("prompt_tokens")),
+            completion_tokens=_safe_int(usage.get("completion_tokens")),
+            cached_tokens=_safe_int(prompt_details.get("cached_tokens")),
+            cache_write_tokens=_safe_int(
+                prompt_details.get("cache_write_tokens") or usage.get("cache_write_tokens")
+            ),
+        ),
+        finish_reason=str(choice.get("finish_reason") or ""),
+        provider_metadata={"api_surface": "hf_router_chat_completions"},
     )
 
 
@@ -3779,11 +3847,18 @@ def _call_llm(
     tool_choice: str | dict[str, Any] = "auto",
     timeout_s: float | None = None,
 ) -> NormalizedLLMResponse:
-    # huggingface is normalised to "openai-compat" by _build_provider_client;
-    # both route through the same OpenAI-compatible call path.
     if provider in ("openai", "openai-compat"):
         return _call_openai_provider(
             provider,
+            client,
+            model,
+            messages,
+            tools,
+            tool_choice=tool_choice,
+            timeout_s=timeout_s,
+        )
+    if provider == "huggingface":
+        return _call_huggingface_provider(
             client,
             model,
             messages,
