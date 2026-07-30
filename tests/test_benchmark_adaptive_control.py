@@ -1620,6 +1620,23 @@ def test_qwen_agentic_coding_candidates_have_hf_routes_pricing_and_tiers() -> No
     )
 
 
+def test_qwen_route_recovery_is_isolated_and_priced() -> None:
+    registry = load_registry(_SCRIPTS_DIR / "govern_bench" / "models.yml")
+    candidates = select(registry, groups={"open-mid-route-recovery"})
+
+    assert candidates == [
+        {
+            "label": "qwen3.6-27b-ovhcloud",
+            "provider": "huggingface",
+            "model": "Qwen/Qwen3.6-27B:ovhcloud",
+            "group": "open-mid-route-recovery",
+            "tier": "open-mid",
+        }
+    ]
+    assert model_tier(candidates[0]["model"]) == "open-mid"
+    assert estimate_cost(candidates[0]["model"], 1_000_000, 1_000_000) == pytest.approx(3.66)
+
+
 def test_open_frontier_candidates_have_verified_routes_pricing_and_tiers() -> None:
     registry = load_registry(_SCRIPTS_DIR / "govern_bench" / "models.yml")
     candidates = select(registry, groups={"open-frontier"})

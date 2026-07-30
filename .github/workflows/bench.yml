@@ -56,7 +56,7 @@ on:
           - scalar-milestone-packet-authority-v7
         default: control
       groups:
-        description: "Model groups to run (comma-separated: open,open-qwen,open-mid-admission,open-mid-followup,open-frontier,open-direct,openai,openai-native,anthropic,google). Default: open."
+        description: "Model groups to run (comma-separated: open,open-qwen,open-mid-admission,open-mid-route-recovery,open-mid-followup,open-frontier,open-direct,openai,openai-native,anthropic,google). Default: open."
         required: false
         default: "open"
       providers:
@@ -139,6 +139,7 @@ jobs:
           python scripts/govern_bench/select_models.py --groups open --pretty
           python scripts/govern_bench/select_models.py --groups open-qwen --pretty
           python scripts/govern_bench/select_models.py --groups open-mid-admission --pretty
+          python scripts/govern_bench/select_models.py --groups open-mid-route-recovery --pretty
           python scripts/govern_bench/select_models.py --groups open-mid-followup --pretty
           python scripts/govern_bench/select_models.py --groups open-frontier --pretty
           python scripts/govern_bench/select_models.py --groups open-direct --pretty

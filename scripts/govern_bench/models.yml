@@ -83,6 +83,14 @@ models:
     model: Qwen/Qwen3.6-27B:deepinfra
     group: open-mid-admission
     tier: open-mid
+  - label: qwen3.6-27b-ovhcloud
+    provider: huggingface
+    # Workflow 30558352037 discovered OVHcloud as a distinct live,
+    # tool-capable route. Keep it outside the locked admission cohort so the
+    # serving-stack recovery does not silently pool with DeepInfra evidence.
+    model: Qwen/Qwen3.6-27B:ovhcloud
+    group: open-mid-route-recovery
+    tier: open-mid
   - label: gpt-oss-20b
     provider: huggingface
     # Groq returned HTTP 403 in live probe 30264148420. Nscale advertises
