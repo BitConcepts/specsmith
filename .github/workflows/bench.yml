@@ -93,6 +93,11 @@ on:
         required: false
         type: boolean
         default: false
+      list_providers:
+        description: "Probe diagnostics: list every live HF route while preserving configured route pins"
+        required: false
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -284,7 +289,13 @@ jobs:
           BENCH_OPENAI_COMPAT_API_KEY: ${{ secrets.BENCH_OPENAI_COMPAT_API_KEY }}
           BENCH_OPENAI_BASE_URL: ${{ vars.BENCH_OPENAI_BASE_URL || 'https://openrouter.ai/api/v1' }}
           BENCH_CONTROLLER_EXPERIMENT: ${{ github.event.inputs.experiment || 'control' }}
-        run: python scripts/govern_bench/probe_models.py --matrix matrix.json --live-call
+        run: |
+          PROVIDER_FLAG=""
+          [ "${{ github.event.inputs.list_providers }}" = "true" ] && PROVIDER_FLAG="--list-providers"
+          python scripts/govern_bench/probe_models.py \
+            --matrix matrix.json \
+            --live-call \
+            $PROVIDER_FLAG
 
   # ──────────────────────────────────────────────────────────────────────────
   # bench-matrix — one job per selected model. No continue-on-error: a model

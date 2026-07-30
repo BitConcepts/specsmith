@@ -66,6 +66,7 @@ from govern_bench.harness import (  # noqa: E402
     _write_paths_from_calls,
 )
 from govern_bench.metrics import estimate_cost, model_tier  # noqa: E402
+from govern_bench.probe_models import _pinned_result  # noqa: E402
 from govern_bench.select_models import load_registry, select  # noqa: E402
 from govern_bench.tasks import get_task  # noqa: E402
 
@@ -499,6 +500,8 @@ def test_benchmark_workflow_exposes_scoped_native_patch_experiment() -> None:
     assert "scalar-milestone-packet-authority-v7" in workflow
     assert "scalar-parallel-hybrid-v1" in workflow
     assert "scalar-parallel-hybrid-v2" in workflow
+    assert "list_providers:" in workflow
+    assert "--list-providers" in workflow
     native_workflow = (
         Path(__file__).parent.parent / ".github" / "workflows" / "qwen-native-bench.yml"
     ).read_text(encoding="utf-8")
@@ -509,6 +512,39 @@ def test_benchmark_workflow_exposes_scoped_native_patch_experiment() -> None:
     assert "scalar-milestone-packet-patch" in native_workflow
     assert "scalar-milestone-packet-authority" in native_workflow
     assert "scalar-milestone-packet-authority-v2" in native_workflow
+
+
+def test_pinned_probe_discovery_preserves_selected_route() -> None:
+    providers = [
+        {
+            "provider": "deepinfra",
+            "status": "live",
+            "supports_tools": True,
+        },
+        {
+            "provider": "scaleway",
+            "status": "live",
+            "supports_tools": True,
+        },
+        {
+            "provider": "offline-route",
+            "status": "staging",
+            "supports_tools": True,
+        },
+    ]
+
+    result = _pinned_result(
+        "Qwen/Qwen3.6-35B-A3B:scaleway",
+        "scaleway",
+        providers,
+    )
+
+    assert result["ok"]
+    assert [route["provider"] for route in result["live"]] == ["scaleway"]
+    assert [route["provider"] for route in result["available_live"]] == [
+        "deepinfra",
+        "scaleway",
+    ]
 
 
 def test_benchmark_deadlines_and_retry_policy_are_bounded(

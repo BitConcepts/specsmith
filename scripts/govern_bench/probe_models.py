@@ -95,11 +95,15 @@ def _pinned_result(model_id: str, pinned: str, providers: list[dict]) -> dict:
         error = f"pinned provider '{pinned}' does not support tools"
     else:
         error = None
+    available_live = [
+        provider for provider in providers if str(provider.get("status", "")).lower() == "live"
+    ]
     return {
         "model": model_id,
         "ok": error is None,
         "n_providers": len(providers),
         "live": [match] if (error is None and match is not None) else [],
+        "available_live": available_live,
         "error": error,
     }
 
@@ -140,6 +144,7 @@ def _probe_one(model_id: str, token: str | None, timeout: float) -> dict:
         "ok": bool(live),
         "n_providers": len(providers),
         "live": live,
+        "available_live": live,
         "error": None if live else "no live provider",
     }
 
@@ -485,6 +490,14 @@ def _parse_args() -> argparse.Namespace:
             "credits, and runtime support"
         ),
     )
+    parser.add_argument(
+        "--list-providers",
+        action="store_true",
+        help=(
+            "print every live inference-provider route reported for each Hugging "
+            "Face model while preserving the configured pin for the live call"
+        ),
+    )
     args = parser.parse_args()
     if args.registry is None:
         args.registry = str(Path(__file__).with_name("models.yml"))
@@ -510,8 +523,19 @@ def main() -> int:
             result = _probe_one(model_id, token, args.timeout)
             if result["ok"]:
                 print(f"OK {provider}/{model_id} ({result['n_providers']} provider(s))")
-                for live_provider in result["live"]:
-                    print(f"    {_fmt_provider(live_provider)}")
+                visible_providers = (
+                    result.get("available_live", []) if args.list_providers else result["live"]
+                )
+                _repo_id, pinned_provider = _split_route(model_id)
+                for live_provider in visible_providers:
+                    provider_name = str(live_provider.get("provider") or "")
+                    selected = (
+                        " [selected]"
+                        if pinned_provider
+                        and provider_name.casefold() == pinned_provider.casefold()
+                        else ""
+                    )
+                    print(f"    {_fmt_provider(live_provider)}{selected}")
                 if args.live_call:
                     result = _probe_chat_endpoint(
                         model_id,
