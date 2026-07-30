@@ -19,6 +19,7 @@ from govern_bench.harness import (  # noqa: E402
     _exec_run_command,
     _exec_run_validator,
     _get_project_dir,
+    _has_milestone_packet_argument_error,
     _install_acceptance_oracle,
     _project_pythonpath,
 )
@@ -250,6 +251,24 @@ def test_huggingface_native_transport_normalizes_structured_content(
     assert captured["url"] == "https://router.huggingface.co/v1/chat/completions"
     assert captured["headers"] == {"Authorization": "Bearer test-token"}
     assert captured["timeout_s"] == 30
+
+
+def test_milestone_packet_recovery_reads_normalized_tool_content() -> None:
+    assert _has_milestone_packet_argument_error(
+        [
+            {
+                "role": "tool",
+                "tool_call_id": "call-1",
+                "content": (
+                    "ERROR: at least path_1 and content_1 are required; "
+                    "provide a complete milestone packet"
+                ),
+            }
+        ]
+    )
+    assert not _has_milestone_packet_argument_error(
+        [{"role": "tool", "tool_call_id": "call-2", "content": "OK: wrote files"}]
+    )
 
 
 def test_github_collection_matches_src_layout_runtime_path() -> None:

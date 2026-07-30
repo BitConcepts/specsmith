@@ -2135,6 +2135,14 @@ def _noop_action_signature(
     ]
 
 
+def _has_milestone_packet_argument_error(tool_results: list[dict[str, Any]]) -> bool:
+    """Return whether a normalized tool result reports an invalid milestone packet."""
+    prefix = "ERROR: at least path_1 and content_1 are required"
+    return any(
+        _stringify_content(result.get("content")).startswith(prefix) for result in tool_results
+    )
+
+
 def _updated_repeated_noop_streak(
     prior: int,
     current_signature: str,
@@ -5212,10 +5220,7 @@ def _run_agent_loop(
         if (
             condition.id == "SPECSMITH_FULL"
             and invalid_milestone_packet_count
-            and any(
-                result.startswith("ERROR: at least path_1 and content_1 are required")
-                for result in tool_results
-            )
+            and _has_milestone_packet_argument_error(tool_results)
         ):
             remaining_paths = _next_incomplete_boundary_paths(task, files_written)
             retry_tool = "write_file" if len(remaining_paths) == 1 else "write_milestone"

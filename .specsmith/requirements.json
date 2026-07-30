@@ -4962,5 +4962,16 @@
       "TEST-518",
       "TEST-519"
     ]
+  },
+  {
+    "id": "REQ-492",
+    "version": 1,
+    "title": "Preregistered real-repository publication evidence",
+    "description": "GovernanceBench publication runs MUST fail closed against a byte-hashed, frozen preregistration that fixes task IDs, conditions, repetition counts, exact model/provider routes, controller protocol, metrics, failure accounting, and promotion gates before paid inference begins. The publication suite MUST include a license-preserving, commit-pinned snapshot of an independent upstream repository with public validators and an evaluator-only hidden oracle. Raw rows and compact evidence manifests MUST retain the preregistration identity and digest. Failed model runs MUST remain in token and cost denominators and their absolute expenditure MUST be reported. Open models in the 20B-35B band MUST advance sequentially from n=1 admission to n=5 screening and n=10 confirmation only when each frozen correctness and efficiency gate passes.",
+    "source": "Preprint publication-readiness protocol GB-PREPRINT-2026-07-30-V1",
+    "status": "implemented",
+    "test_ids": [
+      "TEST-520"
+    ]
   }
 ]

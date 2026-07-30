@@ -16,7 +16,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-import tomllib
+try:
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover - exercised by the Python 3.10 CI jobs
+    import tomli as tomllib
 
 _PROJECTS = Path(__file__).with_name("projects")
 

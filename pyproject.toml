@@ -50,6 +50,7 @@ dev = [
     "ruff>=0.4",
     "mypy>=1.10",
     "pre-commit>=3.0",
+    "tomli>=2.0; python_version < '3.11'",
     "types-pyyaml>=6.0",
 ]
 esdb = [
