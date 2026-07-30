@@ -80,6 +80,16 @@ consolidated into the next published release.
   $0.120940 mean cost, five turns, 100% first-pass, and 1.62% CV. Relative to
   v5 n=10, tokens fell 12.5%, cost 5.3%, and turns 12.3%, while first-pass
   rose 70 percentage points.
+- Add versioned Qwen hybrid controllers that combine automatic parallel scalar
+  construction, active T29 packets, controller-owned validators, v7 public
+  invariants, and exact-patch recovery. Workflow `30552076420` showed 27B
+  truncation and post-tool continuation failure at 20,195 tokens, while 35B
+  DeepInfra timed out before producing model evidence; identical retry
+  `30552754670` failed its live probe. V2 raised only Qwen3.6's bounded output
+  allowance. In `30553392304`, 27B advanced through nine files and eight turns
+  before a provider timeout at 38,704 tokens; 35B/Scaleway completed Python
+  and Go milestones before a 504 at 11,526 tokens. Both artifacts remain
+  incomplete, are excluded from TPCA claims, and receive no n=5 promotion.
 - Normalize nested verification file-path evidence at CLI, governance,
   persistence, and risk-audit boundaries so malformed legacy or tampered work
   items cannot crash `specsmith audit`.

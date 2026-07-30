@@ -45,6 +45,9 @@ task-conditional substitution—not general small-model replacement.
 | [30545401727](https://github.com/layer1labs/specsmith/actions/runs/30545401727) | GPT-5.6 Terra / structured native Responses v6 | 5 fresh T29 FULL | 5/5 at 18.7k TPCA, 60% first-pass, zero UI repairs; two milestone-one Python repairs remain |
 | [30545048843](https://github.com/layer1labs/specsmith/actions/runs/30545048843) | GPT-5.6 Terra / structured native Responses v6 | 1 fresh T29 FULL | First-pass at 17.4k TPCA; admitted to n=5 |
 | [30547516220](https://github.com/layer1labs/specsmith/actions/runs/30547516220) | GPT-5.6 Terra / structured native Responses v7 | 10 fresh T29 FULL | 10/10 first-pass at 17.6k TPCA, five turns, 1.62% CV; audit clear |
+| [30553392304](https://github.com/layer1labs/specsmith/actions/runs/30553392304) | Qwen3.6-27B / DeepInfra hybrid v2 | 1 fresh T29 FULL | incomplete: nine files, eight turns, 38,704 tokens before provider timeout; no TPCA or promotion |
+| [30553392304](https://github.com/layer1labs/specsmith/actions/runs/30553392304) | Qwen3.6-35B-A3B / Scaleway hybrid v2 | 1 fresh T29 FULL | incomplete: Python and Go milestones passed, then provider 504 at 11,526 tokens; no TPCA or promotion |
+| [30552076420](https://github.com/layer1labs/specsmith/actions/runs/30552076420) | Qwen3.6-27B/35B-A3B hybrid v1 | 1 fresh T29 FULL each | 27B failed after truncation and empty continuations; 35B DeepInfra timed out; no model cleared admission |
 | [30546999004](https://github.com/layer1labs/specsmith/actions/runs/30546999004) | GPT-5.6 Terra / structured native Responses v7 | 5 fresh T29 FULL | 5/5 first-pass at 17.4k TPCA and five turns; promoted to n=10 |
 | [30546766992](https://github.com/layer1labs/specsmith/actions/runs/30546766992) | GPT-5.6 Terra / structured native Responses v7 | 1 fresh T29 FULL | First-pass at 17.4k TPCA; admitted to n=5 |
 | [30454018932](https://github.com/layer1labs/specsmith/actions/runs/30454018932) | GPT-5.6 Terra / structured native Responses v5 | 5 fresh T29 FULL | 5/5 at 18.1k TPCA, 80% first-pass, zero loop recoveries; promoted to n=10 |
@@ -161,6 +164,18 @@ zero high/critical audit findings. This clears the measured correctness
 blocker for the repaired commit without pooling incompatible runs.
 
 ## Managed Qwen findings
+
+The fresh-repository hybrid experiment combined automatic parallel scalar
+writes—the best earlier 27B interface—with active milestone packets,
+controller-owned validators, exact-patch recovery, and the successful T29 v7
+public invariants. V1 workflow `30552076420` found a 4,096-token completion
+boundary and unreliable post-tool continuation. V2 removed that truncation
+without changing the task or oracle: 27B implemented nine of ten files and
+passed Python and Go milestone checks before a later request timed out.
+DeepInfra's 35B route timed out in the first cell and again in the exact live
+probe (`30552754670`); Scaleway reached two validated milestones before a 504.
+These are useful serving/controller diagnostics, but all rows are incomplete,
+tokens per correct answer are undefined, and no route is eligible for n=5.
 
 The locked July 26 admission produced Qwen3.6's best correct managed T28 result
 so far: 67,701 tokens, twelve turns, $0.0249 measured route cost, and one stable

@@ -53,6 +53,12 @@ into the repository because the paper's statistics require only the compact
 measurements, while the larger fields may contain model-generated source or
 prompt text.
 
+Incomplete Qwen hybrid workflows `30552076420`, `30552754670`, and
+`30553392304` intentionally have no compact evidence directory. Their rows
+contain provider timeouts or 504 errors and fail the exporter's completeness
+contract, so they are cited as infrastructure-affected negative evidence in
+the preprint and RTD pages but excluded from statistical comparisons.
+
 Verify a compact directory from the repository root:
 
 ```bash

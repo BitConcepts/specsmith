@@ -372,6 +372,21 @@ GPT-OSS repetition or larger turn budget is justified.
 
 ## Qwen long-horizon diagnostic
 
+Fresh T29 hybrid workflows `30552076420`, `30552754670`, and `30553392304`
+exercise the audit's fail-closed infrastructure and promotion rules. V1 27B
+was a valid failed row: one completed milestone, 20,195 tokens, a recorded
+length stop, and two empty post-tool continuations. Its audit selected
+`repair_and_rerun`. V1 35B/DeepInfra exceeded the 120-second first-request
+deadline, and the identical follow-up failed the 60-second live probe, so the
+route is classified as censored infrastructure rather than a model result.
+
+Hybrid v2 raised only the Qwen3.6 output allowance. The 27B row then wrote nine
+files and reached eight turns before a later request timed out; 35B/Scaleway
+validated its Python and Go milestones before a 504. Both raw artifacts retain
+partial token and progress telemetry, but the audit marks them unusable,
+returns `reject_artifact`, and leaves TPCA undefined. The repeated gate is
+therefore closed for both models.
+
 [Workflow 29962883256](https://github.com/layer1labs/specsmith/actions/runs/29962883256)
 tested three managed Hugging Face routes at one repetition. All six T28 cells
 failed, so none has finite TPCA and none was promoted to a repeated screen.

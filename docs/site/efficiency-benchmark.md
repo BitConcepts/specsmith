@@ -761,6 +761,28 @@ Chat Completions compatibility mode to native Responses function tools.
 | [30546999004](https://github.com/layer1labs/specsmith/actions/runs/30546999004) | GPT-5.6 Terra, structured v7, fresh T29 | 5/5 | 17,405 | $0.1182 | 5 | 100% first-pass; expand to n=10 |
 | [30547516220](https://github.com/layer1labs/specsmith/actions/runs/30547516220) | GPT-5.6 Terra, structured v7, fresh T29 | 10/10 | 17,590 | $0.1209 | 5 | 100% first-pass; 1.62% CV; publish or expand |
 
+### Qwen hybrid T29 admissions
+
+The Qwen hybrid kept T29, FULL governance, public validators, hidden oracle,
+sampling, and bounded deadlines fixed. It replaced the native structured
+milestone writer with automatic parallel scalar writes for construction while
+retaining active packets, v7 public invariants, controller-owned validation,
+and exact-patch repair.
+
+| Workflow | Route | Result | Observed work | Tokens | Gate |
+|---|---|---|---|---:|---|
+| [30552076420](https://github.com/layer1labs/specsmith/actions/runs/30552076420) | Qwen3.6-27B / DeepInfra, hybrid v1 | incorrect | 1/4 milestones; output truncation followed by two empty continuations | 20,195 | repair only |
+| [30552076420](https://github.com/layer1labs/specsmith/actions/runs/30552076420) | Qwen3.6-35B-A3B / DeepInfra, hybrid v1 | censored | first request exceeded the 120-second bound | 0 | reject artifact |
+| [30552754670](https://github.com/layer1labs/specsmith/actions/runs/30552754670) | Qwen3.6-35B-A3B / DeepInfra, identical retry | censored | live tool probe timed out after 60 seconds | 0 | route rejected |
+| [30553392304](https://github.com/layer1labs/specsmith/actions/runs/30553392304) | Qwen3.6-27B / DeepInfra, hybrid v2 | incomplete | nine files, eight turns; Python and Go passed before a later request timeout | 38,704 | reject artifact |
+| [30553392304](https://github.com/layer1labs/specsmith/actions/runs/30553392304) | Qwen3.6-35B-A3B / Scaleway, hybrid v2 | incomplete | Python and Go milestones passed first-pass; third request returned 504 | 11,526 | reject artifact |
+
+V2 changed only Qwen3.6's per-turn output allowance from 4,096 to a bounded
+8,192 tokens. That removed v1's truncation and materially increased milestone
+yield, but it did not produce a complete row. Provider-error rows are excluded
+from TPCA by design. Neither model earns n=5, and these admissions provide no
+support for a small-model replacement claim.
+
 Every correct listed row passed public validators and the hidden oracle and
 completed all four milestones; repair cycles and first-pass rates are reported
 explicitly above. The earlier native Terra

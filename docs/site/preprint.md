@@ -33,6 +33,7 @@ favorable point estimate.
 | Published 8B or mini models replace frontier models | A small-model admission, matched n=5 screen, and n=10 release gate all pass | Rejected for current routes: Llama 3.1 8B and GPT-4o mini T28 admissions failed |
 | A reasoning-capable 20B–32B model can complete governed T28 | Correct public checks and independent oracle in admission | Supported at n=1 for Qwen3.6-27B/DeepInfra; the best controller diagnostic used 26,850 tokens and 6 turns |
 | A 20B–32B governed model replaces frontier Sol efficiently | Correct admission inside the versioned Sol envelope, then matched n=5 and n=10 gates | Not supported: the best correct 27B cell still used 1.53× the Sol token envelope and has no matched n=5 confirmation |
+| Qwen3.6-27B/35B completes fresh T29 on the hybrid controller | Complete public and hidden correctness at admission, followed by matched n=5 and n=10 gates | Not established: v2 increased milestone yield, but 27B timed out after nine files and 35B/Scaleway received a 504 after two validated milestones; both artifacts are incomplete |
 | Native Responses tools improve the governed T28 model/cost frontier | Same-controller route admission followed by matched n=5 and n=10 confirmation | Route-specific support: structured-schema Sol passed an independent 10/10 confirmation at 17,907 TPCA and 1.77% CV; Terra's separate fixed-schema n=5 remains lower-cost at 17,213 TPCA; no cross-task native claim |
 | Small models universally replace frontier models | Broad external replication across fresh repositories, languages, providers, and task distributions | Not claimed |
 
@@ -105,6 +106,26 @@ correct admission, but it is a separate n=1 controller diagnostic and remains
 context-compaction, and validator-authority variants did not beat it.
 Accordingly the result supports interface optimization, not frontier
 replacement or a broad small-model claim.
+
+The later fresh-repository hybrid experiment tested whether that interface
+gain transferred to T29. Hybrid v1 combined scalar-parallel construction with
+milestone packets, controller-owned validators, exact-patch recovery, and the
+T29 v7 public invariants. In
+[workflow 30552076420](https://github.com/layer1labs/specsmith/actions/runs/30552076420),
+27B completed one milestone at 20,195 tokens but hit a 4,096-token length stop
+and two empty continuations; 35B/DeepInfra exceeded the first-request timeout.
+An identical 35B retry
+([30552754670](https://github.com/layer1labs/specsmith/actions/runs/30552754670))
+failed its live probe and is classified as infrastructure-censored.
+
+Hybrid v2 changed only the Qwen3.6 output allowance to 8,192 tokens.
+[Workflow 30553392304](https://github.com/layer1labs/specsmith/actions/runs/30553392304)
+then advanced 27B through nine files and eight turns before a provider timeout
+at 38,704 tokens. The alternate 35B/Scaleway route completed and validated the
+Python and Go milestones before a 504 at 11,526 tokens. This establishes that
+the bounded allowance repaired truncation and increased milestone yield, but
+not end-to-end reliability. Both rows are incomplete, TPCA is undefined, and
+neither route passes admission or earns repeated gates.
 
 A subsequent native-interface series provides a controlled mechanism result.
 Changing only the managed Qwen route did not help: Coder-Next and Coder-480B

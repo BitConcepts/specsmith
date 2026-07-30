@@ -86,6 +86,20 @@ constraints explicit: admission `30546766992`, n=5 `30546999004`, and n=10
 17,589.9 TPCA, $0.120940 mean cost, five turns, and 1.62% sample CV; the audit
 selects `publish_or_expand`.
 
+The subsequent open-model hybrid experiment is negative evidence. Versioned
+`scalar-parallel-hybrid-v1` combined the best Qwen scalar-parallel construction
+interface with milestone packets, controller-owned validation, v7 invariants,
+and exact-patch recovery. In workflow `30552076420`, Qwen3.6-27B stopped after
+one milestone at 20,195 tokens when a 4,096-token completion truncated and the
+route returned two empty continuations; Qwen3.6-35B-A3B/DeepInfra timed out
+before its first completion. Identical retry `30552754670` timed out in the
+35B live probe. V2 changed only Qwen3.6's per-turn allowance to 8,192 tokens.
+Workflow `30553392304` then advanced 27B through nine files and eight turns
+before a provider timeout at 38,704 tokens. The alternate 35B Scaleway route
+completed the Python and Go milestones before a 504 at 11,526 tokens. Both
+rows are incomplete infrastructure-affected artifacts, not correctness or
+TPCA results; neither earns n=5 and no small-model replacement claim follows.
+
 ---
 
 ## Quick Start

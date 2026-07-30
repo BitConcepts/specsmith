@@ -35,6 +35,7 @@ htmlcov/
 # Generated examples / test output
 .work/
 /site/
+.tmp/
 tmp/
 temp/
 *.log
