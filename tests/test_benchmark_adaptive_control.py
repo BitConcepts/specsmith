@@ -1769,6 +1769,39 @@ def test_audit_identifies_finish_reason_and_composite_payload_failures() -> None
     assert "do not infer truncation" in weaknesses["completion_truncation"].recommendation
 
 
+def test_audit_reports_native_tool_batch_and_patch_payload_recoveries() -> None:
+    row = _audit_row(condition="SPECSMITH_FULL", passed=True)
+    row["agent_transcript"] = [
+        {
+            "turn": 2,
+            "role": "controller",
+            "tool_batch_sanitization": {
+                "reason": "exact_duplicate_actions_collapsed",
+                "original_call_count": 65,
+                "effective_call_count": 6,
+                "dropped_duplicate_action_calls": 59,
+            },
+        },
+        {
+            "turn": 3,
+            "role": "controller",
+            "malformed_patch_payload": 1,
+            "forced_tool": "write_file",
+        },
+    ]
+
+    report = audit_benchmark_rows([row])
+    weaknesses = {item.code: item for item in report.weaknesses}
+
+    assert {"tool_call_amplification", "malformed_patch_payload"} <= set(weaknesses)
+    assert "59 exact duplicate" in weaknesses["tool_call_amplification"].evidence
+    assert "write_file" in weaknesses["malformed_patch_payload"].recommendation
+    assert report.next_experiment.action == "optimize_and_rerun"
+    assert {"tool_call_amplification", "malformed_patch_payload"} <= set(
+        report.next_experiment.evidence_codes
+    )
+
+
 def test_qwen_agentic_coding_candidates_have_hf_routes_pricing_and_tiers() -> None:
     registry = load_registry(_SCRIPTS_DIR / "govern_bench" / "models.yml")
     candidates = select(registry, groups={"open-qwen"})

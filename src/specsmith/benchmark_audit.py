@@ -140,6 +140,7 @@ def _next_experiment_decision(
         "controller_efficiency_regression",
         "cursor_efficiency_regression",
         "milestone_fragmentation",
+        "malformed_patch_payload",
         "first_pass_regression",
         "initial_scope_overread",
         "late_boundary_validation",
@@ -148,6 +149,7 @@ def _next_experiment_decision(
         "scope_expansion",
         "systematic_repair_hotspot",
         "token_amplification",
+        "tool_call_amplification",
         "tool_call_serialization",
         "tool_schema_discontinuity",
         "verification_repair_outlier",
@@ -858,6 +860,72 @@ def audit_benchmark_rows(
                 ),
                 tasks=sorted({str(row.get("task")) for row in invalid_composite_writes}),
                 conditions=sorted({str(row.get("condition")) for row in invalid_composite_writes}),
+            )
+        )
+
+    amplified_tool_batches: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    malformed_patch_rows: list[dict[str, Any]] = []
+    for row in valid:
+        for event in row.get("agent_transcript") or []:
+            if not isinstance(event, dict):
+                continue
+            sanitization = event.get("tool_batch_sanitization")
+            if isinstance(sanitization, dict):
+                amplified_tool_batches.append((row, sanitization))
+            if event.get("malformed_patch_payload"):
+                malformed_patch_rows.append(row)
+                break
+    if amplified_tool_batches:
+        duplicate_actions = sum(
+            _as_int(event.get("dropped_duplicate_action_calls"))
+            for _row, event in amplified_tool_batches
+        )
+        completion_signals = sum(
+            _as_int(event.get("dropped_done_calls")) for _row, event in amplified_tool_batches
+        )
+        affected_rows = {id(row): row for row, _event in amplified_tool_batches}
+        weaknesses.append(
+            BenchmarkWeakness(
+                code="tool_call_amplification",
+                severity=(
+                    "high"
+                    if duplicate_actions + completion_signals >= 16
+                    or any(not row.get("passed") for row in affected_rows.values())
+                    else "medium"
+                ),
+                title="Native parser amplified redundant tool calls",
+                evidence=(
+                    f"{len(affected_rows)} row(s) required deterministic sanitation across "
+                    f"{len(amplified_tool_batches)} batch(es), dropping {duplicate_actions} "
+                    f"exact duplicate action call(s) and {completion_signals} redundant "
+                    "completion signal(s)."
+                ),
+                recommendation=(
+                    "Keep semantic call deduplication enabled, then compare the identical "
+                    "cell with a smaller active boundary or stronger native tool-serving "
+                    "route; do not retain redundant calls in provider history."
+                ),
+                tasks=sorted({str(row.get("task")) for row in affected_rows.values()}),
+                conditions=sorted({str(row.get("condition")) for row in affected_rows.values()}),
+            )
+        )
+    if malformed_patch_rows:
+        unique_rows = {id(row): row for row in malformed_patch_rows}
+        weaknesses.append(
+            BenchmarkWeakness(
+                code="malformed_patch_payload",
+                severity="medium",
+                title="Native parser emitted a half-filled optional patch hunk",
+                evidence=(
+                    f"{len(unique_rows)} row(s) required a bounded whole-file fallback after "
+                    "atomic patch validation rejected a half-filled optional hunk."
+                ),
+                recommendation=(
+                    "Retain blank-unused-hunk normalization and the one-turn write_file "
+                    "fallback, then test whether a stricter parser route removes the recovery."
+                ),
+                tasks=sorted({str(row.get("task")) for row in unique_rows.values()}),
+                conditions=sorted({str(row.get("condition")) for row in unique_rows.values()}),
             )
         )
 
