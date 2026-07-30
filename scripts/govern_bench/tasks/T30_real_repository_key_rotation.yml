@@ -5,7 +5,7 @@ title: "Add key-rotation reissue diagnostics to a pinned ItsDangerous repository
 category: real_repository_maintenance
 difficulty: advanced
 project: upstream-itsdangerous-rotation
-horizon: standard
+horizon: long
 max_turns: 12
 enforce_completion_validators: true
 languages:
@@ -47,6 +47,8 @@ milestones:
       - "The upstream provenance and license files remain unchanged."
     files:
       - docs/serializer.rst
+    validators:
+      - "python tools/validate_rotation_docs.py"
 
 estimated_tokens_ungoverned: 18000
 estimated_tokens_specsmith_full: 14000
@@ -122,6 +124,7 @@ validator:
   shell: auto
   commands:
     - "python tools/validate_rotation_api.py"
+    - "python tools/validate_rotation_docs.py"
   boundaries:
     "ruff check .":
       - src/itsdangerous/serializer.py
@@ -138,6 +141,9 @@ validator:
     "python tools/validate_rotation_api.py":
       - src/itsdangerous/serializer.py
       - src/itsdangerous/timed.py
+    "python tools/validate_rotation_docs.py":
+      - docs/serializer.rst
   allowed_patterns:
     - "^pytest( .*)?$"
     - "^python tools/validate_rotation_api.py$"
+    - "^python tools/validate_rotation_docs.py$"

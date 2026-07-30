@@ -28,6 +28,7 @@ from govern_bench.metrics import RunResult, SliceStats  # noqa: E402
 from govern_bench.profiles import PROFILES  # noqa: E402
 from govern_bench.protocol import (  # noqa: E402
     DEFAULT_PROTOCOL_PATH,
+    RECOVERY_PROTOCOL_PATH,
     load_protocol,
     protocol_sha256,
     validate_run_contract,
@@ -63,6 +64,7 @@ def test_publication_contract_fails_closed_on_drift() -> None:
         repetitions=10,
         provider="openai-responses",
         model="gpt-5.6-terra",
+        controller="scalar-milestone-packet-authority-v7",
     )
     assert protocol_id == "GB-PREPRINT-2026-07-30-V1"
     assert digest == hashlib.sha256(DEFAULT_PROTOCOL_PATH.read_bytes()).hexdigest()
@@ -75,6 +77,7 @@ def test_publication_contract_fails_closed_on_drift() -> None:
             repetitions=10,
             provider="openai-responses",
             model="gpt-5.6-terra",
+            controller="scalar-milestone-packet-authority-v7",
         )
 
     with pytest.raises(ValueError, match="not a frozen route"):
@@ -85,7 +88,36 @@ def test_publication_contract_fails_closed_on_drift() -> None:
             repetitions=10,
             provider="openai-responses",
             model="unregistered-model",
+            controller="scalar-milestone-packet-authority-v7",
         )
+
+
+def test_recovery_protocol_is_frozen_and_scoped_to_invalidated_t30() -> None:
+    protocol = load_protocol(RECOVERY_PROTOCOL_PATH)
+
+    assert protocol["protocol_id"] == "GB-PREPRINT-2026-07-30-V2"
+    assert protocol["amendment"]["supersedes_protocol"] == "GB-PREPRINT-2026-07-30-V1"
+    assert protocol["amendment"]["invalidated_workflow"] == "30578319069"
+    assert protocol["amendment"]["invalidated_stratum"] == "T30"
+    assert protocol["amendment"]["preserved_v1_strata"] == ["T28", "T29"]
+    assert protocol["controls"]["controller"] == "scalar-milestone-packet-authority-v8"
+
+    profile = PROFILES["publication-real-repository-recovery"]
+    assert profile.tasks == ("T30",)
+    assert profile.conditions == ("UNGOVERNED", "CURSOR_RULES", "SPECSMITH_FULL")
+    assert profile.repetitions == 10
+
+    protocol_id, digest = validate_run_contract(
+        profile=profile.name,
+        tasks=list(profile.tasks),
+        conditions=list(profile.conditions),
+        repetitions=profile.repetitions,
+        provider="openai-responses",
+        model="gpt-5.6-sol",
+        controller="scalar-milestone-packet-authority-v8",
+    )
+    assert protocol_id == "GB-PREPRINT-2026-07-30-V2"
+    assert digest == hashlib.sha256(RECOVERY_PROTOCOL_PATH.read_bytes()).hexdigest()
 
 
 @pytest.mark.parametrize(
@@ -107,6 +139,7 @@ def test_open_model_routes_are_preregistered(provider: str, model: str) -> None:
         repetitions=1,
         provider=provider,
         model=model,
+        controller="scalar-milestone-packet-authority-v7",
     )
 
     assert protocol_id == "GB-PREPRINT-2026-07-30-V1"
@@ -168,6 +201,7 @@ def test_t30_is_a_pinned_real_repository_with_hidden_acceptance(tmp_path: Path) 
 
     assert task.project == "upstream-itsdangerous-rotation"
     assert task.project_subdir == "itsdangerous_rotation"
+    assert task.is_long_horizon
     assert task.max_turns == 12
     assert manifest["commit"] == "672971d66a2ef9f85151e53283113f33d642dabd"
     for item in manifest["files"]:
@@ -177,7 +211,15 @@ def test_t30_is_a_pinned_real_repository_with_hidden_acceptance(tmp_path: Path) 
     _copy_project_fixture(source, project)
     passed, _ = _exec_run_validator(project, task, "python tools/validate_rotation_api.py")
     assert not passed
+    passed, _ = _exec_run_validator(project, task, "python tools/validate_rotation_docs.py")
+    assert not passed
     _install_acceptance_oracle(task, project)
+    passed, output = _exec_run_command(
+        project,
+        "pytest .governancebench_oracle/test_acceptance.py"
+        "::test_pinned_provenance_and_license_are_preserved",
+    )
+    assert passed, output
     passed, _ = _exec_run_command(project, "pytest .governancebench_oracle")
     assert not passed
     assert str(project / "src") in _project_pythonpath(project)
@@ -314,3 +356,30 @@ def test_failed_run_expenditure_is_explicit_and_inclusive() -> None:
     assert stats.failed_run_cost_usd == pytest.approx(0.30)
     assert stats.failed_token_share == pytest.approx(0.75)
     assert stats.failed_cost_share == pytest.approx(0.75)
+
+
+def test_open_admission_status_cannot_claim_unearned_promotion() -> None:
+    status_path = Path(__file__).parents[1] / "paper/data/publication-open-admission-status.json"
+    status = json.loads(status_path.read_text(encoding="utf-8"))
+
+    assert status["protocol_id"] == "GB-PREPRINT-2026-07-30-V1"
+    assert status["protocol_sha256"] == protocol_sha256()
+    assert len(status["complete_results"]) == 3
+    assert all(not row["passed"] and not row["promoted"] for row in status["complete_results"])
+    assert status["promotion_outcome"]["admitted_models"] == []
+    assert status["promotion_outcome"]["screen_n5_runs"] == []
+    assert status["promotion_outcome"]["release_n10_runs"] == []
+    assert {row["classification"] for row in status["censored_routes"]} == {
+        "provider_incompatible",
+        "provider_unavailable",
+    }
+    assert status["expenditure"]["complete_failed_tokens"] == sum(
+        row["tokens"] for row in status["complete_results"]
+    )
+    assert status["expenditure"]["censored_partial_tokens"] == sum(
+        row["partial_tokens"] for row in status["censored_routes"]
+    )
+    assert status["expenditure"]["all_observed_tokens"] == (
+        status["expenditure"]["complete_failed_tokens"]
+        + status["expenditure"]["censored_partial_tokens"]
+    )

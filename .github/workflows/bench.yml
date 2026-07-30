@@ -24,6 +24,7 @@ on:
           - substitution-screen
           - substitution-release
           - publication-matched
+          - publication-real-repository-recovery
           - publication-open-admission
           - publication-open-screen
           - publication-open-release
@@ -58,6 +59,7 @@ on:
           - scalar-milestone-packet-authority-v5
           - scalar-milestone-packet-authority-v6
           - scalar-milestone-packet-authority-v7
+          - scalar-milestone-packet-authority-v8
         default: control
       groups:
         description: "Model groups to run (comma-separated: open,open-qwen,open-mid-admission,open-mid-route-recovery,open-mid-followup,open-frontier,open-direct,openai,openai-native,anthropic,google). Default: open."

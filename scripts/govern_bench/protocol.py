@@ -9,6 +9,10 @@ from typing import Any
 import yaml
 
 DEFAULT_PROTOCOL_PATH = Path(__file__).with_name("PREPRINT_PROTOCOL_2026_07.yml")
+RECOVERY_PROTOCOL_PATH = Path(__file__).with_name("PREPRINT_PROTOCOL_2026_07_V2.yml")
+PROTOCOL_PATH_BY_PROFILE = {
+    "publication-real-repository-recovery": RECOVERY_PROTOCOL_PATH,
+}
 
 
 def load_protocol(path: Path = DEFAULT_PROTOCOL_PATH) -> dict[str, Any]:
@@ -38,9 +42,11 @@ def validate_run_contract(
     repetitions: int,
     provider: str,
     model: str,
-    path: Path = DEFAULT_PROTOCOL_PATH,
+    controller: str,
+    path: Path | None = None,
 ) -> tuple[str, str]:
     """Fail closed unless a publication run matches its frozen contract."""
+    path = path or PROTOCOL_PATH_BY_PROFILE.get(profile, DEFAULT_PROTOCOL_PATH)
     payload = load_protocol(path)
     contract = (payload.get("contracts") or {}).get(profile)
     if not isinstance(contract, dict):
@@ -67,5 +73,11 @@ def validate_run_contract(
     if (provider, model) not in routes:
         raise ValueError(
             f"{provider}/{model} is not a frozen route for {profile}; allowed={sorted(routes)}"
+        )
+    expected_controller = str((payload.get("controls") or {}).get("controller") or "")
+    if controller != expected_controller:
+        raise ValueError(
+            f"{controller!r} is not the frozen controller for {profile}; "
+            f"expected {expected_controller!r}"
         )
     return str(payload["protocol_id"]), protocol_sha256(path)

@@ -261,6 +261,21 @@ and Specsmith FULL conditions at n=10. Open routes use separate locked
 admission, n=5, and n=10 profiles and advance only after the prior gate passes.
 Raw rows and compact manifests carry the protocol digest.
 
+The frozen T30 open-model admission is complete. Qwen3.6-27B, Qwen3-32B, and
+Qwen3-Coder-30B produced complete failed cells; GPT-OSS-20B, GLM-4.7-Flash,
+and Qwen3.6-35B were censored by their pinned provider routes. No candidate
+passed both public and hidden correctness, so no n=5 or n=10 profile was run.
+`paper/data/publication-open-admission-status.json` records complete,
+censored, superseded-infrastructure, promotion, and expenditure outcomes.
+
+V1 workflow `30578319069` later exposed an impossible T30 hidden invariant:
+the byte-identical Pallets license did not contain the literal SPDX label used
+by the oracle. Its T30 stratum is invalidated rather than scored. The separately
+frozen `GB-PREPRINT-2026-07-30-V2` protocol reruns only corrected T30 under
+`publication-real-repository-recovery`; it verifies the license by its pinned
+digest, exercises timed and documentation contracts publicly, and requires
+every declared milestone boundary before FULL completion.
+
 The current publication-eligible screen is `T1`, `T2`, `T6`, `T7`, `T10`,
 `T11`, `T13`, and `T28`. Its coding tasks have evaluator-only acceptance tests that
 are injected after the agent stops. A standard task without an oracle fails

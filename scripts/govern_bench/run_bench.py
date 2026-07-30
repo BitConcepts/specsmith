@@ -415,6 +415,7 @@ def main() -> int:
                 repetitions=args.reps,
                 provider=args.provider,
                 model=args.model,
+                controller=os.environ.get("BENCH_CONTROLLER_EXPERIMENT", "control"),
             )
         except ValueError as exc:
             print(f"\n[FATAL] Frozen publication protocol mismatch: {exc}", file=sys.stderr)

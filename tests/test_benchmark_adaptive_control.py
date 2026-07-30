@@ -408,6 +408,11 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
             ["write_file", "write_milestone", "patch_file", "done"],
             "auto",
         ),
+        (
+            "scalar-milestone-packet-authority-v8",
+            ["write_file", "write_milestone", "patch_file", "done"],
+            "auto",
+        ),
     ],
 )
 def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
@@ -439,6 +444,7 @@ def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
             "scalar-milestone-packet-authority-v5",
             "scalar-milestone-packet-authority-v6",
             "scalar-milestone-packet-authority-v7",
+            "scalar-milestone-packet-authority-v8",
         }:
             assert "bounded files array" in contract
             assert set(properties) == {"files"}
@@ -454,6 +460,7 @@ def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
                 "scalar-milestone-packet-authority-v5",
                 "scalar-milestone-packet-authority-v6",
                 "scalar-milestone-packet-authority-v7",
+                "scalar-milestone-packet-authority-v8",
             }:
                 assert {"type": "null"} in properties["path_2"]["anyOf"]
             native_tool = _openai_tools_to_responses([milestone_tool])[0]
@@ -503,6 +510,7 @@ def test_benchmark_workflow_exposes_scoped_native_patch_experiment() -> None:
     assert "scalar-milestone-packet-authority-v5" in workflow
     assert "scalar-milestone-packet-authority-v6" in workflow
     assert "scalar-milestone-packet-authority-v7" in workflow
+    assert "scalar-milestone-packet-authority-v8" in workflow
     assert "scalar-parallel-hybrid-v1" in workflow
     assert "scalar-parallel-hybrid-v2" in workflow
     assert "list_providers:" in workflow

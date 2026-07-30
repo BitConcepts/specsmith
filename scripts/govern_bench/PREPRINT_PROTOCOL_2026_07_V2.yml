@@ -1,0 +1,105 @@
+schema: governancebench-preregistration-v1
+protocol_id: GB-PREPRINT-2026-07-30-V2
+status: frozen
+frozen_at: "2026-07-30T22:35:02Z"
+publication_status: unpublished
+
+objective: >-
+  Recover the invalidated real-repository stratum of V1 without reusing its
+  impossible evaluator assertion or changing model routes, task scope,
+  conditions, repetitions, scoring, or statistical gates.
+
+amendment:
+  supersedes_protocol: GB-PREPRINT-2026-07-30-V1
+  supersedes_protocol_sha256: 92545b3923527811f0b7e43d05c2cb728ace475423f93d2f5ee5192288f90f74
+  invalidated_workflow: "30578319069"
+  invalidated_attempt: 1
+  invalidated_stratum: T30
+  invalidation_reason: >-
+    The hidden provenance test required the literal label "BSD 3-Clause" in
+    the untouched pinned LICENSE.txt even though the canonical upstream license
+    text does not contain that label. FULL completion also accepted public
+    equilibrium while declared milestone files remained unwritten.
+  preserved_v1_strata: [T28, T29]
+  corrections:
+    - Verify LICENSE.txt by its pinned upstream SHA-256 digest.
+    - Classify T30 as long-horizon so its declared milestones own context and validation.
+    - Require write evidence for every declared long-horizon milestone file before FULL completion.
+    - Exercise timed, URL-safe, documentation, and provenance requirements in public validators.
+    - Identify the corrected controller as scalar-milestone-packet-authority-v8.
+
+task_suite:
+  - id: T30
+    kind: pinned-upstream-repository
+    repository: https://github.com/pallets/itsdangerous
+    commit: 672971d66a2ef9f85151e53283113f33d642dabd
+    license: BSD-3-Clause
+    license_sha256: 63af09891b6be8ad1a4252ed43af0f4efba7fc948e228367bed7f3c5ae0b09d7
+
+conditions:
+  - UNGOVERNED
+  - CURSOR_RULES
+  - SPECSMITH_FULL
+
+contracts:
+  publication-real-repository-recovery:
+    tasks: [T30]
+    conditions: [UNGOVERNED, CURSOR_RULES, SPECSMITH_FULL]
+    repetitions: 10
+    routes:
+      - provider: openai-responses
+        model: gpt-5.6-terra
+      - provider: openai-responses
+        model: gpt-5.6-sol
+
+hypotheses:
+  - id: H1
+    statement: >-
+      SPECSMITH_FULL is non-inferior in correctness and lower in tokens per
+      correct answer than UNGOVERNED for the same model on corrected T30.
+  - id: H2
+    statement: >-
+      SPECSMITH_FULL is non-inferior in correctness and lower in tokens per
+      correct answer than CURSOR_RULES for the same model on corrected T30.
+  - id: H3
+    statement: >-
+      Governed Terra is non-inferior in correctness and lower in tokens per
+      correct answer than ungoverned Sol on corrected T30.
+
+metrics:
+  primary: tokens_per_correct_answer
+  secondary:
+    - pass_rate
+    - cost_of_pass
+    - first_pass_rate
+    - failed_run_tokens
+    - failed_run_cost_usd
+    - wall_clock_s
+  uncertainty:
+    pass_rate: wilson_95
+    cost_of_pass: deterministic_bootstrap_95_1000
+    substitution: paired_hierarchical_bootstrap_95_10000
+  failed_runs: included_in_all_token_and_cost_denominators
+
+controls:
+  hidden_oracle: installed_after_agent_completion
+  provider_retries: 0
+  task_repetition_ids: 1-through-N
+  controller: scalar-milestone-packet-authority-v8
+  tool_schema: stable-five-tool
+  benchmark_commit: recorded_from_workflow
+  model_sampling: pinned_model_card_defaults
+  task_budgets: task_metadata_max_turns
+  compare_same_provider_route: true
+
+claim_gates:
+  correctness_margin: -0.05
+  tpca_ratio_upper_95_max: 1.0
+
+analysis_rules:
+  - V1 T30 cells are invalidated and cannot be pooled with V2 correctness results.
+  - V1 T28 and T29 cells remain separate, protocol-labeled evidence.
+  - No controller, prompt, task, oracle, budget, or scoring change is allowed after this freeze.
+  - Infrastructure failures remain censored and are rerun only on the identical contract.
+  - Model failures count toward token and cost expenditure and cannot be discarded.
+  - Results support only the frozen repository, models, routes, and conditions.

@@ -1373,6 +1373,7 @@ def test_long_horizon_full_gate_requires_fresh_polyglot_validators() -> None:
     task = get_task("T28")
     accepted, instruction = _completion_gate("SPECSMITH_FULL", task, True, True, set())
     assert not accepted
+    assert "milestone 1/" in instruction
     assert "go -C worker test ./..." in instruction
     assert "python tools/validate_contract.py" in instruction
     assert "python tools/validate_ui.py" in instruction
@@ -1380,14 +1381,33 @@ def test_long_horizon_full_gate_requires_fresh_polyglot_validators() -> None:
     evidence: set[str] = set()
     for command in task.allowed_validator_commands:
         evidence = _updated_validator_evidence(command, True, evidence)
-    assert _completion_gate("SPECSMITH_FULL", task, True, True, evidence)[0]
+    assert not _completion_gate("SPECSMITH_FULL", task, True, True, evidence)[0]
+
+    milestone_files = [
+        str(path) for milestone in task.milestones for path in (milestone.get("files") or [])
+    ]
+    assert _completion_gate(
+        "SPECSMITH_FULL",
+        task,
+        True,
+        True,
+        evidence,
+        milestone_files,
+    )[0]
 
     evidence = _updated_validator_evidence(
         "python tools/validate_ui.py",
         False,
         evidence,
     )
-    assert not _completion_gate("SPECSMITH_FULL", task, True, True, evidence)[0]
+    assert not _completion_gate(
+        "SPECSMITH_FULL",
+        task,
+        True,
+        True,
+        evidence,
+        milestone_files,
+    )[0]
 
 
 def test_t28_visible_contract_validator_rejects_incomplete_starter(tmp_path: Path) -> None:

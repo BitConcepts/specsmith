@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from itsdangerous import Serializer
+from itsdangerous import SignatureExpired
 from itsdangerous import TimedSerializer
+from itsdangerous import URLSafeSerializer
+from itsdangerous import URLSafeTimedSerializer
 
 
 def main() -> int:
@@ -18,9 +23,45 @@ def main() -> int:
     assert old_reissue is True
 
     timed = TimedSerializer(["old-secret", "new-secret"])
-    timed_payload, timed_reissue = timed.loads_with_reissue(timed.dumps("ok"))
+    timed_current = timed.dumps("ok")
+    timed_old = TimedSerializer("old-secret").dumps("old")
+    timed_payload, timed_reissue = timed.loads_with_reissue(timed_current)
     assert timed_payload == "ok"
     assert timed_reissue is False
+
+    old_payload, old_reissue = timed.loads_with_reissue(timed_old)
+    assert old_payload == "old"
+    assert old_reissue is True
+
+    timestamp_payload, timestamp, timestamp_reissue = timed.loads_with_reissue(
+        timed_old,
+        return_timestamp=True,
+    )
+    assert timestamp_payload == "old"
+    assert isinstance(timestamp, datetime)
+    assert timestamp_reissue is True
+
+    try:
+        timed.loads_with_reissue(timed_old, max_age=-1)
+    except SignatureExpired:
+        pass
+    else:
+        raise AssertionError(
+            "expired timed values must retain SignatureExpired behavior"
+        )
+
+    url_safe = URLSafeSerializer(["old-secret", "new-secret"])
+    assert url_safe.loads_with_reissue(url_safe.dumps({"url": "safe"})) == (
+        {"url": "safe"},
+        False,
+    )
+    url_safe_timed = URLSafeTimedSerializer(["old-secret", "new-secret"])
+    assert url_safe_timed.loads_with_reissue(
+        url_safe_timed.dumps({"url": "timed"})
+    ) == (
+        {"url": "timed"},
+        False,
+    )
     return 0
 
 

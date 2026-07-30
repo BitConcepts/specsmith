@@ -108,6 +108,7 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
+        "scalar-milestone-packet-authority-v8",
     }
 )
 
@@ -448,6 +449,7 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
+        "scalar-milestone-packet-authority-v8",
     }
 
 
@@ -476,6 +478,7 @@ def _compact_context_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
+        "scalar-milestone-packet-authority-v8",
     }
 
 
@@ -499,6 +502,7 @@ def _native_edit_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
+        "scalar-milestone-packet-authority-v8",
     }
 
 
@@ -517,6 +521,7 @@ def _native_patch_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
+        "scalar-milestone-packet-authority-v8",
     }
 
 
@@ -537,6 +542,7 @@ def _scoped_read_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
+        "scalar-milestone-packet-authority-v8",
     }
 
 
@@ -631,6 +637,7 @@ def _milestone_bundle_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
+        "scalar-milestone-packet-authority-v8",
     }
 
 
@@ -647,6 +654,7 @@ def _milestone_packet_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
+        "scalar-milestone-packet-authority-v8",
         "scalar-parallel-hybrid-v1",
         "scalar-parallel-hybrid-v2",
     }
@@ -664,6 +672,7 @@ def _adaptive_required_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
+        "scalar-milestone-packet-authority-v8",
         "scalar-parallel-hybrid-v1",
         "scalar-parallel-hybrid-v2",
     }
@@ -685,6 +694,7 @@ def _stable_repair_schema_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
+        "scalar-milestone-packet-authority-v8",
         "scalar-parallel-hybrid-v1",
         "scalar-parallel-hybrid-v2",
     }
@@ -697,6 +707,7 @@ def _native_milestone_schema_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
+        "scalar-milestone-packet-authority-v8",
     }
 
 
@@ -710,6 +721,7 @@ def _validator_authority_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
+        "scalar-milestone-packet-authority-v8",
         "scalar-parallel-hybrid-v1",
         "scalar-parallel-hybrid-v2",
     }
@@ -1740,6 +1752,7 @@ def _versioned_milestone_criteria(task: BenchTask, index: int) -> list[str]:
         experiment
         in {
             "scalar-milestone-packet-authority-v7",
+            "scalar-milestone-packet-authority-v8",
             "scalar-parallel-hybrid-v1",
             "scalar-parallel-hybrid-v2",
         }
@@ -1758,6 +1771,7 @@ def _versioned_milestone_criteria(task: BenchTask, index: int) -> list[str]:
         in {
             "scalar-milestone-packet-authority-v6",
             "scalar-milestone-packet-authority-v7",
+            "scalar-milestone-packet-authority-v8",
             "scalar-parallel-hybrid-v1",
             "scalar-parallel-hybrid-v2",
         }
@@ -1822,7 +1836,7 @@ def _scope_progress(task: BenchTask, files_written: list[str]) -> str:
 def _next_incomplete_boundary_paths(task: BenchTask, files_written: list[str]) -> list[str]:
     """Return only the active requirement boundary, never the entire repository."""
     written = {_normalized_history_path(path) for path in files_written}
-    if task.is_long_horizon and task.milestones:
+    if task.milestones:
         for milestone in task.milestones:
             remaining = [
                 str(path)
@@ -4001,11 +4015,20 @@ def _completion_gate(
     lint_verified: bool,
     tests_verified: bool,
     validator_verified: set[str] | None = None,
+    files_written: list[str] | None = None,
 ) -> tuple[bool, str]:
     """Require fresh task-relevant verification before FULL may finish coding."""
     if condition_id != "SPECSMITH_FULL" or task.is_safety_task or task.is_clarification_task:
         return True, "Task marked complete."
     missing = []
+    if task.is_long_horizon and task.milestones:
+        active = _active_milestone(task, files_written or [])
+        if active is not None:
+            index, milestone, remaining = active
+            name = str(milestone.get("name") or f"milestone {index}")
+            missing.append(
+                f"milestone {index}/{len(task.milestones)} ({name}): " + ", ".join(remaining)
+            )
     if not lint_verified:
         missing.append("ruff check .")
     if not tests_verified:
@@ -4888,6 +4911,7 @@ def _run_agent_loop(
                     lint_verified,
                     tests_verified,
                     validator_verified,
+                    files_written,
                 )
                 completion_failures: list[str] = []
                 repair_receipts: list[str] = []
@@ -4924,6 +4948,7 @@ def _run_agent_loop(
                         lint_verified,
                         tests_verified,
                         validator_verified,
+                        files_written,
                     )
                     if completion_failures:
                         validation_failed = True
@@ -5599,6 +5624,7 @@ def _run_agent_loop(
                         "scalar-milestone-packet-authority-v5",
                         "scalar-milestone-packet-authority-v6",
                         "scalar-milestone-packet-authority-v7",
+                        "scalar-milestone-packet-authority-v8",
                         "scalar-parallel-hybrid-v1",
                         "scalar-parallel-hybrid-v2",
                     }
@@ -5623,6 +5649,7 @@ def _run_agent_loop(
                     "scalar-milestone-packet-authority-v5",
                     "scalar-milestone-packet-authority-v6",
                     "scalar-milestone-packet-authority-v7",
+                    "scalar-milestone-packet-authority-v8",
                     "scalar-parallel-hybrid-v1",
                     "scalar-parallel-hybrid-v2",
                 }

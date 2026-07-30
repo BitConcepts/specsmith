@@ -19,6 +19,22 @@ consolidated into the next published release.
 - Add T30, a commit-pinned BSD-3-Clause snapshot of Pallets ItsDangerous with
   upstream file hashes, unchanged 297-test baseline, a key-rotation maintenance
   task, public validators, and an evaluator-isolated hidden oracle.
+- Complete the frozen 20B-35B T30 admission lane without weakening its gates.
+  Qwen3.6-27B, Qwen3-32B, and Qwen3-Coder-30B produced complete failed cells
+  totaling 229,996 tokens and $0.080464; GPT-OSS-20B, GLM-4.7-Flash, and
+  Qwen3.6-35B remained censored by pinned-route incompatibility or repeated
+  timeouts after another 16,485 observed tokens and $0.002487. No route earned
+  n=5 or n=10 promotion.
+- Replace Hugging Face SDK response coercion in GovernanceBench with a bounded
+  native router JSON transport, normalize structured content deterministically,
+  fix invalid-milestone recovery to inspect tool-result content, and restore
+  Python 3.10 benchmark dependency collection with the conditional `tomli`
+  backport.
+- Invalidate the V1 T30 stratum after its evaluator incorrectly required a
+  non-upstream license label, replace that check with the pinned license digest,
+  expand public timed and documentation validators, block FULL completion while
+  declared milestone files remain unwritten, and freeze the corrected
+  `GB-PREPRINT-2026-07-30-V2` recovery protocol with controller v8.
 - Add separately labeled OpenAI Responses benchmark lanes for GPT-5.6 Sol,
   Terra, and Luna with native function tools, low-effort/low-verbosity controls,
   bounded requests, exact-prefix state continuation, provider-visible schema

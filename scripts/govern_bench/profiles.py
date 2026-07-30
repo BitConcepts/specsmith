@@ -75,6 +75,16 @@ PROFILES: dict[str, BenchmarkProfile] = {
             "and one pinned independent upstream repository."
         ),
     ),
+    "publication-real-repository-recovery": BenchmarkProfile(
+        name="publication-real-repository-recovery",
+        tasks=("T30",),
+        conditions=("UNGOVERNED", "CURSOR_RULES", "SPECSMITH_FULL"),
+        repetitions=10,
+        purpose=(
+            "Frozen V2 recovery of the invalidated V1 real-repository stratum "
+            "with corrected evaluator and completion invariants."
+        ),
+    ),
     "publication-open-admission": BenchmarkProfile(
         name="publication-open-admission",
         tasks=("T30",),

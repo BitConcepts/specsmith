@@ -75,13 +75,17 @@ def test_url_safe_subclasses_inherit_rotation_diagnostics() -> None:
     )
 
 
-def test_provenance_license_and_documentation_are_preserved() -> None:
+def test_pinned_provenance_and_license_are_preserved() -> None:
     provenance = (ROOT / "UPSTREAM.md").read_text(encoding="utf-8")
-    license_text = (ROOT / "LICENSE.txt").read_text(encoding="utf-8")
-    docs = (ROOT / "docs" / "serializer.rst").read_text(encoding="utf-8").casefold()
+    license_digest = hashlib.sha256((ROOT / "LICENSE.txt").read_bytes()).hexdigest()
 
     assert "672971d66a2ef9f85151e53283113f33d642dabd" in provenance
-    assert "bsd 3-clause" in license_text.casefold()
+    assert license_digest == "63af09891b6be8ad1a4252ed43af0f4efba7fc948e228367bed7f3c5ae0b09d7"
+
+
+def test_documentation_explains_reissue_contract() -> None:
+    docs = (ROOT / "docs" / "serializer.rst").read_text(encoding="utf-8").casefold()
+
     assert "loads_with_reissue" in docs
     assert "newest" in docs and "older" in docs
     assert "return_timestamp" in docs
