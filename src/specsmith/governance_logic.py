@@ -484,21 +484,14 @@ def run_verify(
         PreflightDecision,
         classify_retry_strategy,
     )
+    from specsmith.agent.verifier import count_test_failures
     from specsmith.wi_store import normalize_files_touched
 
     root = _safe_resolve(project_dir)
     files_changed = normalize_files_touched(files_changed)
     test_results = test_results or {}
 
-    failed = 0
-    for key in ("failed", "failures", "errors"):
-        try:
-            failed += int(test_results.get(key, 0) or 0)
-        except (TypeError, ValueError):
-            continue
-    raw_text = str(test_results.get("raw", "") or "").lower()
-    if "failed" in raw_text and not failed:
-        failed = 1
+    failed = count_test_failures(test_results)
 
     has_changes = bool(files_changed) or bool(diff)
     threshold = _read_confidence_threshold(root) or 0.7

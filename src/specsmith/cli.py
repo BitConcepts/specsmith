@@ -1177,6 +1177,7 @@ def verify_cmd(
         PreflightDecision,
         classify_retry_strategy,
     )
+    from specsmith.agent.verifier import count_test_failures
     from specsmith.wi_store import normalize_files_touched
 
     root = Path(project_dir).resolve()
@@ -1214,15 +1215,7 @@ def verify_cmd(
         files_changed = [p.strip() for p in files_changed.split(",") if p.strip()]
     files_changed = normalize_files_touched(files_changed)
 
-    failed = 0
-    for key in ("failed", "failures", "errors"):
-        try:
-            failed += int(test_results.get(key, 0) or 0)
-        except (TypeError, ValueError):
-            continue
-    raw_text = str(test_results.get("raw", "") or "").lower()
-    if "failed" in raw_text and not failed:
-        failed = 1
+    failed = count_test_failures(test_results)
     has_changes = bool(files_changed) or bool(payload_in.get("diff"))
 
     threshold = _read_confidence_threshold_floor(root) or 0.7

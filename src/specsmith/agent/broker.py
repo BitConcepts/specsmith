@@ -42,6 +42,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from specsmith.agent.verifier import count_test_failures
+
 
 def _safe_file_read(path: Path, encoding: str = "utf-8") -> str:
     """Read a file after validating it contains no path-traversal components.
@@ -648,16 +650,7 @@ def classify_retry_strategy(report: dict[str, Any], decision: PreflightDecision)
         return "rollback"
 
     # Test failures dominate everything else.
-    failed_count = 0
-    if isinstance(test_results, dict):
-        for key in ("failed", "failures", "errors"):
-            try:
-                failed_count += int(test_results.get(key, 0) or 0)
-            except (TypeError, ValueError):
-                continue
-        raw_text = str(test_results.get("raw", "") or "")
-        if "failed" in raw_text.lower():
-            failed_count = max(failed_count, 1)
+    failed_count = count_test_failures(test_results if isinstance(test_results, dict) else {})
     if failed_count > 0:
         return "fix_tests"
 

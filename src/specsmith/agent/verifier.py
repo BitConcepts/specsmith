@@ -15,7 +15,56 @@ measured confidence meets or exceeds the preflight ``confidence_target``.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
+from typing import Any
+
+_FAILURE_COUNT_RE = re.compile(r"\b(\d+)\s+(?:failed|failures?|errors?)\b", re.IGNORECASE)
+_PYTEST_FAILURE_LINE_RE = re.compile(r"^\s*(?:FAILED|ERROR)\s+\S+", re.MULTILINE)
+_BENIGN_FAILURE_TEXT_RE = re.compile(
+    r"\b(?:xfailed|not\s+failed|expected\s+failures?|no\s+failures?)\b",
+    re.IGNORECASE,
+)
+_AMBIGUOUS_FAILURE_RE = re.compile(r"\b(?:failed|failures?|errors?)\b", re.IGNORECASE)
+
+
+def count_test_failures(test_results: dict[str, Any] | None) -> int:
+    """Count real test failures without treating expected failures as failures.
+
+    Explicit structured fields are authoritative. If they are absent, common
+    numeric summaries and pytest failure records are parsed. Ambiguous
+    unstructured failure text fails closed.
+    """
+    results = test_results or {}
+    structured_seen = False
+    structured_invalid = False
+    failed = 0
+    for key in ("failed", "failures", "errors"):
+        if key not in results:
+            continue
+        structured_seen = True
+        value = results.get(key)
+        try:
+            if isinstance(value, (dict, list, set, tuple)):
+                failed += len(value)
+            else:
+                failed += max(0, int(value or 0))
+        except (TypeError, ValueError):
+            structured_invalid = True
+    if structured_seen:
+        return max(failed, 1 if structured_invalid else 0)
+
+    raw_text = str(results.get("raw", "") or "")
+    numeric_matches = [int(match.group(1)) for match in _FAILURE_COUNT_RE.finditer(raw_text)]
+    if numeric_matches:
+        return sum(numeric_matches)
+
+    pytest_records = _PYTEST_FAILURE_LINE_RE.findall(raw_text)
+    if pytest_records:
+        return len(pytest_records)
+
+    remainder = _BENIGN_FAILURE_TEXT_RE.sub("", raw_text)
+    return 1 if _AMBIGUOUS_FAILURE_RE.search(remainder) else 0
 
 
 @dataclass
