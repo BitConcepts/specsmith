@@ -312,6 +312,7 @@ def test_native_workflow_always_cleans_up_and_fails_closed() -> None:
     assert "Qwen/Qwen3.6-35B-A3B-FP8" in workflow
     assert "NATIVE_QWEN_REASONING_PARSER=qwen3" in workflow
     assert "NATIVE_QWEN_INSTANCE_TYPE=nvidia-a100" in workflow
+    assert workflow.count("NATIVE_QWEN_MAX_MODEL_LEN=65536") == 2
     assert "--language-model-only" in workflow
     assert 'BENCH_PROVIDER_MAX_RETRIES: "0"' in workflow
     assert "- required-only" in workflow
