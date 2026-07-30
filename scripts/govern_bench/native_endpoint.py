@@ -201,9 +201,16 @@ def probe_native_tool_parser(
         "model": model,
         "messages": [
             {
+                "role": "system",
+                "content": (
+                    "Use the supplied function whenever the user explicitly asks for it. "
+                    "Do not answer with prose."
+                ),
+            },
+            {
                 "role": "user",
                 "content": "Call record_probe exactly once with value native-qwen.",
-            }
+            },
         ],
         "tools": [
             {
@@ -221,7 +228,10 @@ def probe_native_tool_parser(
                 },
             }
         ],
-        "tool_choice": "required",
+        # qwen3_coder is an auto-tool parser. `required` has had compatibility
+        # regressions on reasoning-enabled Qwen routes, while the explicit
+        # instruction still makes a missing call fail this admission gate.
+        "tool_choice": "auto",
         "temperature": 0,
         "max_tokens": 128,
     }
@@ -235,7 +245,15 @@ def probe_native_tool_parser(
     message = (choices[0].get("message") or {}) if choices else {}
     calls = message.get("tool_calls") or []
     if len(calls) != 1:
-        raise RuntimeError(f"native parser probe returned {len(calls)} tool calls, expected one")
+        diagnostic = {
+            "finish_reason": choices[0].get("finish_reason") if choices else None,
+            "content": str(message.get("content") or "")[:300],
+            "reasoning_content": str(message.get("reasoning_content") or "")[:300],
+        }
+        raise RuntimeError(
+            f"native parser probe returned {len(calls)} tool calls, expected one: "
+            f"{json.dumps(diagnostic, sort_keys=True)}"
+        )
     function = calls[0].get("function") or {}
     if function.get("name") != "record_probe":
         raise RuntimeError("native parser probe returned the wrong tool name")
@@ -304,12 +322,6 @@ def deploy(
     )
     running_at = _utc_now()
     base_url = f"{str(endpoint.url).rstrip('/')}/v1"
-    probe = probe_native_tool_parser(
-        base_url,
-        model=model,
-        token=token,
-        timeout_s=probe_timeout_s,
-    )
     receipt = {
         "endpoint_name": safe_name,
         "namespace": namespace,
@@ -327,8 +339,25 @@ def deploy(
         "running_at": _iso(running_at),
         "deployment_seconds": round((running_at - created_at).total_seconds(), 3),
         "base_url": base_url,
-        "native_tool_probe": probe,
+        "native_tool_probe": {"passed": False, "status": "pending"},
     }
+    output.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+    try:
+        probe = probe_native_tool_parser(
+            base_url,
+            model=model,
+            token=token,
+            timeout_s=probe_timeout_s,
+        )
+    except Exception as exc:
+        receipt["native_tool_probe"] = {
+            "passed": False,
+            "status": "failed",
+            "error": f"{type(exc).__name__}: {exc}",
+        }
+        output.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
+        raise
+    receipt["native_tool_probe"] = probe
     output.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
     return receipt
 

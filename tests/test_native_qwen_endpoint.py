@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -11,6 +12,7 @@ _SCRIPTS_DIR = Path(__file__).parent.parent / "scripts"
 if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
+import govern_bench.native_endpoint as native_endpoint  # noqa: E402
 from govern_bench.native_endpoint import (  # noqa: E402
     DEFAULT_IMAGE,
     DEFAULT_MODEL,
@@ -186,7 +188,91 @@ def test_native_parser_probe_requires_exact_structured_tool_call() -> None:
     }
     assert captured["url"] == "https://native.example/v1/chat/completions"
     assert captured["timeout_s"] == 12
-    assert captured["payload"]["tool_choice"] == "required"
+    assert captured["payload"]["tool_choice"] == "auto"
+    assert captured["payload"]["messages"][0]["role"] == "system"
+
+
+def test_native_parser_probe_reports_compact_unparsed_response() -> None:
+    def post(_url: str, **_kwargs: Any) -> dict[str, Any]:
+        return {
+            "choices": [
+                {
+                    "finish_reason": "stop",
+                    "message": {
+                        "content": "I should call record_probe.",
+                        "reasoning_content": "The user requested a tool call.",
+                    },
+                }
+            ]
+        }
+
+    with pytest.raises(RuntimeError, match='"finish_reason": "stop"') as exc_info:
+        probe_native_tool_parser(
+            "https://native.example/v1",
+            model=DEFAULT_MODEL,
+            token="token",
+            timeout_s=12,
+            post=post,
+        )
+
+    assert "I should call record_probe." in str(exc_info.value)
+    assert "The user requested a tool call." in str(exc_info.value)
+
+
+def test_failed_probe_preserves_deployment_and_cost_receipt(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    class Api:
+        def __init__(self, **_kwargs: Any) -> None:
+            pass
+
+        def whoami(self, **_kwargs: Any) -> dict[str, str]:
+            return {"name": "owner"}
+
+        def create_inference_endpoint(self, *_args: Any, **_kwargs: Any) -> None:
+            pass
+
+    monkeypatch.setitem(sys.modules, "huggingface_hub", SimpleNamespace(HfApi=Api))
+    monkeypatch.setattr(
+        native_endpoint,
+        "wait_for_running",
+        lambda *_args, **_kwargs: SimpleNamespace(url="https://native.example"),
+    )
+
+    def fail_probe(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
+        raise RuntimeError("zero parsed calls")
+
+    monkeypatch.setattr(native_endpoint, "probe_native_tool_parser", fail_probe)
+    output = tmp_path / "receipt.json"
+
+    with pytest.raises(RuntimeError, match="zero parsed calls"):
+        native_endpoint.deploy(
+            name="specsmith-qwen-native-receipt",
+            output=output,
+            model="Qwen/Qwen3.6-27B-FP8",
+            image=DEFAULT_IMAGE,
+            tool_parser="qwen3_coder",
+            reasoning_parser="qwen3",
+            language_model_only=True,
+            instance_type="nvidia-a100",
+            instance_size="x1",
+            max_model_len=32_768,
+            hourly_cost_usd=2.50,
+            deploy_timeout_s=10,
+            probe_timeout_s=10,
+            token="token",
+        )
+
+    receipt = json.loads(output.read_text(encoding="utf-8"))
+    assert receipt["hourly_cost_usd"] == 2.50
+    assert receipt["created_at"]
+    assert receipt["running_at"]
+    assert receipt["native_tool_probe"] == {
+        "passed": False,
+        "status": "failed",
+        "error": "RuntimeError: zero parsed calls",
+    }
 
 
 def test_cleanup_attempts_delete_even_when_pause_fails() -> None:
