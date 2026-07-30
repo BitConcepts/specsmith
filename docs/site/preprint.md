@@ -29,11 +29,11 @@ favorable point estimate.
 | A lower-tier governed system substitutes for frontier raw on the mixed release suite | Preregistered eight-task 2×2 design, n=10, fixed-suite correctness and TPCA gates | Supported for Terra FULL versus Sol raw in workflow 30210886840 |
 | The result is robust to resampling the eight named tasks | Task-cluster correctness and TPCA confidence gates both pass | Supported within the benchmark distribution; this is not evidence on fresh repositories |
 | A lower-tier governed system substitutes on coding-only work | Prespecified coding slice clears the same correctness and TPCA gates | Not confirmed: observed results favor Terra FULL, but the correctness lower bound missed the margin by 0.7 pp |
-| The result generalizes to new repositories and task families | Independent replication across fresh real repositories, languages, providers, and task distributions | Not established: synthetic T29 v5 passed 10/10 at n=10, but first-pass was 30%, its audit requires optimization, and no fresh real repository was tested |
+| The result generalizes to new repositories and task families | Independent replication across fresh real repositories, languages, providers, and task distributions | Not established: synthetic T29 v7 passed 10/10 first-pass at n=10, but no fresh real repository was tested |
 | Published 8B or mini models replace frontier models | A small-model admission, matched n=5 screen, and n=10 release gate all pass | Rejected for current routes: Llama 3.1 8B and GPT-4o mini T28 admissions failed |
 | A reasoning-capable 20B–32B model can complete governed T28 | Correct public checks and independent oracle in admission | Supported at n=1 for Qwen3.6-27B/DeepInfra; the best controller diagnostic used 26,850 tokens and 6 turns |
 | A 20B–32B governed model replaces frontier Sol efficiently | Correct admission inside the versioned Sol envelope, then matched n=5 and n=10 gates | Not supported: the best correct 27B cell still used 1.53× the Sol token envelope and has no matched n=5 confirmation |
-| Qwen3.6-27B/35B completes fresh T29 on the hybrid controller | Complete public and hidden correctness at admission, followed by matched n=5 and n=10 gates | Not established: v2 increased milestone yield, but 27B timed out after nine files and 35B/Scaleway received a 504 after two validated milestones; both artifacts are incomplete |
+| Qwen3.6-27B/35B completes fresh T29 under hybrid/native governance | Complete public and hidden correctness at admission, followed by matched n=5 and n=10 gates | Rejected on tested routes: managed v2 remained incomplete; native 35B FP8 reached 3/4 milestones but failed at 105,087 tokens and 20 turns |
 | Native Responses tools improve the governed T28 model/cost frontier | Same-controller route admission followed by matched n=5 and n=10 confirmation | Route-specific support: structured-schema Sol passed an independent 10/10 confirmation at 17,907 TPCA and 1.77% CV; Terra's separate fixed-schema n=5 remains lower-cost at 17,213 TPCA; no cross-task native claim |
 | Small models universally replace frontier models | Broad external replication across fresh repositories, languages, providers, and task distributions | Not claimed |
 
@@ -126,6 +126,20 @@ Python and Go milestones before a 504 at 11,526 tokens. This establishes that
 the bounded allowance repaired truncation and increased milestone yield, but
 not end-to-end reliability. Both rows are incomplete, TPCA is undefined, and
 neither route passes admission or earns repeated gates.
+
+The final lane self-hosted `Qwen/Qwen3.6-35B-A3B-FP8` on one A100 with vLLM
+`0.24.0`, a 65,536-token context, and the native `qwen3_coder` plus `qwen3`
+parsers. Both cells passed exact native tool probes and clean endpoint
+pause/delete checks. Generic required-tool recovery
+([30566266722](https://github.com/layer1labs/specsmith/actions/runs/30566266722))
+failed after one milestone, 30,287 tokens, one length stop, and two empty
+continuations. Exact named-tool recovery
+([30567968596](https://github.com/layer1labs/specsmith/actions/runs/30567968596))
+advanced to three milestones but failed at 105,087 tokens and 20 turns. The
+controller removed 96 duplicate actions and recovered one malformed atomic
+patch, yet the row still missed the Go dependency, TypeScript query invariant,
+architecture file, and acceptance oracle. This converts the route question
+from infrastructure-censored to a valid negative admission; n=5 is not earned.
 
 A subsequent native-interface series provides a controlled mechanism result.
 Changing only the managed Qwen route did not help: Coder-Next and Coder-480B

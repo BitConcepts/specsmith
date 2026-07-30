@@ -136,35 +136,16 @@ the [`examples/policies`](examples/policies) directory.
 
 ## Governance efficiency benchmark
 
-The same-commit GPT-5.6 Sol n=10 replication completed 160/160 valid rows.
-FULL passed 80/80 at 10.7k tokens per correct answer (TPCA); the versioned
-Cursor-style condition passed 70/80 at 24.8k. On coding-only tasks both passed
-60/60, while FULL used 14.3k versus 27.1k TPCA.
+In the same-commit GPT-5.6 Sol n=10 replication, Specsmith FULL passed 80/80
+cells at 10.7k tokens per correct answer (TPCA); the versioned Cursor-style
+condition passed 70/80 at 24.8k. A separate preregistered mixed-suite run found
+Terra + FULL at 80/80 and 11.7k TPCA versus raw Sol at 65/80 and 28.0k; its
+coding-only correctness gate remained inconclusive.
 
-The preregistered matched n=10 substitution run found that GPT-5.6 Terra +
-FULL passed 80/80 mixed-suite cells at 11.7k TPCA, while frontier Sol raw
-passed 65/80 at 28.0k. Both mixed-suite confidence gates passed; the separate
-coding-only confidence gate remained inconclusive.
-
-For the long-horizon polyglot task, native structured milestone tools with
-GPT-5.6 Sol passed an independent 10/10 confirmation at 17.9k TPCA, five turns,
-and 1.77% coefficient of variation. The schema change reduced TPCA by 7.2%
-from the immediately preceding native controller diagnostic. A frozen-controller
-Terra replication was less stable: T28 passed 9/10 at 19.6k TPCA, while a new
-independent synthetic repository task initially passed 5/5 at 22.0k TPCA with
-0% first-pass completion. A trace-derived v5 screen then passed 5/5 at 18.1k
-TPCA and 80% first-pass. Its independent n=10 sample passed 10/10 at 20.1k
-TPCA, but first-pass completion fell to 30%; the audit found a recurring UI
-test-contract repair in 6/10 observed patch receipts and requires optimization
-before another confirmation. Versioned v6 made that invariant explicit:
-admission `30545048843` passed first-pass at 17.4k tokens, and n=5
-`30545401727` passed 5/5 at 18.7k TPCA with 60% first-pass and no UI repair.
-The remaining two repairs were milestone-one Python toolchain mistakes.
-Versioned v7 made those constraints explicit and passed an independent 10/10
-confirmation at 17.6k TPCA, five turns, 100% first-pass, and 1.62% CV.
-These results are task- and route-specific. Managed
-20B–32B and Qwen native-tool candidates have useful correct diagnostics but
-have not passed the repeated replacement gates, so Specsmith does not claim
+The fresh synthetic polyglot T29 package later passed an independent 10/10
+confirmation first-pass at 17.6k TPCA, five turns, and 1.62% CV. These are
+task-, route-, and benchmark-specific results. Published-size open models have
+not passed the repeated frontier-replacement gates, so Specsmith does not claim
 that small models generally replace frontier models.
 
 See the

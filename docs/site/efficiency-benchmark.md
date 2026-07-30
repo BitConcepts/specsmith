@@ -489,19 +489,19 @@ weakening the hidden oracle. They did not make the managed model reliable: only
 one of three recent Qwen3.6 cells was correct, all reached the turn ceiling, and
 the correct cell used 8.8× GPT-5.6 Sol FULL's 20.6k T28 TPCA.
 
-No managed Qwen result is promoted to n=5. A stronger infrastructure experiment
-is Qwen3-Coder-Next behind its native `qwen3_coder` parser in vLLM/SGLang or
-Qwen Code/Qwen-Agent, where multi-step tool semantics are part of the serving
-stack. The Novita runs are managed OpenAI-compatible route evidence, not native
-parser evidence. The official model cards are
+No managed Qwen result is promoted to n=5. These findings motivated the later
+native vLLM experiments, where multi-step tool semantics are part of the
+serving stack. The Novita runs remain managed OpenAI-compatible route evidence,
+not native-parser evidence. The official model cards are
 [Qwen3.6-35B-A3B](https://huggingface.co/Qwen/Qwen3.6-35B-A3B),
 [Qwen3-Coder-Next](https://huggingface.co/Qwen/Qwen3-Coder-Next), and
 [Qwen3-Coder-480B-A35B-Instruct](https://huggingface.co/Qwen/Qwen3-Coder-480B-A35B-Instruct).
 
 The `Qwen3.6-35B-A3B-FP8` repository was not offered by a managed Hugging Face
-Inference Provider during these probes. FP8 or a base model therefore belongs
-in a separately labelled self-hosted lane; combining it with managed routes
-would confound model quality, quantization, parser, and serving hardware.
+Inference Provider during these probes. It was therefore tested later in the
+separately labelled self-hosted lane reported below; those rows are not pooled
+with managed routes because model, quantization, parser, and serving hardware
+all differ.
 
 ## Reasoning-capable 20B–32B admission
 
@@ -776,12 +776,25 @@ and exact-patch repair.
 | [30552754670](https://github.com/layer1labs/specsmith/actions/runs/30552754670) | Qwen3.6-35B-A3B / DeepInfra, identical retry | censored | live tool probe timed out after 60 seconds | 0 | route rejected |
 | [30553392304](https://github.com/layer1labs/specsmith/actions/runs/30553392304) | Qwen3.6-27B / DeepInfra, hybrid v2 | incomplete | nine files, eight turns; Python and Go passed before a later request timeout | 38,704 | reject artifact |
 | [30553392304](https://github.com/layer1labs/specsmith/actions/runs/30553392304) | Qwen3.6-35B-A3B / Scaleway, hybrid v2 | incomplete | Python and Go milestones passed first-pass; third request returned 504 | 11,526 | reject artifact |
+| [30566266722](https://github.com/layer1labs/specsmith/actions/runs/30566266722) | Qwen3.6-35B-A3B-FP8 / native vLLM, generic required tools | incorrect | 1/4 milestones; output truncation followed by two empty continuations | 30,287 | repair only |
+| [30567968596](https://github.com/layer1labs/specsmith/actions/runs/30567968596) | Qwen3.6-35B-A3B-FP8 / native vLLM, named recovery tools | incorrect | 3/4 milestones; 96 duplicate actions removed; Go dependency and TypeScript repair remained | 105,087 | reject repetition |
 
 V2 changed only Qwen3.6's per-turn output allowance from 4,096 to a bounded
 8,192 tokens. That removed v1's truncation and materially increased milestone
 yield, but it did not produce a complete row. Provider-error rows are excluded
 from TPCA by design. Neither model earns n=5, and these admissions provide no
 support for a small-model replacement claim.
+
+The final two rows remove the managed-route ambiguity. Both provisioned an
+ephemeral A100 endpoint running vLLM `0.24.0`, the `qwen3_coder` tool parser,
+the `qwen3` reasoning parser, and a 65,536-token context; both passed an exact
+native tool probe and recorded clean pause/delete receipts. Selecting the
+controller's exact next repair tool fixed the generic route's immediate
+post-tool empty-response failure and increased completion from one to three
+milestones. It did not improve task efficiency or correctness: the final cell
+used 105,087 tokens and all 20 turns, never wrote `docs/architecture.md`, and
+failed the unchanged public and hidden gates. Native parsing is therefore
+compatible but insufficient, and neither native row earns paid replication.
 
 Every correct listed row passed public validators and the hidden oracle and
 completed all four milestones; repair cycles and first-pass rates are reported

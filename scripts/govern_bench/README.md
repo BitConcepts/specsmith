@@ -100,6 +100,15 @@ completed the Python and Go milestones before a 504 at 11,526 tokens. Both
 rows are incomplete infrastructure-affected artifacts, not correctness or
 TPCA results; neither earns n=5 and no small-model replacement claim follows.
 
+The final native Qwen3.6-35B-A3B-FP8 lane ran on A100/vLLM `0.24.0` with the
+`qwen3_coder` tool parser, `qwen3` reasoning parser, and 65,536-token context.
+Both workflows passed exact native tool probes and cleaned up their endpoints.
+Generic required-tool workflow `30566266722` failed after 1/4 milestones and
+30,287 tokens. Exact named-tool recovery in `30567968596` reached 3/4
+milestones but failed at 105,087 tokens and 20 turns after deterministic
+sanitation removed 96 duplicate actions. Both are valid failed rows; no n=5
+replication is admitted.
+
 ---
 
 ## Quick Start

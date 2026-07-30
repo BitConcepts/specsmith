@@ -3,7 +3,7 @@
 \usepackage[margin=0.75in]{geometry}
 \usepackage{amsmath}
 \usepackage{booktabs}
-\usepackage{microtype}
+\usepackage[expansion=false]{microtype}
 \usepackage{url}
 \usepackage[hidelinks]{hyperref}
 \usepackage[numbers,sort&compress]{natbib}
@@ -354,6 +354,20 @@ combined infrastructure cost. Thus native parser compatibility removes a
 serving-stack ambiguity but is insufficient for correctness, and globally
 required tool choice is rejected for this model and task.
 
+We then tested the newer Qwen3.6-35B-A3B-FP8 checkpoint on one A100 with vLLM
+0.24.0, a 65,536-token context, the native \texttt{qwen3\_coder} tool parser,
+and the \texttt{qwen3} reasoning parser. Both cells passed an exact tool probe
+and recorded successful endpoint pause and deletion. Generic required-tool
+recovery failed T29 after one of four milestones, 30,287 tokens, a length stop,
+and two empty continuations. Exact named-tool recovery advanced through three
+milestones but failed at 105,087 tokens and the 20-turn cap. Deterministic
+sanitation removed 96 duplicate actions, and bounded malformed-patch recovery
+still left Go dependency and TypeScript query repairs incomplete. The latter
+cell consumed 5.97 times the correct Terra T29 v7 token anchor without a correct
+answer. This valid native-route failure rejects repetition and shows that parser
+compatibility plus governance recovery did not substitute for model capability
+on the fresh polyglot task.
+
 The same controls were then exercised through the native Responses tool route
 of the stronger GPT-5.6 Sol system. Replacing eight fixed nullable file slots
 with one bounded strict array of file objects preserved all-or-nothing
@@ -402,6 +416,21 @@ to the favorable five-row estimate, mean tokens rose 11.3\%, cost 6.5\%, and
 turns 9.6\%. The audit therefore selects \texttt{optimize\_and\_rerun}, not
 clean promotion. This supplies exact-route, synthetic release-sized evidence
 while preserving the negative conclusion on real-repository generalization.
+
+Two further trace-derived packages tested whether those repair receipts could
+be moved into milestone-boundary constraints. Versioned v6 made the existing
+Playwright visibility criterion explicit and removed the recurring UI repair,
+but two of five rows still repaired milestone-one Python toolchain mistakes.
+Versioned v7 additionally made those observed constraints explicit. Its
+admission and five-row screen passed every row first-pass. The independent
+ten-row workflow 30547516220 then passed public and hidden validation in all
+ten rows first-pass at 17,589.9 mean tokens per correct answer, \$0.120940 mean
+estimated cost, five turns, and 1.62\% coefficient of variation. Relative to
+the v5 ten-row sample, mean tokens fell 12.5\%, estimated cost 5.3\%, and turns
+12.3\%, while first-pass completion rose 70 percentage points. This establishes
+a clean repeated result for the exact synthetic T29, Terra Responses, and FULL
+controller package; it still does not establish transfer to a fresh real
+repository.
 
 \section{Threats to Validity}
 

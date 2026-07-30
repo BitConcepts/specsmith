@@ -46,6 +46,11 @@ fields.
 | `native-terra-fresh-t29-v5-admission-30453721376` | 30453721376 | Trace-derived T29 v5 admission; first-pass at 17,407 tokens |
 | `native-terra-fresh-t29-v5-n5-30454018932` | 30454018932 | T29 v5 screen; 5/5 at 18,055 TPCA, 80% first-pass; promoted to n=10 |
 | `native-terra-fresh-t29-v5-n10-30457360342` | 30457360342 | T29 v5 n=10; 10/10 at 20,100 TPCA, 30% first-pass; optimize and rerun |
+| `native-terra-fresh-t29-v7-admission-30546766992` | 30546766992 | T29 v7 admission; 1/1 first-pass at 17,408 tokens |
+| `native-terra-fresh-t29-v7-n5-30546999004` | 30546999004 | T29 v7 screen; 5/5 first-pass at 17,405 mean TPCA |
+| `native-terra-fresh-t29-v7-n10-30547516220` | 30547516220 | Independent T29 v7 confirmation; 10/10 first-pass at 17,590 mean TPCA, five turns, 1.62% CV |
+| `qwen-native-35b-required-30566266722` | 30566266722 | Native Qwen3.6-35B FP8 T29 negative admission; failed after 1/4 milestones and 30,287 tokens |
+| `qwen-native-35b-named-30567968596` | 30567968596 | Native Qwen3.6-35B FP8 named-tool negative admission; failed after 3/4 milestones and 105,087 tokens |
 
 Full raw rows, traces, diffs, and validator output remain in the cited GitHub
 Actions artifacts for the configured retention period. They are not copied
@@ -58,6 +63,11 @@ Incomplete Qwen hybrid workflows `30552076420`, `30552754670`, and
 contain provider timeouts or 504 errors and fail the exporter's completeness
 contract, so they are cited as infrastructure-affected negative evidence in
 the preprint and RTD pages but excluded from statistical comparisons.
+
+The two native Qwen3.6-35B directories are retained because both rows satisfy
+the exporter's completeness contract. They are negative capability evidence,
+not TPCA samples: neither row passed, and neither enters any correctness or
+efficiency mean.
 
 Verify a compact directory from the repository root:
 

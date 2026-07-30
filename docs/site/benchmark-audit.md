@@ -387,6 +387,19 @@ partial token and progress telemetry, but the audit marks them unusable,
 returns `reject_artifact`, and leaves TPCA undefined. The repeated gate is
 therefore closed for both models.
 
+Native A100/vLLM admissions then removed the provider-censorship ambiguity.
+[Workflow 30566266722](https://github.com/layer1labs/specsmith/actions/runs/30566266722)
+passed the exact `qwen3_coder` parser probe but failed after one milestone,
+30,287 tokens, truncation, and two empty continuations. Forcing the exact
+controller-selected repair tool in
+[workflow 30567968596](https://github.com/layer1labs/specsmith/actions/runs/30567968596)
+advanced through three milestones, but still failed at 105,087 tokens and the
+20-turn cap. The new audit telemetry attributes 96 removed duplicate actions
+to `tool_call_amplification` and the rejected half-filled hunk to
+`malformed_patch_payload`. Because the second row is complete, incorrect, and
+5.97× the correct Terra T29 anchor before TPCA can even be defined, the audit
+rejects repetition rather than asking for a larger context or timeout.
+
 [Workflow 29962883256](https://github.com/layer1labs/specsmith/actions/runs/29962883256)
 tested three managed Hugging Face routes at one repetition. All six T28 cells
 failed, so none has finite TPCA and none was promoted to a repeated screen.

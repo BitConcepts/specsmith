@@ -76,6 +76,11 @@ See the [current executable results](../site/efficiency-benchmark.md) and the
   All used 20 turns and remain separate n=1 cells. Qwen3-Coder-Next/Novita runs
   `30007255204` and `30007554143` failed provider/tool admission and are not
   native-parser evidence.
+- Native Qwen3.6-35B-A3B-FP8 T29 admissions `30566266722` and `30567968596`
+  passed exact A100/vLLM `qwen3_coder` route probes but failed correctness at
+  30.3k/one milestone and 105.1k/three milestones. The latter removed 96
+  duplicate actions yet exhausted all 20 turns. Both are valid negative rows
+  and neither earns n=5.
 - Incomplete, cancelled, provider-error, and artifact-error attempts are
   diagnostic provenance only. They must not populate a comparison table.
 

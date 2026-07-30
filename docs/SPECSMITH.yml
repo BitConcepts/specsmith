@@ -17,3 +17,8 @@ author: Layer1 Labs
 url: https://github.com/layer1labs/specsmith
 
 aee_phase: release
+
+# This repository's ledger uses longer evidence-rich entries. Its 64 structured
+# entries are below the 300-entry compression floor, so use the supported
+# per-project limit instead of suppressing the ledger-size audit.
+ledger_line_threshold: 750

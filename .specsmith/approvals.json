@@ -170,5 +170,27 @@
     "scope": ".gitignore repository-local generated .tmp artifacts",
     "rationale": "User explicitly requested immediate completion of the Qwen hybrid experiment; .tmp ignore hygiene is independently verified by git check-ignore and all public CI, CodeQL, and benchmark smoke gates passed.",
     "requirement_ids": []
+  },
+  {
+    "approval_type": "implementation",
+    "work_item_id": "WI-61AA3A3B9D90",
+    "approver": "Tristen Pierson <98970594+tbitcs@users.noreply.github.com>",
+    "timestamp": "2026-07-30T16:46:47Z",
+    "scope": "REQ-490 managed Qwen route recovery",
+    "rationale": "User explicitly authorized complete benchmark-route implementation in this session; TEST-516 independent suite passed and the volatile OVH route was fail-closed.",
+    "requirement_ids": [
+      "REQ-490"
+    ]
+  },
+  {
+    "approval_type": "implementation",
+    "work_item_id": "WI-645120DAEDED",
+    "approver": "Tristen Pierson <98970594+tbitcs@users.noreply.github.com>",
+    "timestamp": "2026-07-30T16:46:55Z",
+    "scope": "REQ-490 native Qwen3.6 endpoint profiles",
+    "rationale": "User explicitly authorized complete native Qwen benchmark implementation in this session; 271 tests passed before publication and endpoint lifecycle cleanup is fail-closed.",
+    "requirement_ids": [
+      "REQ-490"
+    ]
   }
 ]

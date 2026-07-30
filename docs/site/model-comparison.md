@@ -45,6 +45,8 @@ task-conditional substitution—not general small-model replacement.
 | [30545401727](https://github.com/layer1labs/specsmith/actions/runs/30545401727) | GPT-5.6 Terra / structured native Responses v6 | 5 fresh T29 FULL | 5/5 at 18.7k TPCA, 60% first-pass, zero UI repairs; two milestone-one Python repairs remain |
 | [30545048843](https://github.com/layer1labs/specsmith/actions/runs/30545048843) | GPT-5.6 Terra / structured native Responses v6 | 1 fresh T29 FULL | First-pass at 17.4k TPCA; admitted to n=5 |
 | [30547516220](https://github.com/layer1labs/specsmith/actions/runs/30547516220) | GPT-5.6 Terra / structured native Responses v7 | 10 fresh T29 FULL | 10/10 first-pass at 17.6k TPCA, five turns, 1.62% CV; audit clear |
+| [30567968596](https://github.com/layer1labs/specsmith/actions/runs/30567968596) | Qwen3.6-35B-A3B-FP8 / native vLLM named tools | 1 fresh T29 FULL | failed at 105,087 tokens and 20 turns after 3/4 milestones; no TPCA or promotion |
+| [30566266722](https://github.com/layer1labs/specsmith/actions/runs/30566266722) | Qwen3.6-35B-A3B-FP8 / native vLLM required tools | 1 fresh T29 FULL | failed at 30,287 tokens and three turns after truncation and empty continuations |
 | [30553392304](https://github.com/layer1labs/specsmith/actions/runs/30553392304) | Qwen3.6-27B / DeepInfra hybrid v2 | 1 fresh T29 FULL | incomplete: nine files, eight turns, 38,704 tokens before provider timeout; no TPCA or promotion |
 | [30553392304](https://github.com/layer1labs/specsmith/actions/runs/30553392304) | Qwen3.6-35B-A3B / Scaleway hybrid v2 | 1 fresh T29 FULL | incomplete: Python and Go milestones passed, then provider 504 at 11,526 tokens; no TPCA or promotion |
 | [30552076420](https://github.com/layer1labs/specsmith/actions/runs/30552076420) | Qwen3.6-27B/35B-A3B hybrid v1 | 1 fresh T29 FULL each | 27B failed after truncation and empty continuations; 35B DeepInfra timed out; no model cleared admission |
@@ -177,6 +179,15 @@ probe (`30552754670`); Scaleway reached two validated milestones before a 504.
 These are useful serving/controller diagnostics, but all rows are incomplete,
 tokens per correct answer are undefined, and no route is eligible for n=5.
 
+The final native endpoint admissions made the route complete enough to judge.
+Both A100/vLLM cells passed exact tool probes under the official
+`qwen3_coder` parser and were cleaned up successfully. Generic required-tool
+recovery failed after one milestone at 30,287 tokens. Named recovery tools
+advanced to three milestones but failed at 105,087 tokens and 20 turns after
+the sanitizer removed 96 duplicate actions. This is stronger negative evidence
+than a provider timeout: the native route worked, while the unchanged model,
+controller, validators, and oracle did not clear admission.
+
 The locked July 26 admission produced Qwen3.6's best correct managed T28 result
 so far: 67,701 tokens, twelve turns, $0.0249 measured route cost, and one stable
 tool-schema hash. That is a 47.9% reduction from the prior 129,905-token correct
@@ -244,35 +255,31 @@ returned HTTP 400 before the first action, while `30007554143` wrote no files in
 
 ## Native Qwen experiment
 
-No same-route repetition was earned. The repository now defines the cleaner
-one-cell experiment in `.github/workflows/qwen-native-bench.yml`:
+The native serving question is now answered for two exact FP8 checkpoints.
+Qwen3-Coder-30B-A3B on L40S/vLLM `0.24.0` proved `qwen3_xml` parser
+compatibility and clean endpoint lifecycle, but atomic, scoped, and globally
+required-tool T28 cells all failed. Qwen3.6-35B-A3B-FP8 on A100/vLLM then
+proved `qwen3_coder` plus `qwen3` parser compatibility at 65,536 context.
 
-- `Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8`;
-- vLLM `v0.24.0` with automatic tool choice and `qwen3_xml`;
-- one L40S GPU, 32k context, exact native tool probe, and zero provider retries;
-- 20-minute deployment, 120-second request, and 15-minute cell bounds;
-- pause and delete attempted even when deployment or inference fails.
+| Workflow | Native policy | Result | Tokens | Main diagnosis |
+|---|---|---:|---:|---|
+| [30566266722](https://github.com/layer1labs/specsmith/actions/runs/30566266722) | generic required tools | fail | 30,287 | first milestone only; truncation and two empty continuations |
+| [30567968596](https://github.com/layer1labs/specsmith/actions/runs/30567968596) | exact named repair tool | fail | 105,087 | 3/4 milestones; duplicate-call amplification, malformed patch recovery, turn exhaustion |
 
-Workflow `30317300977` reached HF identity resolution but endpoint creation
-returned 403 because `HF_TOKEN` lacked `inference.endpoints.write`. No endpoint
-or model request was created. After that secret permission is corrected, rerun
-the existing workflow once; do not alter the model, parser, hardware, task,
-controller, or timeout bounds. A correct cell must also beat the current
-17,501.7-token Sol envelope before an n=5 screen is justified.
-
-If the literal-parser cell still fails, the next distinct lane is a Qwen-native
-agent scaffold such as Qwen Code or Qwen-Agent, with scaffold and endpoint
-metadata retained. A larger Coder-480B capacity control is lower priority
-because the Novita result already showed that parameter count alone did not
-repair tool-loop behavior.
+Named forcing fixed the immediate serving-continuation failure, not the
+efficiency frontier. The last row used 5.97× the 17,589.9-token Terra T29 v7
+anchor without producing a correct answer. No native Qwen row is eligible for
+n=5. A future open-model experiment must change model capability or the agent
+scaffold, not merely repeat parser, forcing, context, or timeout variants.
 
 ## FP8 and base variants
 
 The Qwen3.6 FP8 repository was not mapped to a managed Hugging Face Inference
-Provider during the probe. Test it only in a separately labelled self-hosted
-lane with exact hardware, quantization, runtime, parser, and sampling metadata.
-A base model is not the preferred tool agent without post-training or an agent
-scaffold; compare it as a scientific control, not as the expected winner.
+Provider, so the completed test used a separately labelled self-hosted lane
+with exact hardware, quantization, runtime, parser, and sampling metadata. A
+base model remains a scientific control, not the expected tool-agent winner:
+without post-training or an agent scaffold it would not repair the failure
+mode established by the instruction-tuned native route.
 
 ## Recommended comparison set
 

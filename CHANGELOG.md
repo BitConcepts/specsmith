@@ -90,6 +90,14 @@ consolidated into the next published release.
   before a provider timeout at 38,704 tokens; 35B/Scaleway completed Python
   and Go milestones before a 504 at 11,526 tokens. Both artifacts remain
   incomplete, are excluded from TPCA claims, and receive no n=5 promotion.
+- Complete native Qwen3.6-35B-A3B-FP8 T29 admissions on an ephemeral A100
+  endpoint with vLLM `0.24.0`, the `qwen3_coder` tool parser, `qwen3`
+  reasoning parser, 65,536-token context, bounded requests, and verified
+  cleanup. Generic required-tool workflow `30566266722` failed after one
+  milestone and 30,287 tokens. Exact named-tool recovery in `30567968596`
+  reached three milestones but failed at 105,087 tokens and 20 turns after
+  deterministic sanitation removed 96 duplicate actions. Archive both valid
+  negative rows and reject n=5 repetition.
 - Normalize nested verification file-path evidence at CLI, governance,
   persistence, and risk-audit boundaries so malformed legacy or tampered work
   items cannot crash `specsmith audit`.
