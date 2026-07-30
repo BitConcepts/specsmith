@@ -251,7 +251,12 @@ Re-audit using observed modifying-tool receipts attributes the recurring
 hotspot to `ui/tests/release-control.spec.ts` in 6/10 rows; the earlier
 aggregate label inferred the first path in a broader validator boundary.
 Versioned v6 makes the existing `toBeVisible()` criterion explicit at
-milestone three. It remains an unmeasured intervention pending admission.
+milestone three. Admission `30545048843` passed first-pass at 17,373 tokens.
+The earned n=5 screen `30545401727` passed 5/5 at 18,734.4 TPCA, $0.122941
+mean cost, 5.4 turns, and 60% first-pass; no row repaired the UI boundary.
+The remaining repairs were Ruff B008 on FastAPI `Query()` defaults and a
+nonexistent `pytest.ANY` sentinel at milestone one. Trace-derived v7 makes
+those public toolchain constraints explicit, but remains unmeasured.
 
 ## Reproduction
 

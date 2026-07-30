@@ -755,10 +755,12 @@ Chat Completions compatibility mode to native Responses function tools.
 | [30453721376](https://github.com/layer1labs/specsmith/actions/runs/30453721376) | GPT-5.6 Terra, structured v5, fresh T29 | 1/1 | 17,407 | $0.1189 | 5 | first-pass admission; repeat eligible |
 | [30454018932](https://github.com/layer1labs/specsmith/actions/runs/30454018932) | GPT-5.6 Terra, structured v5, fresh T29 | 5/5 | 18,055 | $0.1199 | 5.2 | 80% first-pass; expand to n=10 |
 | [30457360342](https://github.com/layer1labs/specsmith/actions/runs/30457360342) | GPT-5.6 Terra, structured v5, fresh T29 | 10/10 | 20,100 | $0.1277 | 5.7 | 30% first-pass; optimize and rerun |
+| [30545048843](https://github.com/layer1labs/specsmith/actions/runs/30545048843) | GPT-5.6 Terra, structured v6, fresh T29 | 1/1 | 17,373 | $0.1181 | 5 | first-pass admission; repeat eligible |
+| [30545401727](https://github.com/layer1labs/specsmith/actions/runs/30545401727) | GPT-5.6 Terra, structured v6, fresh T29 | 5/5 | 18,734 | $0.1229 | 5.4 | 60% first-pass; zero UI repairs; optimize milestone one |
 
-Every successful Sol and Terra row passed public validators and the hidden
-oracle, completed all four milestones, and used one implementation attempt
-with no repair cycle. The Terra
+Every correct listed row passed public validators and the hidden oracle and
+completed all four milestones; repair cycles and first-pass rates are reported
+explicitly above. The earlier native Terra
 n=5 range was 16,777–17,411 tokens; mean wall time was 45.9 seconds. Relative
 to the Sol native diagnostic, Terra's screen used 6.8% fewer mean tokens and
 54.6% lower mean cost. The separately measured July 25 Sol release envelope
@@ -867,8 +869,13 @@ Retained traces show the repeated invariant belongs to
 receipts now attributes that file as the systematic hotspot in 6/10 rows,
 rather than inferring the first path from the broader validator boundary.
 Versioned v6 places the already-public `toBeVisible()` criterion directly in
-milestone three. No v6 efficiency or correctness gain is claimed before a
-completed run.
+milestone three. Admission `30545048843` passed first-pass at 17,373 tokens.
+The earned n=5 screen `30545401727` passed 5/5 at 18,734.4 mean TPCA,
+$0.122941 mean cost, 5.4 turns, and 60% first-pass, with zero UI repairs. Its
+two repairs moved to milestone one: one FastAPI `Query()` default violated
+Ruff B008 and one model-authored test used nonexistent `pytest.ANY`.
+Versioned v7 makes those public toolchain constraints explicit but is
+unmeasured.
 
 Relative to the favorable n=5 point estimate, n=10 used 11.3% more mean tokens,
 6.5% more estimated cost, and 9.6% more turns while first-pass completion fell

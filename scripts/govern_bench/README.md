@@ -78,7 +78,10 @@ invalid model-authored pytest assertion. The audit selects
 rather than a clean promotion or real-repository claim. Observed patch receipts
 attribute the recurring hotspot to `ui/tests/release-control.spec.ts` in 6/10
 rows. Versioned v6 makes that existing visibility criterion explicit in
-milestone three; it has no measured result yet.
+milestone three. Admission `30545048843` passed first-pass at 17,373 tokens;
+n=5 `30545401727` passed 5/5 at 18,734.4 TPCA, 60% first-pass, and zero UI
+repairs. Two milestone-one Python toolchain repairs remain. V7 makes those
+constraints explicit and is not yet measured.
 
 ---
 

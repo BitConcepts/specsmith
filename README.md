@@ -156,8 +156,11 @@ independent synthetic repository task initially passed 5/5 at 22.0k TPCA with
 TPCA and 80% first-pass. Its independent n=10 sample passed 10/10 at 20.1k
 TPCA, but first-pass completion fell to 30%; the audit found a recurring UI
 test-contract repair in 6/10 observed patch receipts and requires optimization
-before another confirmation. The next versioned controller makes that existing
-milestone invariant explicit; its effect remains unmeasured.
+before another confirmation. Versioned v6 made that invariant explicit:
+admission `30545048843` passed first-pass at 17.4k tokens, and n=5
+`30545401727` passed 5/5 at 18.7k TPCA with 60% first-pass and no UI repair.
+The remaining two repairs were milestone-one Python toolchain mistakes; v7
+targets them but remains unmeasured.
 These results are task- and route-specific. Managed
 20B–32B and Qwen native-tool candidates have useful correct diagnostics but
 have not passed the repeated replacement gates, so Specsmith does not claim

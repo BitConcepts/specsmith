@@ -386,6 +386,11 @@ def test_long_horizon_milestones_are_bounded_and_progress_replaces_history() -> 
             ["write_file", "write_milestone", "patch_file", "done"],
             "auto",
         ),
+        (
+            "scalar-milestone-packet-authority-v7",
+            ["write_file", "write_milestone", "patch_file", "done"],
+            "auto",
+        ),
     ],
 )
 def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
@@ -416,6 +421,7 @@ def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
             "scalar-milestone-packet-authority-v4",
             "scalar-milestone-packet-authority-v5",
             "scalar-milestone-packet-authority-v6",
+            "scalar-milestone-packet-authority-v7",
         }:
             assert "bounded files array" in contract
             assert set(properties) == {"files"}
@@ -430,6 +436,7 @@ def test_controller_experiments_are_versioned_and_isolate_tool_protocol(
                 "scalar-milestone-packet-authority-v4",
                 "scalar-milestone-packet-authority-v5",
                 "scalar-milestone-packet-authority-v6",
+                "scalar-milestone-packet-authority-v7",
             }:
                 assert {"type": "null"} in properties["path_2"]["anyOf"]
             native_tool = _openai_tools_to_responses([milestone_tool])[0]
@@ -478,6 +485,7 @@ def test_benchmark_workflow_exposes_scoped_native_patch_experiment() -> None:
     assert "scalar-milestone-packet-authority-v4" in workflow
     assert "scalar-milestone-packet-authority-v5" in workflow
     assert "scalar-milestone-packet-authority-v6" in workflow
+    assert "scalar-milestone-packet-authority-v7" in workflow
     native_workflow = (
         Path(__file__).parent.parent / ".github" / "workflows" / "qwen-native-bench.yml"
     ).read_text(encoding="utf-8")
@@ -624,6 +632,26 @@ def test_v6_makes_t29_visibility_invariant_explicit_without_changing_v5(
     assert "toBeVisible()" not in v5_packet
     assert "toBeVisible()" in v6_packet
     assert "before filter and approve interactions" in v6_packet
+
+
+def test_v7_adds_t29_python_toolchain_invariants_and_inherits_v6_ui_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task = get_task("T29")
+    monkeypatch.setenv(
+        "BENCH_CONTROLLER_EXPERIMENT",
+        "scalar-milestone-packet-authority-v7",
+    )
+
+    milestone_one = _milestone_work_packet(task, [])
+    completed = [str(path) for milestone in task.milestones[:2] for path in milestone["files"]]
+    milestone_three = _milestone_work_packet(task, completed)
+
+    assert "Ruff B008 is enforced" in milestone_one
+    assert "not Query() calls in function defaults" in milestone_one
+    assert "pytest has no ANY or anything sentinel" in milestone_one
+    assert "assert dynamic response fields separately" in milestone_one
+    assert "toBeVisible()" in milestone_three
 
 
 def test_native_edit_interface_is_exact_bounded_and_tracks_changes(tmp_path: Path) -> None:

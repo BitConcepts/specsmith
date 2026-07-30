@@ -49,7 +49,10 @@ See the [current executable results](../site/efficiency-benchmark.md) and the
   `30457360342` passed 10/10 at 20.1k TPCA, but first-pass fell to 30% and the
   audit selected `optimize_and_rerun`. Corrected observed-target attribution
   locates the recurring repair in `ui/tests/release-control.spec.ts` in 6/10
-  rows. Versioned v6 makes that invariant explicit but is not yet measured.
+  rows. Versioned v6 made that invariant explicit: admission `30545048843`
+  passed first-pass at 17.4k tokens and n=5 `30545401727` passed 5/5 at 18.7k
+  TPCA, 60% first-pass, and zero UI repairs. Two milestone-one Python repairs
+  remain; v7 targets them but is not yet measured.
 - Current frontier screen: GPT-5.6 Sol runs `29963772623` and `29963515885`,
   eight exact task types, Cursor rules/FULL, and five repetitions per cell.
   FULL passed 40/40 at 9.0k TPCA; Cursor rules passed 34/40 at 33.8k TPCA.

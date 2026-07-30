@@ -105,6 +105,7 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
+        "scalar-milestone-packet-authority-v7",
     }
 )
 
@@ -360,6 +361,7 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
+        "scalar-milestone-packet-authority-v7",
     }
 
 
@@ -385,6 +387,7 @@ def _compact_context_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
+        "scalar-milestone-packet-authority-v7",
     }
 
 
@@ -405,6 +408,7 @@ def _native_edit_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
+        "scalar-milestone-packet-authority-v7",
     }
 
 
@@ -420,6 +424,7 @@ def _native_patch_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
+        "scalar-milestone-packet-authority-v7",
     }
 
 
@@ -437,6 +442,7 @@ def _scoped_read_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
+        "scalar-milestone-packet-authority-v7",
     }
 
 
@@ -530,6 +536,7 @@ def _milestone_bundle_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
+        "scalar-milestone-packet-authority-v7",
     }
 
 
@@ -545,6 +552,7 @@ def _milestone_packet_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
+        "scalar-milestone-packet-authority-v7",
     }
 
 
@@ -559,6 +567,7 @@ def _adaptive_required_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
+        "scalar-milestone-packet-authority-v7",
     }
 
 
@@ -577,6 +586,7 @@ def _stable_repair_schema_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
+        "scalar-milestone-packet-authority-v7",
     }
 
 
@@ -586,6 +596,7 @@ def _native_milestone_schema_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
+        "scalar-milestone-packet-authority-v7",
     }
 
 
@@ -598,6 +609,7 @@ def _validator_authority_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v4",
         "scalar-milestone-packet-authority-v5",
         "scalar-milestone-packet-authority-v6",
+        "scalar-milestone-packet-authority-v7",
     }
 
 
@@ -1607,16 +1619,33 @@ def _completed_milestone_count(task: BenchTask, files_written: list[str]) -> int
 
 def _versioned_milestone_criteria(task: BenchTask, index: int) -> list[str]:
     """Return experiment-only public criteria without mutating frozen predecessors."""
+    experiment = _controller_experiment()
+    if task.id != "T29":
+        return []
+
+    criteria: list[str] = []
+    if experiment == "scalar-milestone-packet-authority-v7" and index == 1:
+        criteria.extend(
+            [
+                "Ruff B008 is enforced: use plain optional FastAPI parameters, not "
+                "Query() calls in function defaults.",
+                "pytest has no ANY or anything sentinel; assert dynamic response fields "
+                "separately from stable fields.",
+            ]
+        )
     if (
-        _controller_experiment() == "scalar-milestone-packet-authority-v6"
-        and task.id == "T29"
+        experiment
+        in {
+            "scalar-milestone-packet-authority-v6",
+            "scalar-milestone-packet-authority-v7",
+        }
         and index == 3
     ):
-        return [
+        criteria.append(
             "The Playwright journey must assert that the loaded Releases list is visible "
             "with toBeVisible() before filter and approve interactions."
-        ]
-    return []
+        )
+    return criteria
 
 
 def _milestone_work_packet(task: BenchTask, files_written: list[str]) -> str:
@@ -5315,6 +5344,7 @@ def _run_agent_loop(
                     in {
                         "scalar-milestone-packet-authority-v5",
                         "scalar-milestone-packet-authority-v6",
+                        "scalar-milestone-packet-authority-v7",
                     }
                     else 3
                 ),
@@ -5336,6 +5366,7 @@ def _run_agent_loop(
                 in {
                     "scalar-milestone-packet-authority-v5",
                     "scalar-milestone-packet-authority-v6",
+                    "scalar-milestone-packet-authority-v7",
                 }
                 else 3
             )

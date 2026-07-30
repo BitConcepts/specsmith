@@ -78,6 +78,21 @@ def test_t29_v6_milestone_three_names_the_playwright_visibility_invariant(
     assert "before filter and approve interactions" in packet
 
 
+def test_t29_v7_milestone_one_names_observed_python_toolchain_invariants(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    task = get_task("T29")
+    monkeypatch.setenv(
+        "BENCH_CONTROLLER_EXPERIMENT",
+        "scalar-milestone-packet-authority-v7",
+    )
+
+    packet = _milestone_work_packet(task, [])
+
+    assert "Ruff B008 is enforced" in packet
+    assert "pytest has no ANY or anything sentinel" in packet
+
+
 def test_t29_ui_validator_accepts_structural_empty_state_and_css_contract(
     tmp_path: Path,
 ) -> None:

@@ -42,6 +42,8 @@ task-conditional substitution—not general small-model replacement.
 | [30418513274](https://github.com/layer1labs/specsmith/actions/runs/30418513274) | GPT-5.6 Sol / structured native Responses v4 | 10 T28 FULL | 10/10 correct and first-pass at 17.9k TPCA, five turns, 1.77% CV; release-sized audit clear |
 | [30445030314](https://github.com/layer1labs/specsmith/actions/runs/30445030314) | GPT-5.6 Terra / structured native Responses v4 | 10 T28 FULL | 9/10 at 19.6k TPCA; one repeated-tool-loop failure; rejected |
 | [30457360342](https://github.com/layer1labs/specsmith/actions/runs/30457360342) | GPT-5.6 Terra / structured native Responses v5 | 10 fresh T29 FULL | 10/10 at 20.1k TPCA, 30% first-pass, 9.8% CV; recurring UI test-contract repair blocks promotion |
+| [30545401727](https://github.com/layer1labs/specsmith/actions/runs/30545401727) | GPT-5.6 Terra / structured native Responses v6 | 5 fresh T29 FULL | 5/5 at 18.7k TPCA, 60% first-pass, zero UI repairs; two milestone-one Python repairs remain |
+| [30545048843](https://github.com/layer1labs/specsmith/actions/runs/30545048843) | GPT-5.6 Terra / structured native Responses v6 | 1 fresh T29 FULL | First-pass at 17.4k TPCA; admitted to n=5 |
 | [30454018932](https://github.com/layer1labs/specsmith/actions/runs/30454018932) | GPT-5.6 Terra / structured native Responses v5 | 5 fresh T29 FULL | 5/5 at 18.1k TPCA, 80% first-pass, zero loop recoveries; promoted to n=10 |
 | [30453721376](https://github.com/layer1labs/specsmith/actions/runs/30453721376) | GPT-5.6 Terra / structured native Responses v5 | 1 fresh T29 FULL | First-pass at 17.4k TPCA; admitted to n=5 |
 | [30447789765](https://github.com/layer1labs/specsmith/actions/runs/30447789765) | GPT-5.6 Terra / structured native Responses v4 | 5 fresh T29 FULL | 5/5 at 22.0k TPCA, but 0% first-pass and systematic App empty-state repair; n=10 blocked |
@@ -110,8 +112,12 @@ percentage points. The audit selects `optimize_and_rerun`; this exact-route
 sample is release-sized, but it is neither a clean promotion nor
 real-repository generalization. Corrected hotspot attribution follows observed
 patch receipts and names `ui/tests/release-control.spec.ts` in 6/10 rows.
-Versioned v6 makes that existing invariant explicit at milestone three, but is
-unmeasured until its admission run completes.
+Versioned v6 makes that existing invariant explicit at milestone three.
+Admission `30545048843` passed first-pass at 17,373 tokens; n=5
+`30545401727` passed 5/5 at 18,734.4 TPCA, $0.122941 mean cost, 5.4 turns,
+and 60% first-pass with no UI repair. The only repairs were Ruff B008 and a
+nonexistent pytest sentinel at milestone one. V7 targets both and remains
+unmeasured.
 
 Results are never combined across incompatible commits, task grids, routes, or
 repetition sets. GPT-5.6 uses Chat Completions with `reasoning_effort=none` for

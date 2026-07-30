@@ -115,7 +115,15 @@ to repaired rows. Re-audit with observed patch-target receipts attributes the
 systematic hotspot to `ui/tests/release-control.spec.ts` in 6/10 rows instead
 of inferring the first path from the broader validator boundary. Versioned v6
 makes the existing `toBeVisible()` requirement explicit in milestone three.
-That controller change is not a measured gain until a new run completes.
+Admission
+[30545048843](https://github.com/layer1labs/specsmith/actions/runs/30545048843)
+passed first-pass at 17,373 tokens. Its earned
+[n=5 screen 30545401727](https://github.com/layer1labs/specsmith/actions/runs/30545401727)
+passed 5/5 at 18,734.4 TPCA, $0.122941 mean cost, 5.4 turns, and 60%
+first-pass. No row repaired the UI boundary. The two repairs were instead
+milestone-one Python mistakes: Ruff B008 on FastAPI `Query()` defaults and a
+nonexistent `pytest.ANY` sentinel. Versioned v7 makes those public toolchain
+constraints explicit; it remains unmeasured.
 T29 therefore increases evaluator diversity and supplies an exact-route n=10
 sample without establishing clean promotion or real-repository
 generalization.

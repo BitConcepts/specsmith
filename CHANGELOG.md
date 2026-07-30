@@ -67,8 +67,14 @@ consolidated into the next published release.
   existing Playwright `toBeVisible()` criterion explicit at milestone three.
   Repair-hotspot attribution now prefers observed modifying-tool receipts over
   the first path in a broad validator boundary; corrected re-audit of workflow
-  `30457360342` names `ui/tests/release-control.spec.ts` in 6/10 rows. No v6
-  performance gain is claimed before a completed run.
+  `30457360342` names `ui/tests/release-control.spec.ts` in 6/10 rows.
+  Admission `30545048843` passed first-pass at 17,373 tokens; n=5 workflow
+  `30545401727` passed 5/5 at 18,734 mean TPCA, $0.1229 mean cost, 5.4 turns,
+  and 60% first-pass with zero UI repairs.
+- Add versioned T29 controller v7, preserving v6 while making its two observed
+  milestone-one Python repair constraints explicit: avoid FastAPI `Query()`
+  calls in defaults under Ruff B008, and assert dynamic fields without
+  nonexistent `pytest.ANY` or `pytest.anything` sentinels. V7 is unmeasured.
 - Normalize nested verification file-path evidence at CLI, governance,
   persistence, and risk-audit boundaries so malformed legacy or tampered work
   items cannot crash `specsmith audit`.
