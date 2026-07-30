@@ -37,6 +37,7 @@ from govern_bench.harness import (  # noqa: E402
     _focused_validator_failures,
     _focused_validator_repair_boundaries,
     _focused_validator_repair_progress,
+    _forced_named_tool_choice,
     _looks_like_nonterminal_narration,
     _milestone_contract,
     _milestone_progress,
@@ -1611,6 +1612,19 @@ def test_ordinary_tool_batches_are_not_rewritten() -> None:
 
     assert sanitized is calls
     assert telemetry is None
+
+
+def test_forced_tool_choice_uses_native_provider_shapes() -> None:
+    assert _forced_named_tool_choice("openai-compat", "patch_file") == {
+        "type": "function",
+        "function": {"name": "patch_file"},
+    }
+    assert _forced_named_tool_choice("openai-responses", "patch_file") == {
+        "type": "function",
+        "name": "patch_file",
+    }
+    assert _forced_named_tool_choice("openai", "patch_file") == "required"
+    assert _forced_named_tool_choice("anthropic", "patch_file") == "required"
 
 
 def _audit_row(*, condition: str, passed: bool, transcript: list[dict] | None = None) -> dict:

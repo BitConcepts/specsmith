@@ -709,6 +709,16 @@ def _controller_tool_choice(condition_id: str, experiment: str) -> str:
     return "auto"
 
 
+def _forced_named_tool_choice(provider: str, tool_name: str) -> str | dict[str, Any]:
+    """Return the provider-native shape for one controller-selected function."""
+    if provider == "openai-responses":
+        return {"type": "function", "name": tool_name}
+    if provider == "openai-compat":
+        return {"type": "function", "function": {"name": tool_name}}
+    # Preserve the established frontier and non-OpenAI controller protocols.
+    return "required"
+
+
 # ---------------------------------------------------------------------------
 # Tool definitions
 # ---------------------------------------------------------------------------
@@ -4333,10 +4343,9 @@ def _run_agent_loop(
             )
         turn_timeout_s = min(request_timeout_s, remaining_s)
         if forced_tool_name_next_turn:
-            request_tool_choice: str | dict[str, Any] = (
-                {"type": "function", "name": forced_tool_name_next_turn}
-                if provider == "openai-responses"
-                else "required"
+            request_tool_choice: str | dict[str, Any] = _forced_named_tool_choice(
+                provider,
+                forced_tool_name_next_turn,
             )
         else:
             request_tool_choice = (
