@@ -2621,7 +2621,10 @@ def _exec_patch_file(
     for index in range(1, 4):
         old_text = args.get(f"old_text_{index}")
         new_text = args.get(f"new_text_{index}")
-        if old_text is None and new_text is None:
+        if index > 1 and old_text in (None, "") and new_text in (None, ""):
+            # OpenAI-compatible native parsers sometimes materialize nullable,
+            # unused scalar slots as empty strings. Treat an entirely blank
+            # optional pair as absent; a half-filled pair remains an error.
             continue
         if not isinstance(old_text, str) or not old_text:
             return f"ERROR: old_text_{index} must be non-empty text"
@@ -4298,6 +4301,7 @@ def _run_agent_loop(
     active_repair_evidence_signature = ""
     last_repair_evidence_signature = ""
     invalid_composite_write_count = 0
+    invalid_patch_payload_count = 0
     invalid_milestone_packet_count = 0
     force_tool_call_next_turn = False
     forced_tool_name_next_turn = ""
@@ -4573,6 +4577,7 @@ def _run_agent_loop(
         successful_write_paths: list[str] = []
         suppressed_unchanged_reads: list[str] = []
         invalid_composite_this_turn = False
+        invalid_patch_payload_this_turn = False
         finished = False
         validation_failed = False
         repair_context_provided = False
@@ -4689,6 +4694,9 @@ def _run_agent_loop(
                             validator_verified,
                         )
                     )
+                elif out.startswith("ERROR: old_text_") and "must be non-empty text" in out:
+                    invalid_patch_payload_count += 1
+                    invalid_patch_payload_this_turn = True
 
             elif fn_name == "write_milestone":
                 out, milestone_write_paths = _exec_write_milestone(
@@ -5077,6 +5085,28 @@ def _run_agent_loop(
                     "turn": turn + 1,
                     "role": "controller",
                     "composite_write_payload_failure": invalid_composite_write_count,
+                    "recovery": recovery,
+                }
+            )
+            rework_turns += 1
+
+        if condition.id == "SPECSMITH_FULL" and invalid_patch_payload_this_turn:
+            recovery = (
+                "The native patch payload contained a half-filled optional hunk and was "
+                "rejected atomically. Do not retry patch_file with blank old_text_N "
+                "values. Use write_file once with the complete current replacement body "
+                "for this controller-identified repair boundary."
+            )
+            active_repair_focus = (
+                f"{active_repair_focus}\n\n{recovery}" if active_repair_focus else recovery
+            )
+            forced_tool_name_next_turn = "write_file"
+            agent_transcript.append(
+                {
+                    "turn": turn + 1,
+                    "role": "controller",
+                    "malformed_patch_payload": invalid_patch_payload_count,
+                    "forced_tool": "write_file",
                     "recovery": recovery,
                 }
             )

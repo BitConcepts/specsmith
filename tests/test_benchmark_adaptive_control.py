@@ -846,6 +846,39 @@ def test_native_patch_interface_is_atomic_bounded_and_tracks_changes(tmp_path: P
     assert path.read_text(encoding="utf-8") == original
 
 
+def test_native_patch_treats_fully_blank_optional_hunks_as_unused(tmp_path: Path) -> None:
+    path = tmp_path / "component.py"
+    path.write_text("VALUE = 1\nKEEP = True\n", encoding="utf-8")
+    written: list[str] = []
+    parser_materialized_args = {
+        "path": "component.py",
+        "old_text_1": "VALUE = 1",
+        "new_text_1": "VALUE = 2",
+        "old_text_2": "",
+        "new_text_2": "",
+        "old_text_3": None,
+        "new_text_3": None,
+    }
+
+    result = _exec_patch_file(
+        tmp_path,
+        "component.py",
+        parser_materialized_args,
+        written,
+    )
+
+    assert result.startswith("OK:")
+    assert path.read_text(encoding="utf-8") == "VALUE = 2\nKEEP = True\n"
+    assert written == ["component.py"]
+
+    path.write_text("VALUE = 1\nKEEP = True\n", encoding="utf-8")
+    half_filled = {**parser_materialized_args, "new_text_2": "NEW"}
+    assert _exec_patch_file(tmp_path, "component.py", half_filled, []).startswith(
+        "ERROR: old_text_2 must be non-empty text"
+    )
+    assert path.read_text(encoding="utf-8") == "VALUE = 1\nKEEP = True\n"
+
+
 def test_scalar_milestone_bundle_validates_pairs_before_writing(tmp_path: Path) -> None:
     written: list[str] = []
     output, successful = _exec_write_milestone(
