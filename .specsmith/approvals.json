@@ -201,5 +201,32 @@
     "scope": "Frozen V2 real-repository recovery implementation at f2bedf1",
     "rationale": "Corrected T30 oracle, long-horizon milestone enforcement, validator coverage, and v8 recovery controller were reviewed against REQ-484, REQ-490, and REQ-492; 2,562 tests plus targeted hidden-oracle feasibility and strict quality gates passed.",
     "requirement_ids": []
+  },
+  {
+    "approval_type": "implementation",
+    "work_item_id": "WI-9D3192B60628",
+    "approver": "Tristen Pierson <98970594+tbitcs@users.noreply.github.com>",
+    "timestamp": "2026-07-31T13:09:58Z",
+    "scope": "REQ-470,REQ-471,REQ-472,REQ-484,REQ-485,REQ-490,REQ-492",
+    "rationale": "User explicitly directed execution of the complete literature-backed efficiency plan; 2,581 tests and all deterministic quality gates pass.",
+    "requirement_ids": []
+  },
+  {
+    "approval_type": "implementation",
+    "work_item_id": "WI-3E78F9B1FE6B",
+    "approver": "Tristen Pierson <98970594+tbitcs@users.noreply.github.com>",
+    "timestamp": "2026-07-31T13:10:00Z",
+    "scope": "REQ-484 docs and tests",
+    "rationale": "User explicitly directed execution of the complete literature-backed efficiency plan; 2,581 tests and all deterministic quality gates pass.",
+    "requirement_ids": []
+  },
+  {
+    "approval_type": "implementation",
+    "work_item_id": "WI-9EEA67280570",
+    "approver": "Tristen Pierson <98970594+tbitcs@users.noreply.github.com>",
+    "timestamp": "2026-07-31T13:10:02Z",
+    "scope": "REQ-484 commit, push, CI, and n=1 admission",
+    "rationale": "User explicitly directed execution of the complete literature-backed efficiency plan; 2,581 tests and all deterministic quality gates pass.",
+    "requirement_ids": []
   }
 ]
