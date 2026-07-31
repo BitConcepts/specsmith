@@ -3,6 +3,14 @@
 GovernanceBench measures how governance/scaffolding changes **cost, quality, and safety**
 across coding-agent workflows.
 
+The preregistered `scalar-milestone-packet-authority-v9` experiment is isolated
+from frozen publication v8. Use `literature-v9-ablation` for one T28/T29/T30
+admission per feature set, then `literature-v9-screen` and
+`literature-v9-release` only after the preceding gate passes. Configure features
+with `--controller-features`; use `--escalation-model` only for the separately
+labeled same-fixture cascade. JSON output automatically retains context,
+evidence, handoff, failed-token, and policy-example telemetry.
+
 > Status: the current GPT-5.6 Sol screen is split across complete matched runs
 > `29963772623` and `29963515885` at commit `f474bb6`. Across eight tasks and
 > five repetitions per cell, Cursor rules passed 34/40 at 33.8k TPCA;

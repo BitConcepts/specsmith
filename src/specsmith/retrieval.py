@@ -5,8 +5,11 @@
 from __future__ import annotations
 
 import json
+import math
 import re
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
+from typing import Any
 
 _INDEX_PATH = Path(".specsmith") / "retrieval-index.json"
 _TEXT_EXTS = {
@@ -14,7 +17,13 @@ _TEXT_EXTS = {
     ".txt",
     ".py",
     ".ts",
+    ".tsx",
     ".js",
+    ".jsx",
+    ".css",
+    ".scss",
+    ".rst",
+    ".proto",
     ".json",
     ".yaml",
     ".yml",
@@ -30,6 +39,7 @@ _TEXT_EXTS = {
     ".cmd",
 }
 _SKIP_DIRS = {".git", "node_modules", "__pycache__", ".venv", "dist", "build", ".mypy_cache"}
+_ROLE_INDEX_VERSION = "role-v1"
 
 
 #: Infrastructure record kinds excluded from the RAG index (critical rule §18).
@@ -47,6 +57,182 @@ _RAG_EXCLUDE_KINDS = frozenset(
 )
 
 
+def _path_role(path: str) -> str:
+    """Return a compact deterministic role label for repository retrieval."""
+
+    normalized = path.replace("\\", "/").casefold()
+    name = normalized.rsplit("/", 1)[-1]
+    if "/test" in f"/{normalized}" or name.startswith("test_") or ".test." in name:
+        return "acceptance and regression tests"
+    if normalized.endswith((".md", ".rst")) or normalized.startswith("docs/"):
+        return "documentation and user contract"
+    if normalized.endswith((".css", ".scss")):
+        return "user-interface styling"
+    if normalized.endswith((".tsx", ".jsx", ".vue", ".svelte")):
+        return "interactive user interface"
+    if "schema" in normalized or normalized.endswith((".proto", ".graphql")):
+        return "shared data contract"
+    if "api" in normalized or "route" in normalized or "endpoint" in normalized:
+        return "service API boundary"
+    if normalized.endswith((".yml", ".yaml", ".toml", ".json")):
+        return "configuration and build contract"
+    if name in {"main.py", "main.go", "main.ts", "index.ts", "app.py", "app.tsx"}:
+        return "application entry point"
+    return "implementation module"
+
+
+_SYMBOL_PATTERNS = (
+    re.compile(r"^\s*(?:async\s+)?(?:def|class)\s+([A-Za-z_][\w]*)", re.MULTILINE),
+    re.compile(
+        r"^\s*(?:export\s+)?(?:async\s+)?(?:function|class|interface|type|const)"
+        r"\s+([A-Za-z_$][\w$]*)",
+        re.MULTILINE,
+    ),
+    re.compile(r"^\s*(?:func|type)\s+(?:\([^)]*\)\s*)?([A-Za-z_][\w]*)", re.MULTILINE),
+)
+_DEPENDENCY_PATTERNS = (
+    re.compile(r"^\s*(?:from|import)\s+([A-Za-z0-9_.@/\-]+)", re.MULTILINE),
+    re.compile(r"(?:from\s+|require\()[\"']([^\"']+)", re.MULTILINE),
+    re.compile(r"^\s*import\s+(?:\w+\s+)?[\"']([^\"']+)[\"']", re.MULTILINE),
+)
+
+
+def _represent_file(path: str, content: str) -> dict[str, Any]:
+    symbols: list[str] = []
+    dependencies: list[str] = []
+    for pattern in _SYMBOL_PATTERNS:
+        symbols.extend(pattern.findall(content))
+    for pattern in _DEPENDENCY_PATTERNS:
+        dependencies.extend(pattern.findall(content))
+    symbols = list(dict.fromkeys(str(item) for item in symbols if str(item).strip()))[:12]
+    dependencies = list(dict.fromkeys(str(item) for item in dependencies if str(item).strip()))[:12]
+    role = _path_role(path)
+    summary_parts = [f"role={role}"]
+    if symbols:
+        summary_parts.append("symbols=" + ", ".join(symbols))
+    if dependencies:
+        summary_parts.append("depends=" + ", ".join(dependencies))
+    return {
+        "path": path,
+        "content": content,
+        "role": role,
+        "role_summary": "; ".join(summary_parts),
+        "symbols": symbols,
+        "dependencies": dependencies,
+        "representation": _ROLE_INDEX_VERSION,
+        "source_chars": len(content),
+    }
+
+
+def build_role_entries(
+    root: Path,
+    *,
+    paths: Sequence[str] | None = None,
+    max_source_chars: int = 24_000,
+) -> list[dict[str, Any]]:
+    """Build compact role-aware representations for a repository or path set."""
+
+    resolved = root.resolve()
+    candidates: Iterable[Path] = (
+        (resolved / path for path in paths) if paths is not None else resolved.rglob("*")
+    )
+    entries: list[dict[str, Any]] = []
+    for candidate in candidates:
+        try:
+            relative = candidate.resolve().relative_to(resolved)
+        except (OSError, ValueError):
+            continue
+        if (
+            not candidate.is_file()
+            or candidate.suffix.casefold() not in _TEXT_EXTS
+            or any(
+                part in _SKIP_DIRS or part in {".specsmith", ".chronomemory"}
+                for part in relative.parts
+            )
+        ):
+            continue
+        try:
+            content = candidate.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        if content.strip():
+            entries.append(_represent_file(relative.as_posix(), content[:max_source_chars]))
+    return sorted(entries, key=lambda entry: str(entry["path"]))
+
+
+def _query_tokens(value: str) -> list[str]:
+    return [token for token in re.findall(r"[a-zA-Z0-9_\-]+", value.casefold()) if len(token) > 1]
+
+
+def rank_role_entries(
+    entries: Sequence[Mapping[str, Any]],
+    query: str,
+    *,
+    failure_context: str = "",
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    """Rank role representations with deterministic BM25 and path boosts."""
+
+    query_terms = _query_tokens(f"{query} {failure_context}")
+    failure_terms = set(_query_tokens(failure_context))
+    if not query_terms or limit <= 0:
+        return []
+    documents = [
+        _query_tokens(
+            " ".join(
+                [
+                    str(entry.get("path", "")),
+                    str(entry.get("role_summary", "")),
+                    " ".join(str(value) for value in entry.get("symbols", []) or []),
+                    " ".join(str(value) for value in entry.get("dependencies", []) or []),
+                ]
+            )
+        )
+        for entry in entries
+    ]
+    average_length = sum(map(len, documents)) / max(1, len(documents))
+    document_frequency = {
+        term: sum(1 for document in documents if term in document) for term in set(query_terms)
+    }
+    scored: list[dict[str, Any]] = []
+    for entry, document in zip(entries, documents, strict=True):
+        frequencies = {term: document.count(term) for term in set(query_terms)}
+        score = 0.0
+        for term in query_terms:
+            frequency = frequencies.get(term, 0)
+            if not frequency:
+                continue
+            df = document_frequency[term]
+            inverse_frequency = math.log(1.0 + (len(documents) - df + 0.5) / (df + 0.5))
+            denominator = frequency + 1.5 * (
+                1.0 - 0.75 + 0.75 * len(document) / max(1.0, average_length)
+            )
+            score += inverse_frequency * frequency * 2.5 / denominator
+        path = str(entry.get("path", "")).casefold()
+        score += 0.35 * sum(1 for term in set(query_terms) if term in path)
+        symbol_text = " ".join(str(value) for value in entry.get("symbols", []) or []).casefold()
+        score += 1.5 * sum(1 for term in failure_terms if term in path or term in symbol_text)
+        if score > 0:
+            row = dict(entry)
+            row["score"] = round(score, 6)
+            scored.append(row)
+    return sorted(scored, key=lambda item: (-float(item["score"]), str(item["path"])))[:limit]
+
+
+def render_role_packet(entries: Sequence[Mapping[str, Any]]) -> str:
+    """Render the smallest useful repository map without injecting source bodies."""
+
+    if not entries:
+        return ""
+    lines = ["## Retrieved repository roles"]
+    for entry in entries:
+        lines.append(
+            f"- {entry.get('path', '')}: {entry.get('role_summary', entry.get('role', ''))}"
+        )
+    lines.append("Retrieve exact source only for the active requirement boundary.")
+    return "\n".join(lines)
+
+
 def build_index(root: Path, *, include_ledger: bool = False, external: str = "") -> str:
     """Build or refresh the local retrieval index.
 
@@ -55,7 +241,7 @@ def build_index(root: Path, *, include_ledger: bool = False, external: str = "")
     ChronoStore WAL is used when present, otherwise the free SQLite ESDB backend
     supplies the same governance knowledge so RAG works without commercial deps.
     """
-    entries: list[dict[str, str]] = []
+    entries: list[dict[str, Any]] = []
 
     # H18: inject high-confidence ESDB records as retrieval context.
     # Infrastructure records (see _RAG_EXCLUDE_KINDS) are excluded — rule §18.
@@ -150,12 +336,8 @@ def build_index(root: Path, *, include_ledger: bool = False, external: str = "")
             continue
         if not text.strip():
             continue
-        entries.append(
-            {
-                "path": str(fp.relative_to(root)) if fp.is_relative_to(root) else str(fp),
-                "content": text[:12000],
-            },
-        )
+        path = str(fp.relative_to(root)) if fp.is_relative_to(root) else str(fp)
+        entries.append(_represent_file(path.replace("\\", "/"), text[:12000]))
 
     index_path = root / _INDEX_PATH
     index_path.parent.mkdir(parents=True, exist_ok=True)
@@ -163,32 +345,42 @@ def build_index(root: Path, *, include_ledger: bool = False, external: str = "")
     return f"Indexed {len(entries)} file(s) into {index_path.relative_to(root)}"
 
 
-def search_index(root: Path, query: str, *, limit: int = 5) -> str:
-    """Search the local retrieval index with a simple keyword score."""
+def search_index(
+    root: Path,
+    query: str,
+    *,
+    limit: int = 5,
+    failure_context: str = "",
+    include_source: bool = False,
+) -> str:
+    """Search the local index using role-aware BM25 ranking."""
     index_path = root / _INDEX_PATH
     if not index_path.exists():
         return "[NOT INDEXED] Run `specsmith index` first."
 
     data = json.loads(index_path.read_text(encoding="utf-8"))
     entries = data.get("entries", [])
-    tokens = [t for t in re.findall(r"[a-zA-Z0-9_\\-]+", query.lower()) if len(t) > 1]
-    if not tokens:
+    if not _query_tokens(f"{query} {failure_context}"):
         return "[ERROR] Query must include at least one keyword."
-
-    scored: list[tuple[int, dict[str, str]]] = []
-    for entry in entries:
-        hay = f"{entry.get('path', '')}\n{entry.get('content', '')}".lower()
-        score = sum(hay.count(tok) for tok in tokens)
-        if score > 0:
-            scored.append((score, entry))
-
-    if not scored:
+    represented = [
+        entry
+        if entry.get("role_summary")
+        else _represent_file(str(entry.get("path", "")), str(entry.get("content", "")))
+        for entry in entries
+    ]
+    ranked = rank_role_entries(
+        represented,
+        query,
+        failure_context=failure_context,
+        limit=limit,
+    )
+    if not ranked:
         return f"No indexed matches for '{query}'."
-
-    scored.sort(key=lambda item: (-item[0], item[1].get("path", "")))
-    lines = [f"Top {min(limit, len(scored))} result(s) for '{query}':"]
-    for score, entry in scored[:limit]:
-        content = entry.get("content", "").strip().replace("\r\n", "\n")
-        preview = "\n".join(content.splitlines()[:8])
-        lines.append(f"\n[{score}] {entry.get('path', '')}\n{preview}")
+    lines = [f"Top {len(ranked)} result(s) for '{query}':"]
+    for entry in ranked:
+        preview = str(entry.get("role_summary") or entry.get("role") or "")
+        if include_source:
+            content = str(entry.get("content", "")).strip().replace("\r\n", "\n")
+            preview += "\n" + "\n".join(content.splitlines()[:8])
+        lines.append(f"\n[{entry['score']}] {entry.get('path', '')}\n{preview}")
     return "\n".join(lines)

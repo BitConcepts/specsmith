@@ -153,6 +153,8 @@ def _next_experiment_decision(
         "tool_call_serialization",
         "tool_schema_discontinuity",
         "verification_repair_outlier",
+        "failed_token_mass",
+        "milestone_escalation_rate",
     }
 
     if dry_run or not complete or codes & artifact_blockers:
@@ -267,6 +269,17 @@ def _condition_rollups(
         mean_turns = sum(_as_int(item.get("llm_turns")) for item in items) / count
         mean_tokens = mean_input + mean_output
         pass_rate = passed / count
+        total_tokens = sum(
+            _as_int(item.get("input_tokens")) + _as_int(item.get("output_tokens")) for item in items
+        )
+        failed_tokens = sum(
+            _as_int(item.get("input_tokens")) + _as_int(item.get("output_tokens"))
+            for item in items
+            if not bool(item.get("passed"))
+        )
+        escalation_count = sum(
+            str(item.get("stop_reason") or "") == "milestone_escalation" for item in items
+        )
         result[condition] = {
             "rows": count,
             "passed": passed,
@@ -276,6 +289,16 @@ def _condition_rollups(
             "mean_total_tokens": round(mean_tokens, 3),
             "mean_llm_turns": round(mean_turns, 3),
             "tokens_per_correct_answer": (round(mean_tokens / pass_rate, 3) if pass_rate else None),
+            "failed_token_share": (round(failed_tokens / total_tokens, 6) if total_tokens else 0.0),
+            "milestone_escalation_rate": round(escalation_count / count, 6),
+            "mean_working_context_peak_chars": round(
+                sum(_as_int(item.get("working_context_peak_chars")) for item in items) / count,
+                3,
+            ),
+            "mean_working_context_pruned_chars": round(
+                sum(_as_int(item.get("working_context_pruned_chars")) for item in items) / count,
+                3,
+            ),
         }
     return result
 
@@ -1553,6 +1576,38 @@ def audit_benchmark_rows(
                     recommendation=(
                         "Use just-in-time retrieval, stable cached prefixes, and compact "
                         "redundant tool output."
+                    ),
+                    conditions=[condition],
+                )
+            )
+
+        failed_token_share = _as_float(item.get("failed_token_share"))
+        if failed_token_share >= 0.5 and _as_int(item.get("rows")) >= 5:
+            weaknesses.append(
+                BenchmarkWeakness(
+                    code="failed_token_mass",
+                    severity="high",
+                    title=f"Failed trajectories dominate {condition} token spend",
+                    evidence=f"Failed rows consumed {failed_token_share:.1%} of measured tokens.",
+                    recommendation=(
+                        "Stop or hand off stalled milestones earlier; preserve the validated "
+                        "diff and exact failure evidence instead of restarting the task."
+                    ),
+                    conditions=[condition],
+                )
+            )
+
+        escalation_rate = _as_float(item.get("milestone_escalation_rate"))
+        if escalation_rate >= 0.2:
+            weaknesses.append(
+                BenchmarkWeakness(
+                    code="milestone_escalation_rate",
+                    severity="medium",
+                    title=f"{condition} frequently requires milestone escalation",
+                    evidence=f"Deterministic handoff occurred in {escalation_rate:.1%} of rows.",
+                    recommendation=(
+                        "Measure the small-first cascade against always-frontier execution and "
+                        "train the escalation verifier from the retained policy examples."
                     ),
                     conditions=[condition],
                 )

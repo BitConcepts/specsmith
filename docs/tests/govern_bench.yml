@@ -15,10 +15,17 @@
     each selected model for a live provider before a full run, fail partial real
     runs, reject incomplete or mismatched comparison artifacts, and hand a
     single-file deterministic repair its bounded current content without an
-    avoidable reread turn.
+    avoidable reread turn. Tests also verify that the versioned v9 experiment
+    leaves frozen v8 behavior unchanged, ranks compact role/symbol/dependency
+    repository entries, preserves pruned evidence by exact reference, retains
+    only five recent tool pairs, selects deterministic controller lanes,
+    restores only the focused file during critical replay, escalates repeated
+    execution failures with a machine-readable handoff, defers hidden-oracle
+    evaluation until a cascade finishes, exposes isolated controller features,
+    exports trace-derived policy examples, and defines n=1, n=5, and n=10 gates.
   requirement_id: REQ-484
   type: integration
-  verification_method: pytest tests/test_govern_bench_integrity.py tests/test_benchmark_harness.py
+  verification_method: pytest tests/test_govern_bench_integrity.py tests/test_benchmark_harness.py tests/test_efficiency_controller.py tests/test_benchmark_v9_controller.py
   input: {}
   expected_behavior: {}
   confidence: 1.0

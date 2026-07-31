@@ -561,3 +561,41 @@
 - **Status**: complete
 - **Epistemic status**: high
 - **Chain hash**: `e148e0000c209daf...`
+
+## 2026-07-31T07:44 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `d90f093acee88be2...`
+
+## 2026-07-31T09:09 — wi_close WI-9EEA67280570: REQ-484 v9 implementation and release-path verification complete
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `23f0c39ccfa156a5...`
+
+## 2026-07-31T09:09 — wi_close WI-9D3192B60628: Accepted efficiency improvements implemented and verified
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `d33ec2683ac0bf60...`
+
+## 2026-07-31T09:09 — wi_close WI-3E78F9B1FE6B: Canonical requirements, tests, docs, and preprint updated and verified
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `27d2379ef500efe4...`
+
+## 2026-07-31T09:09 — wi_archive WI-96A3586F61CD: Read-only research assessment completed and subsumed by REQ-484 v9
+- **Author**: specsmith
+- **Type**: wi_archive
+- **Status**: complete
+- **Chain hash**: `c90aefea916d9e55...`
+
+## 2026-07-31T09:09 — wi_archive WI-EC9713B9BF5A: Read-only implementation planning completed and subsumed by REQ-484 v9
+- **Author**: specsmith
+- **Type**: wi_archive
+- **Status**: complete
+- **Chain hash**: `7859f9465d9eaacb...`

@@ -1,5 +1,22 @@
 # Long-Horizon Benchmark and Weakness Audit
 
+## V9 efficiency audit contract
+
+The literature-driven v9 controller adds two directly actionable audit signals:
+`failed_token_share` identifies how much spend ended in incorrect rows, and
+`milestone_escalation_rate` identifies how often a route could not recover
+within one focused replay. It also records peak/pruned working-context size,
+evidence references, deterministic lane choice, and the exact handoff used by
+an optional stronger model.
+
+A repeated execution signature now restores only the active file boundary once.
+Another identical signature stops the current route and emits completed,
+pending, changed-file, validator, and evidence state. The next model continues
+that work; it does not receive a clean restart or an early hidden-oracle hint.
+The audit recommends a cascade comparison when escalation is recurring and
+blocks repetition when failed runs hold at least half the observed token mass
+in an n≥5 slice.
+
 GovernanceBench `T28` is a 20-turn product task spanning a Python/FastAPI API,
 Go worker, TypeScript/React UI, Playwright journey, JSON Schema, CSS, public
 tests, and architecture documentation. Its result is reported separately as

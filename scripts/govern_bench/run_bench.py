@@ -88,7 +88,8 @@ def _parse_args() -> argparse.Namespace:
             "controller-admission=n1 T1/T10/T11/T13/T28 FULL; "
             "release-controls=n10 T10/T13/T28; broad-release=n10 eight-task grid; "
             "substitution-screen=n5 coding/long-horizon 2x2 model-governance screen; "
-            "substitution-release=n10 eight-task 2x2 release comparison."
+            "substitution-release=n10 eight-task 2x2 release comparison; "
+            "literature-v9-ablation/screen/release=n1/n5/n10 controller evidence."
         ),
     )
     parser.add_argument(
@@ -147,6 +148,40 @@ def _parse_args() -> argparse.Namespace:
         help=("Base URL for provider=openai-compat. Defaults to BENCH_OPENAI_BASE_URL when set."),
     )
     parser.add_argument(
+        "--escalation-model",
+        default=os.environ.get("BENCH_ESCALATION_MODEL"),
+        help=(
+            "Optional stronger model used only after a deterministic milestone handoff. "
+            "The hidden oracle remains deferred until the final route completes."
+        ),
+    )
+    parser.add_argument(
+        "--escalation-provider",
+        default=os.environ.get("BENCH_ESCALATION_PROVIDER", "openai-responses"),
+        choices=[
+            "openai",
+            "openai-responses",
+            "anthropic",
+            "google",
+            "openai-compat",
+            "huggingface",
+        ],
+        help="Provider for --escalation-model (default: openai-responses).",
+    )
+    parser.add_argument(
+        "--escalation-base-url",
+        default=os.environ.get("BENCH_ESCALATION_BASE_URL"),
+        help="Optional OpenAI-compatible base URL for the escalation route.",
+    )
+    parser.add_argument(
+        "--controller-features",
+        default=os.environ.get("BENCH_CONTROLLER_FEATURES", "all"),
+        help=(
+            "Comma-separated v9 ablation features: retrieval, working-context, lanes, "
+            "early-stop, critical-replay; default all."
+        ),
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         default=os.environ.get("BENCH_DRY_RUN") == "1",
@@ -170,6 +205,15 @@ def _parse_args() -> argparse.Namespace:
         help=(
             "Write the post-run weakness audit as JSON. Default: "
             "<json-output>.audit.json or <output>.audit.json."
+        ),
+    )
+    parser.add_argument(
+        "--policy-output",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Write trace-derived controller examples as JSONL. When omitted, v9 runs "
+            "with --json-output use the same path with .policy.jsonl."
         ),
     )
     return parser.parse_args()
@@ -199,6 +243,29 @@ def _list_all() -> None:
         print(f"  {c.id:20}  overhead_turns={c.overhead_turns}  tags={c.tags}")
         print(f"        {c.description[:80]}...")
         print()
+
+
+def _validate_controller_features(value: str) -> str:
+    """Normalize v9 feature selection and reject ambiguous experiments."""
+    allowed = {
+        "retrieval",
+        "working-context",
+        "lanes",
+        "early-stop",
+        "critical-replay",
+    }
+    normalized = ",".join(part.strip() for part in value.split(",") if part.strip())
+    if normalized == "all":
+        return normalized
+    selected = set(normalized.split(",")) if normalized else set()
+    unknown = sorted(selected - allowed)
+    if unknown:
+        raise ValueError(f"unknown controller features: {', '.join(unknown)}")
+    if not selected:
+        raise ValueError("at least one controller feature is required")
+    if "critical-replay" in selected and "early-stop" not in selected:
+        raise ValueError("critical-replay requires early-stop")
+    return normalized
 
 
 def _make_dummy_run(task_id: str, condition_id: str, rep: int, model: str) -> RunResult:
@@ -307,6 +374,7 @@ def _result_rows(
             "provider": provider,
             "dry_run": dry_run,
             "controller_experiment": os.environ.get("BENCH_CONTROLLER_EXPERIMENT", "control"),
+            "controller_features": os.environ.get("BENCH_CONTROLLER_FEATURES", "all"),
             "horizon": task_map[r.task_id].horizon if r.task_id in task_map else "standard",
             "category": task_map[r.task_id].category if r.task_id in task_map else "unknown",
             "task_max_turns": task_map[r.task_id].max_turns if r.task_id in task_map else None,
@@ -329,6 +397,10 @@ def _result_rows(
             "stop_reason": r.stop_reason,
             "milestones_completed": r.milestones_completed,
             "milestones_total": r.milestones_total,
+            "controller_lane": r.controller_lane,
+            "working_context_peak_chars": r.working_context_peak_chars,
+            "working_context_pruned_chars": r.working_context_pruned_chars,
+            "evidence_ref_count": r.evidence_ref_count,
             "tokens_per_completed_milestone": (
                 round(r.total_tokens / r.milestones_completed, 3)
                 if r.milestones_completed
@@ -346,6 +418,8 @@ def _result_rows(
             "agent_transcript": r.agent_transcript,
             "governance_decision": r.governance_decision,
             "verify_result": r.verify_result,
+            "handoff": r.handoff,
+            "policy_examples": r.policy_examples,
             "skipped": r.skipped,
             "error": r.error,
         }
@@ -361,9 +435,41 @@ def _default_audit_path(args: argparse.Namespace) -> Path:
     return basis.with_suffix(".audit.json")
 
 
+def _policy_rows(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Flatten controller examples with enough provenance for later training."""
+
+    flattened: list[dict[str, object]] = []
+    for row in rows:
+        examples = row.get("policy_examples")
+        if not isinstance(examples, list):
+            continue
+        for example in examples:
+            if not isinstance(example, dict):
+                continue
+            flattened.append(
+                {
+                    "task": row.get("task"),
+                    "condition": row.get("condition"),
+                    "model": row.get("model"),
+                    "provider": row.get("provider"),
+                    "rep": row.get("rep"),
+                    "controller_experiment": row.get("controller_experiment"),
+                    "controller_features": row.get("controller_features"),
+                    **example,
+                }
+            )
+    return flattened
+
+
 def main() -> int:
     _configure_console_output(sys.stdout, sys.stderr)
     args = _parse_args()
+    try:
+        args.controller_features = _validate_controller_features(args.controller_features)
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 2
+    os.environ["BENCH_CONTROLLER_FEATURES"] = args.controller_features
 
     if args.list:
         _list_all()
@@ -461,6 +567,9 @@ def main() -> int:
                             model=args.model,
                             provider=args.provider,
                             base_url=args.base_url,
+                            escalation_model=args.escalation_model,
+                            escalation_provider=args.escalation_provider,
+                            escalation_base_url=args.escalation_base_url,
                         )
                     except RuntimeError as exc:
                         print(f"\n  [ERROR] {exc}", file=sys.stderr)
@@ -495,6 +604,22 @@ def main() -> int:
         json_path.parent.mkdir(parents=True, exist_ok=True)
         json_path.write_text(json.dumps(rows, indent=2), encoding="utf-8")
         print(f"Raw JSON written to {json_path}")
+
+    policy_rows = _policy_rows(rows)
+    policy_path = (
+        Path(args.policy_output)
+        if args.policy_output
+        else Path(args.json_output).with_suffix(".policy.jsonl")
+        if args.json_output and policy_rows
+        else None
+    )
+    if policy_path is not None:
+        policy_path.parent.mkdir(parents=True, exist_ok=True)
+        policy_path.write_text(
+            "".join(json.dumps(item, sort_keys=True) + "\n" for item in policy_rows),
+            encoding="utf-8",
+        )
+        print(f"Controller policy examples written to {policy_path} ({len(policy_rows)} rows)")
 
     from specsmith.benchmark_audit import (
         audit_benchmark_rows,

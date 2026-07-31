@@ -1,0 +1,84 @@
+protocol_id: GB-LITERATURE-V9-2026-07-31
+status: preregistered_before_paid_inference
+purpose: >-
+  Isolate literature-backed controller mechanisms, then test whether their
+  combination lowers failed-token mass and tokens per correct answer without
+  weakening executable correctness.
+
+controller:
+  frozen_reference: scalar-milestone-packet-authority-v8
+  candidate: scalar-milestone-packet-authority-v9
+  frozen_reference_must_remain_unchanged: true
+  feature_cells:
+    - retrieval
+    - working-context
+    - lanes
+    - early-stop
+    - early-stop,critical-replay
+    - all
+  feature_dependencies:
+    critical-replay: early-stop
+
+mechanisms:
+  retrieval: role_symbol_dependency_repository_map_with_source_on_demand
+  working_context: five_recent_tool_pairs_with_lossless_content_addressed_evidence
+  lanes: smallest_sufficient_gate_compiled_patch_or_milestone_controller
+  early_stop: execution_signature_progress_guard_and_machine_readable_handoff
+  critical_replay: one_focused_file_restore_before_escalation
+  cascade: same_fixture_same_diff_stronger_model_resume_hidden_oracle_once
+
+tasks: [T28, T29, T30]
+condition: SPECSMITH_FULL
+promotion:
+  admission:
+    profile: literature-v9-ablation
+    repetitions: 1
+    requirement: every_task_public_and_hidden_correct_no_error_or_skip
+  screen:
+    profile: literature-v9-screen
+    repetitions: 5
+    requirement: at_least_4_of_5_correct_per_task_and_no_efficiency_blocker
+  confirmation:
+    profile: literature-v9-release
+    repetitions: 10
+    requirement: at_least_9_of_10_correct_per_task_and_joint_efficiency_gate
+
+primary_metrics:
+  - tokens_per_correct_answer
+  - pass_rate
+  - failed_token_share
+  - first_pass_rate
+  - mean_turns
+  - mean_working_context_peak_chars
+  - mean_working_context_pruned_chars
+  - milestone_escalation_rate
+
+failure_accounting:
+  failed_tokens_remain_in_denominator: true
+  provider_errors_are_not_free_failures: true
+  incomplete_or_skipped_cells_fail_closed: true
+  hidden_oracle_runs_once_after_final_route: true
+
+route_sequence:
+  - label: frontier_control
+    model: gpt-5.6-sol
+    provider: openai-responses
+  - label: lower_tier_candidate
+    model: gpt-5.6-terra
+    provider: openai-responses
+  - label: open_27b_candidate
+    model: Qwen3.6-27B
+    provider: registry_pinned_route
+  - label: open_35b_candidate
+    model: Qwen3.6-35B-A3B-FP8
+    provider: native_qwen_route
+  - label: open_to_frontier_cascade
+    first_route: Qwen3.6-27B
+    escalation_route: gpt-5.6-sol
+
+reporting:
+  raw_trace_required: true
+  controller_feature_provenance_required: true
+  policy_examples_required: true
+  no_public_claim_before_confirmation: true
+  negative_and_censored_results_are_retained: true

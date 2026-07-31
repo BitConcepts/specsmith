@@ -11,6 +11,11 @@ consolidated into the next published release.
 ## [Unreleased]
 
 ### Added
+- Add the preregistered literature-driven v9 benchmark controller without
+  changing frozen v8: role-aware source-on-demand retrieval, lossless bounded
+  working context, deterministic controller lanes, execution-derived early
+  stop, focused critical replay, optional same-fixture model escalation,
+  trace-derived policy exports, and locked n=1/n=5/n=10 experiment profiles.
 - Freeze preregistration `GB-PREPRINT-2026-07-30-V1` before paid inference.
   It adds the locked T28/T29/T30 three-condition n=10 publication grid,
   sequential n=1/n=5/n=10 admissions for six exact 20B-35B open-model routes,

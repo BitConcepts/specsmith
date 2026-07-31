@@ -35,6 +35,18 @@
     including simulated dispatch, MUST be excluded from published comparisons.
     A deterministic single-file repair handoff SHOULD provide bounded current
     content and a write-only tool surface so compaction does not force a reread.
+    New controller changes MUST be isolated behind a versioned experiment and
+    MUST NOT mutate a frozen publication controller. The literature-driven v9
+    experiment MUST support role-aware source-on-demand retrieval, lossless
+    evidence references with a bounded recent working history, deterministic
+    selection of the smallest sufficient controller lane, execution-derived
+    stall replay and milestone escalation, and an optional same-fixture model
+    cascade that evaluates the hidden oracle exactly once. Its retrieval,
+    working-context, lane-selection, early-stop, and critical-replay controls
+    MUST be independently ablatable before n=1 admission, n=5 screening, and
+    n=10 confirmation. Raw rows MUST retain controller lane, context pruning,
+    evidence references, handoff state, failed-token mass, and trace-derived
+    policy examples so efficiency decisions remain reproducible.
   source: scripts/govern_bench benchmark trustworthiness fixes (plan aebed8bd)
   status: implemented
 - id: REQ-485

@@ -106,6 +106,30 @@ PROFILES: dict[str, BenchmarkProfile] = {
         repetitions=10,
         purpose="Independent n=10 confirmation for an open route that cleared n=5.",
     ),
+    "literature-v9-ablation": BenchmarkProfile(
+        name="literature-v9-ablation",
+        tasks=("T28", "T29", "T30"),
+        conditions=("SPECSMITH_FULL",),
+        repetitions=1,
+        purpose=(
+            "One admission cell per synthetic/fresh/upstream task for each isolated "
+            "literature-backed v9 feature set."
+        ),
+    ),
+    "literature-v9-screen": BenchmarkProfile(
+        name="literature-v9-screen",
+        tasks=("T28", "T29", "T30"),
+        conditions=("SPECSMITH_FULL",),
+        repetitions=5,
+        purpose="Matched n=5 screen for a combined v9 controller that clears ablation admission.",
+    ),
+    "literature-v9-release": BenchmarkProfile(
+        name="literature-v9-release",
+        tasks=("T28", "T29", "T30"),
+        conditions=("SPECSMITH_FULL",),
+        repetitions=10,
+        purpose="Independent n=10 confirmation for a combined v9 controller that clears n=5.",
+    ),
 }
 
 

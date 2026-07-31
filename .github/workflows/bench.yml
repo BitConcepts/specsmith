@@ -28,6 +28,9 @@ on:
           - publication-open-admission
           - publication-open-screen
           - publication-open-release
+          - literature-v9-ablation
+          - literature-v9-screen
+          - literature-v9-release
         default: custom
       experiment:
         description: "Versioned controller protocol; use one admission per causal variant."
@@ -60,7 +63,20 @@ on:
           - scalar-milestone-packet-authority-v6
           - scalar-milestone-packet-authority-v7
           - scalar-milestone-packet-authority-v8
+          - scalar-milestone-packet-authority-v9
         default: control
+      controller_features:
+        description: "v9 feature set: all, retrieval, working-context, lanes, early-stop, or early-stop,critical-replay."
+        required: false
+        default: "all"
+      escalation_model:
+        description: "Optional stronger model used only after a v9 milestone handoff."
+        required: false
+        default: ""
+      escalation_provider:
+        description: "Provider for the optional escalation model."
+        required: false
+        default: "openai-responses"
       groups:
         description: "Model groups to run (comma-separated: open,open-qwen,open-mid-admission,open-mid-route-recovery,open-mid-followup,open-frontier,open-direct,openai,openai-native,anthropic,google). Default: open."
         required: false
@@ -415,15 +431,25 @@ jobs:
           BENCH_DRY_RUN:     ${{ github.event.inputs.dry_run == 'true' && '1' || '' }}
           BENCH_MAX_TURNS:   "12"
           BENCH_CONTROLLER_EXPERIMENT: ${{ github.event.inputs.experiment || 'control' }}
+          BENCH_CONTROLLER_FEATURES: ${{ github.event.inputs.controller_features || 'all' }}
+          ESCALATION_MODEL: ${{ github.event.inputs.escalation_model || '' }}
+          ESCALATION_PROVIDER: ${{ github.event.inputs.escalation_provider || 'openai-responses' }}
         run: |
           DRY_FLAG=""
           [ "${{ github.event.inputs.dry_run }}" = "true" ] && DRY_FLAG="--dry-run"
+          ESCALATION_ARGS=""
+          if [ -n "$ESCALATION_MODEL" ]; then
+            ESCALATION_ARGS="--escalation-model $ESCALATION_MODEL --escalation-provider $ESCALATION_PROVIDER"
+          fi
           python scripts/govern_bench/run_bench.py \
             ${{ steps.build-args.outputs.args }} \
             --provider ${{ matrix.provider }} \
             --model "${{ matrix.model }}" \
+            --controller-features "$BENCH_CONTROLLER_FEATURES" \
             --output   "bench-report-${{ matrix.label }}.md" \
             --json-output "bench-results-${{ matrix.label }}.json" \
+            --policy-output "bench-policy-${{ matrix.label }}.jsonl" \
+            $ESCALATION_ARGS \
             $DRY_FLAG
 
       - name: Upload per-model artifact
@@ -435,6 +461,7 @@ jobs:
             bench-report-${{ matrix.label }}.md
             bench-results-${{ matrix.label }}.json
             bench-results-${{ matrix.label }}.audit.json
+            bench-policy-${{ matrix.label }}.jsonl
           retention-days: 30
           if-no-files-found: ignore
 

@@ -41,6 +41,15 @@ The free default ESDB uses SQLite. The optional ChronoMemory backend adds its
 licensed ChronoStore implementation. Both expose the same Specsmith evidence
 boundary so integrations do not depend on a proprietary backend.
 
+`specsmith.efficiency_controller` is the reusable experimental boundary for
+long-horizon model efficiency. It selects the smallest deterministic lane that
+can satisfy a task, keeps only five recent tool exchanges in working context,
+and archives every evicted exchange losslessly under a content-addressed
+evidence reference. Role/symbol/dependency repository maps identify likely
+files without preloading raw source. Repeated execution signatures trigger one
+focused replay and then a machine-readable milestone handoff; an optional
+stronger route resumes the same fixture and diff rather than restarting.
+
 ### Interfaces
 
 - The focused CLI supports project adoption, requirements, tests, preflight,
@@ -82,6 +91,8 @@ flowchart LR
 7. Windows, Linux, and macOS use equivalent paths and command semantics.
 8. Specsmith publication occurs only through reviewed release branches and
    repository-local CI.
+9. Experimental benchmark controllers never mutate a frozen publication
+   controller, and hidden acceptance runs only after the final route stops.
 
 ## Release architecture
 

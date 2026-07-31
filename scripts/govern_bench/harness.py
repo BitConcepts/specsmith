@@ -55,6 +55,17 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
+from specsmith.efficiency_controller import (
+    ControllerLane,
+    EvidenceVault,
+    MilestoneHandoff,
+    ProgressGuard,
+    bound_working_messages,
+    select_controller_lane,
+    trace_policy_examples,
+)
+from specsmith.retrieval import build_role_entries, rank_role_entries, render_role_packet
+
 if TYPE_CHECKING:
     from govern_bench.conditions import Condition
     from govern_bench.metrics import RunResult
@@ -109,6 +120,7 @@ CONTROLLER_EXPERIMENTS = frozenset(
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
         "scalar-milestone-packet-authority-v8",
+        "scalar-milestone-packet-authority-v9",
     }
 )
 
@@ -424,6 +436,27 @@ def _controller_experiment() -> str:
     return experiment
 
 
+def _literature_v9_experiment(experiment: str) -> bool:
+    """Return whether the evidence-preserving controller ablation is active."""
+
+    return experiment == "scalar-milestone-packet-authority-v9"
+
+
+_V9_FEATURES = frozenset({"retrieval", "working-context", "lanes", "early-stop", "critical-replay"})
+
+
+def _v9_feature(name: str) -> bool:
+    """Return whether one preregisterable v9 ablation feature is enabled."""
+
+    if not _literature_v9_experiment(_controller_experiment()):
+        return False
+    configured = os.environ.get("BENCH_CONTROLLER_FEATURES", "all").strip().casefold()
+    if configured in {"", "all", "combined"}:
+        return name in _V9_FEATURES
+    enabled = {item.strip() for item in configured.split(",") if item.strip()}
+    return name in enabled
+
+
 def _scalar_parallel_experiment(experiment: str) -> bool:
     return experiment in {
         "scalar-parallel",
@@ -450,6 +483,7 @@ def _scalar_parallel_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
         "scalar-milestone-packet-authority-v8",
+        "scalar-milestone-packet-authority-v9",
     }
 
 
@@ -479,6 +513,7 @@ def _compact_context_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
         "scalar-milestone-packet-authority-v8",
+        "scalar-milestone-packet-authority-v9",
     }
 
 
@@ -503,6 +538,7 @@ def _native_edit_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
         "scalar-milestone-packet-authority-v8",
+        "scalar-milestone-packet-authority-v9",
     }
 
 
@@ -522,6 +558,7 @@ def _native_patch_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
         "scalar-milestone-packet-authority-v8",
+        "scalar-milestone-packet-authority-v9",
     }
 
 
@@ -543,6 +580,7 @@ def _scoped_read_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
         "scalar-milestone-packet-authority-v8",
+        "scalar-milestone-packet-authority-v9",
     }
 
 
@@ -638,6 +676,7 @@ def _milestone_bundle_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
         "scalar-milestone-packet-authority-v8",
+        "scalar-milestone-packet-authority-v9",
     }
 
 
@@ -655,6 +694,7 @@ def _milestone_packet_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
         "scalar-milestone-packet-authority-v8",
+        "scalar-milestone-packet-authority-v9",
         "scalar-parallel-hybrid-v1",
         "scalar-parallel-hybrid-v2",
     }
@@ -673,6 +713,7 @@ def _adaptive_required_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
         "scalar-milestone-packet-authority-v8",
+        "scalar-milestone-packet-authority-v9",
         "scalar-parallel-hybrid-v1",
         "scalar-parallel-hybrid-v2",
     }
@@ -695,6 +736,7 @@ def _stable_repair_schema_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
         "scalar-milestone-packet-authority-v8",
+        "scalar-milestone-packet-authority-v9",
         "scalar-parallel-hybrid-v1",
         "scalar-parallel-hybrid-v2",
     }
@@ -708,6 +750,7 @@ def _native_milestone_schema_experiment(experiment: str) -> bool:
         "scalar-milestone-packet-authority-v6",
         "scalar-milestone-packet-authority-v7",
         "scalar-milestone-packet-authority-v8",
+        "scalar-milestone-packet-authority-v9",
     }
 
 
@@ -960,6 +1003,29 @@ _PATCH_FILE_TOOL: dict[str, Any] = {
                     for key in (f"old_text_{index}", f"new_text_{index}")
                 ),
             ],
+            "additionalProperties": False,
+        },
+    },
+}
+
+_READ_EVIDENCE_TOOL: dict[str, Any] = {
+    "type": "function",
+    "function": {
+        "name": "read_evidence",
+        "description": (
+            "Retrieve one exact archived controller observation by its EV- reference. "
+            "Use only when the compact working state is insufficient."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "ref": {
+                    "type": "string",
+                    "pattern": "^EV-[A-F0-9]{16}$",
+                    "description": "Stable evidence reference supplied by the controller",
+                }
+            },
+            "required": ["ref"],
             "additionalProperties": False,
         },
     },
@@ -1355,6 +1421,12 @@ def _build_active_tools(
     del diagnostics_required, composite_files, composite_reads
     stable_names = {"read_file", "write_file", "done"}
     scalar_tools = [tool for tool in tools if tool["function"]["name"] in stable_names]
+    if _v9_feature("working-context"):
+        scalar_tools = [
+            *[tool for tool in scalar_tools if tool["function"]["name"] != "done"],
+            _READ_EVIDENCE_TOOL,
+            *[tool for tool in scalar_tools if tool["function"]["name"] == "done"],
+        ]
     if _scalar_parallel_experiment(_controller_experiment()):
         if _milestone_bundle_experiment(_controller_experiment()):
             milestone_tool = (
@@ -1388,7 +1460,13 @@ def _build_active_tools(
                     tool
                     for tool in scalar_tools
                     if tool["function"]["name"]
-                    in {"write_file", "write_milestone", "patch_file", "done"}
+                    in {
+                        "write_file",
+                        "write_milestone",
+                        "patch_file",
+                        "read_evidence",
+                        "done",
+                    }
                 ]
             )
         if _native_patch_experiment(_controller_experiment()):
@@ -2418,6 +2496,108 @@ def _build_project_diff(source_root: Path, project_root: Path, max_chars: int = 
             chunks.append("\n... [diff compacted]\n")
             break
     return "".join(chunks)[:max_chars]
+
+
+@dataclass
+class _RepairCheckpoint:
+    signature: str
+    contents: dict[str, str | None]
+
+
+def _capture_repair_checkpoint(
+    project_root: Path,
+    paths: list[str],
+    signature: str,
+) -> _RepairCheckpoint:
+    """Capture only the controller-identified repair boundary."""
+
+    contents: dict[str, str | None] = {}
+    for path in paths:
+        resolved, error = _resolve_project_path(project_root, path)
+        if error or resolved is None:
+            continue
+        contents[path] = (
+            resolved.read_text(encoding="utf-8", errors="ignore") if resolved.is_file() else None
+        )
+    return _RepairCheckpoint(signature=signature, contents=contents)
+
+
+def _restore_repair_checkpoint(project_root: Path, checkpoint: _RepairCheckpoint) -> list[str]:
+    """Restore one bounded repair checkpoint inside a disposable task fixture."""
+
+    restored: list[str] = []
+    for path, content in checkpoint.contents.items():
+        resolved, error = _resolve_project_path(project_root, path)
+        if error or resolved is None:
+            continue
+        if content is None:
+            if resolved.is_file():
+                resolved.unlink()
+        else:
+            resolved.parent.mkdir(parents=True, exist_ok=True)
+            resolved.write_text(content, encoding="utf-8", newline="\n")
+        restored.append(path)
+    return restored
+
+
+def _task_controller_lane(task: BenchTask) -> ControllerLane:
+    return select_controller_lane(
+        is_safety_task=task.is_safety_task,
+        is_clarification_task=task.is_clarification_task,
+        is_long_horizon=task.is_long_horizon,
+        expected_files=task.expected_files_changed,
+        milestones=task.milestones,
+        languages=task.languages,
+    )
+
+
+def _active_milestone_label(task: BenchTask, files_written: list[str]) -> str:
+    active = _active_milestone(task, files_written)
+    if active is None:
+        return "completion validation"
+    index, milestone, _remaining = active
+    return str(milestone.get("name") or f"milestone {index}")
+
+
+def _role_retrieval_packet(
+    project_root: Path,
+    task: BenchTask,
+    *,
+    failure_context: str = "",
+    limit: int = 8,
+) -> tuple[str, list[str]]:
+    entries = build_role_entries(project_root)
+    ranked = rank_role_entries(
+        entries,
+        f"{task.title}\n{task.task_prompt}\n{task.visible_acceptance_criteria}",
+        failure_context=failure_context,
+        limit=limit,
+    )
+    return render_role_packet(ranked), [str(entry["path"]) for entry in ranked]
+
+
+def _make_milestone_handoff(
+    *,
+    task: BenchTask,
+    lane: ControllerLane,
+    reason: str,
+    files_written: list[str],
+    validator_failures: list[str],
+    evidence_vault: EvidenceVault,
+    input_tokens: int,
+    output_tokens: int,
+) -> dict[str, Any]:
+    return MilestoneHandoff(
+        task_id=task.id,
+        controller_lane=lane.value,
+        reason=reason,
+        active_milestone=_active_milestone_label(task, files_written),
+        files_written=tuple(dict.fromkeys(files_written)),
+        validator_failures=tuple(validator_failures),
+        evidence_refs=tuple(evidence_vault.refs),
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+    ).to_dict()
 
 
 # ---------------------------------------------------------------------------
@@ -4168,6 +4348,8 @@ def _run_ruff_with_bounded_safe_fix(
 def _run_standard_validation(
     task: BenchTask,
     project_root: Path,
+    *,
+    include_hidden_oracle: bool = True,
 ) -> tuple[bool, str, bool, str, bool, str]:
     """Grade project checks first, then run the hidden oracle in isolation."""
     lint_ok, lint_out = _exec_run_command(project_root, "ruff check .")
@@ -4181,14 +4363,17 @@ def _run_standard_validation(
     if public_validator_output:
         project_test_out += "\n\n" + "\n\n".join(public_validator_output)
 
-    oracle_dir = _install_acceptance_oracle(task, project_root)
-    try:
-        oracle_ok, oracle_out = _exec_run_command(
-            project_root,
-            "pytest .governancebench_oracle",
-        )
-    finally:
-        shutil.rmtree(oracle_dir, ignore_errors=True)
+    oracle_ok = True
+    oracle_out = "Hidden oracle deferred for milestone handoff."
+    if include_hidden_oracle:
+        oracle_dir = _install_acceptance_oracle(task, project_root)
+        try:
+            oracle_ok, oracle_out = _exec_run_command(
+                project_root,
+                "pytest .governancebench_oracle",
+            )
+        finally:
+            shutil.rmtree(oracle_dir, ignore_errors=True)
 
     return lint_ok, lint_out, project_test_ok, project_test_out, oracle_ok, oracle_out
 
@@ -4207,6 +4392,9 @@ def run_task(
     base_url: str | None = None,
     specsmith_dir: Path | None = None,
     max_turns: int | None = None,
+    escalation_model: str | None = None,
+    escalation_provider: str = "openai-responses",
+    escalation_base_url: str | None = None,
 ) -> RunResult:
     """Run a single benchmark task under a governance condition using a real LLM agent.
 
@@ -4236,7 +4424,98 @@ def run_task(
             project_root=project_root,
             specsmith_dir=_specsmith_dir,
             max_turns=_max_turns,
+            defer_hidden_oracle=bool(escalation_model),
         )
+        if result.handoff and escalation_model:
+            handoff = dict(result.handoff)
+            handoff["final_diff"] = _build_project_diff(source_dir, project_root)
+            escalation_key, escalation_client = _build_provider_client(
+                escalation_provider,
+                base_url=escalation_base_url,
+            )
+            escalated = _run_agent_loop(
+                provider=escalation_key,
+                client=escalation_client,
+                model=escalation_model,
+                task=task,
+                condition=condition,
+                project_root=project_root,
+                specsmith_dir=_specsmith_dir,
+                max_turns=_max_turns,
+                resume_handoff=handoff,
+            )
+            escalated.agent_transcript = [
+                *result.agent_transcript,
+                {
+                    "turn": result.llm_turns,
+                    "role": "controller",
+                    "cascade": {
+                        "from_model": model,
+                        "to_model": escalation_model,
+                        "reason": handoff.get("reason", "milestone escalation"),
+                        "preserved_partial_progress": True,
+                    },
+                },
+                *escalated.agent_transcript,
+            ]
+            escalated.call_usage = [*result.call_usage, *escalated.call_usage]
+            escalated.files_written = list(
+                dict.fromkeys([*result.files_written, *escalated.files_written])
+            )
+            escalated.input_tokens += result.input_tokens
+            escalated.output_tokens += result.output_tokens
+            escalated.cached_input_tokens += result.cached_input_tokens
+            escalated.cache_write_tokens += result.cache_write_tokens
+            escalated.input_cost_usd += result.input_cost_usd
+            escalated.output_cost_usd += result.output_cost_usd
+            escalated.api_cost_usd += result.api_cost_usd
+            escalated.rework_turns += result.rework_turns
+            escalated.governance_turns += result.governance_turns
+            escalated.llm_turns += result.llm_turns
+            escalated.wall_clock_s += result.wall_clock_s
+            escalated.working_context_peak_chars = max(
+                result.working_context_peak_chars,
+                escalated.working_context_peak_chars,
+            )
+            escalated.working_context_pruned_chars += result.working_context_pruned_chars
+            escalated.evidence_ref_count = max(
+                result.evidence_ref_count,
+                escalated.evidence_ref_count,
+            )
+            escalated.policy_examples = [
+                *result.policy_examples,
+                *escalated.policy_examples,
+            ]
+            escalated.model = f"{model}->{escalation_model}"
+            result = escalated
+        elif escalation_model:
+            (
+                lint_ok,
+                lint_out,
+                project_test_ok,
+                project_test_out,
+                oracle_ok,
+                oracle_out,
+            ) = _run_standard_validation(task, project_root)
+            result.lint_passed = lint_ok
+            result.tests_passed = project_test_ok and oracle_ok
+            result.project_tests_passed = project_test_ok
+            result.acceptance_oracle_passed = oracle_ok
+            result.lint_output = lint_out
+            result.test_output = (
+                f"$ project tests\n{project_test_out}\n\n$ acceptance oracle\n{oracle_out}"
+            )
+            result.quality_score = (
+                0.9
+                if result.lint_passed and result.tests_passed and result.files_written
+                else 0.8
+                if result.lint_passed and result.tests_passed
+                else 0.5
+                if result.lint_passed or result.tests_passed
+                else 0.2
+                if result.files_written
+                else 0.0
+            )
         result.rep = rep
         result.final_diff = _build_project_diff(source_dir, project_root)
         return result
@@ -4254,11 +4533,30 @@ def _run_agent_loop(
     project_root: Path,
     specsmith_dir: Path,
     max_turns: int,
+    resume_handoff: dict[str, Any] | None = None,
+    defer_hidden_oracle: bool = False,
 ) -> RunResult:
     from govern_bench.metrics import RunResult, estimate_cost
 
     del specsmith_dir  # governance state is isolated inside project_root
     controller_experiment = _controller_experiment()
+    literature_v9 = condition.id == "SPECSMITH_FULL" and _literature_v9_experiment(
+        controller_experiment
+    )
+    controller_lane = (
+        _task_controller_lane(task)
+        if literature_v9 and _v9_feature("lanes")
+        else ControllerLane.GATE
+        if task.is_safety_task or task.is_clarification_task
+        else ControllerLane.MILESTONE
+    )
+    evidence_vault = EvidenceVault(
+        project_root if literature_v9 and _v9_feature("working-context") else None
+    )
+    progress_guard = ProgressGuard(
+        replay_limit=1 if _v9_feature("critical-replay") else 0,
+        escalation_turns=3,
+    )
     compact_context = _compact_context_experiment(controller_experiment)
     milestone_packets = condition.id == "SPECSMITH_FULL" and _milestone_packet_experiment(
         controller_experiment
@@ -4298,6 +4596,10 @@ def _run_agent_loop(
                 "turn": 0,
                 "role": "controller",
                 "controller_experiment": controller_experiment,
+                "controller_lane": controller_lane.value,
+                "controller_features": sorted(
+                    feature for feature in _V9_FEATURES if _v9_feature(feature)
+                ),
                 "tool_choice": tool_choice,
                 "timeout_policy": {
                     "request_timeout_s": request_timeout_s,
@@ -4339,12 +4641,31 @@ def _run_agent_loop(
 
     # Preload a bounded task-relevant context; the agent can read more on demand.
     file_listing = _exec_list_files(project_root)
+    role_context = ""
+    role_context_paths: list[str] = []
+    if literature_v9 and _v9_feature("retrieval"):
+        role_context, role_context_paths = _role_retrieval_packet(project_root, task)
+        agent_transcript.append(
+            {
+                "turn": 0,
+                "role": "controller",
+                "role_retrieval": {
+                    "paths": role_context_paths,
+                    "representation": "role-v1",
+                    "source_on_demand": True,
+                },
+            }
+        )
     boundary_context = ""
     initial_context_paths: list[str] = []
     if condition.id == "SPECSMITH_FULL":
         initial_context_paths = (
             list(task.initial_context_paths)
             if task.initial_context_paths
+            else role_context_paths[:3]
+            if literature_v9
+            and _v9_feature("lanes")
+            and controller_lane is ControllerLane.COMPILED_PATCH
             else _next_incomplete_boundary_paths(task, [])
             if task.is_long_horizon
             else []
@@ -4387,6 +4708,7 @@ def _run_agent_loop(
     prompt_parts.extend(
         [
             f"## Current project files\n```\n{file_listing}\n```",
+            role_context,
             file_context,
             boundary_context,
         ]
@@ -4402,7 +4724,7 @@ def _run_agent_loop(
     total_output_tokens = 0
     total_cached_tokens = 0
     total_cache_write_tokens = 0
-    files_written: list[str] = []
+    files_written: list[str] = list((resume_handoff or {}).get("files_written") or [])
     active_write_paths = _next_incomplete_boundary_paths(task, files_written)
     # One means the initial implementation attempt. Increment only for an
     # actual recovery/correction cycle, never once per validator command.
@@ -4434,7 +4756,31 @@ def _run_agent_loop(
     invalid_milestone_packet_count = 0
     force_tool_call_next_turn = False
     forced_tool_name_next_turn = ""
+    latest_validator_failures: list[str] = list(
+        (resume_handoff or {}).get("validator_failures") or []
+    )
+    handoff: dict[str, Any] = {}
+    repair_checkpoint: _RepairCheckpoint | None = None
+    working_context_peak_chars = sum(
+        len(json.dumps(message, sort_keys=True, default=str)) for message in messages
+    )
+    working_context_pruned_chars = 0
+    working_context_archived_refs: list[str] = []
     stop_reason = "max_turns"
+
+    if resume_handoff:
+        resume_context = {
+            "role": "user",
+            "content": (
+                "[SPECSMITH MILESTONE HANDOFF]\n"
+                + json.dumps(resume_handoff, sort_keys=True, separators=(",", ":"))
+                + "\nResume only the unresolved milestone; preserve validated partial progress."
+            ),
+        }
+        messages.append(resume_context)
+        agent_transcript.append(
+            {"turn": 0, "role": "controller", "resumed_handoff": resume_handoff}
+        )
 
     for turn in range(max_turns):
         remaining_s = cell_deadline - time.monotonic()
@@ -4622,6 +4968,39 @@ def _run_agent_loop(
         if not msg.tool_calls:
             messages.append(assistant_message)
             content = (msg.content or "").strip()
+            if literature_v9 and _v9_feature("early-stop"):
+                narration_decision = progress_guard.observe(
+                    milestones_completed=_completed_milestone_count(task, files_written),
+                    file_count=len(files_written),
+                    failure_signature=active_repair_evidence_signature,
+                    had_tool_action=False,
+                )
+                agent_transcript.append(
+                    {
+                        "turn": turn + 1,
+                        "role": "controller",
+                        "milestones_completed": _completed_milestone_count(task, files_written),
+                        "files_written": len(files_written),
+                        "failure_signature": active_repair_evidence_signature,
+                        "progress_decision": {
+                            "action": narration_decision.action,
+                            "reason": narration_decision.reason,
+                        },
+                    }
+                )
+                if narration_decision.action == "escalate":
+                    stop_reason = "milestone_escalation"
+                    handoff = _make_milestone_handoff(
+                        task=task,
+                        lane=controller_lane,
+                        reason=narration_decision.reason,
+                        files_written=files_written,
+                        validator_failures=latest_validator_failures,
+                        evidence_vault=evidence_vault,
+                        input_tokens=total_input_tokens,
+                        output_tokens=total_output_tokens,
+                    )
+                    break
             if not content and empty_response_retries < 1 and turn + 1 < max_turns:
                 # Some OpenAI-compatible routes occasionally emit an empty
                 # assistant message immediately after a large tool-result batch.
@@ -4732,6 +5111,13 @@ def _run_agent_loop(
                 out = (
                     "READ SUSPENDED: the controller already supplied current content for "
                     "this requirement boundary. Reuse that evidence and implement now."
+                )
+
+            elif fn_name == "read_evidence":
+                ref = str(args.get("ref") or "")
+                evidence = evidence_vault.get(ref)
+                out = (
+                    evidence.content if evidence is not None else f"ERROR: unknown evidence {ref!r}"
                 )
 
             elif fn_name == "read_file":
@@ -4956,6 +5342,7 @@ def _run_agent_loop(
                             task,
                             completion_failures,
                         )
+                        latest_validator_failures = repair_failures
                         active_repair_evidence_signature = _repair_failure_signature(
                             repair_failures
                         )
@@ -5028,11 +5415,19 @@ def _run_agent_loop(
             else:
                 out = f"ERROR: unknown tool {fn_name!r}"
 
+            evidence_suffix = ""
+            if literature_v9 and _v9_feature("working-context"):
+                evidence_ref = evidence_vault.put(
+                    out,
+                    kind=f"tool:{fn_name}",
+                    metadata={"turn": turn + 1, "target": _tool_call_target(tc)},
+                )
+                evidence_suffix = f"\n[EVIDENCE {evidence_ref}]"
             tool_results.append(
                 {
                     "role": "tool",
                     "tool_call_id": tc.id,
-                    "content": _compact_tool_result(out),
+                    "content": _compact_tool_result(out) + evidence_suffix,
                 }
             )
 
@@ -5069,6 +5464,7 @@ def _run_agent_loop(
             if milestone_failures:
                 validation_failed = True
                 repair_failures = _focused_validator_failures(task, milestone_failures)
+                latest_validator_failures = repair_failures
                 active_repair_evidence_signature = _repair_failure_signature(repair_failures)
                 active_write_paths = _focused_validator_repair_paths(task, repair_failures)
                 repair_focus = _focused_validator_repair_progress(
@@ -5348,6 +5744,131 @@ def _run_agent_loop(
                 }
             )
 
+        if literature_v9 and _v9_feature("early-stop") and validation_failed:
+            failure_signature = active_repair_evidence_signature or _repair_failure_signature(
+                latest_validator_failures
+            )
+            if failure_signature and (
+                repair_checkpoint is None or repair_checkpoint.signature != failure_signature
+            ):
+                repair_checkpoint = _capture_repair_checkpoint(
+                    project_root,
+                    active_write_paths,
+                    failure_signature,
+                )
+            progress_decision = progress_guard.observe(
+                milestones_completed=_completed_milestone_count(task, files_written),
+                file_count=len(files_written),
+                failure_signature=failure_signature,
+                had_tool_action=True,
+            )
+            agent_transcript.append(
+                {
+                    "turn": turn + 1,
+                    "role": "controller",
+                    "milestones_completed": _completed_milestone_count(task, files_written),
+                    "files_written": len(files_written),
+                    "failure_signature": failure_signature,
+                    "progress_decision": {
+                        "action": progress_decision.action,
+                        "reason": progress_decision.reason,
+                        "no_progress_turns": progress_decision.no_progress_turns,
+                        "repeated_failure_count": progress_decision.repeated_failure_count,
+                    },
+                }
+            )
+            if progress_decision.action == "replay" and repair_checkpoint is not None:
+                restored = _restore_repair_checkpoint(project_root, repair_checkpoint)
+                replay_instruction = (
+                    "Critical-point replay: the same validator signature persisted. The "
+                    "controller restored the bounded milestone checkpoint. Produce one "
+                    "materially different atomic patch using the failure evidence; do not "
+                    "restart repository exploration."
+                )
+                active_repair_focus = f"{active_repair_focus}\n\n{replay_instruction}"
+                agent_transcript.append(
+                    {
+                        "turn": turn + 1,
+                        "role": "controller",
+                        "critical_replay": {
+                            "restored_paths": restored,
+                            "failure_signature": failure_signature,
+                            "candidate": progress_guard.replays + 1,
+                        },
+                    }
+                )
+            elif progress_decision.action == "escalate":
+                stop_reason = "milestone_escalation"
+                handoff = _make_milestone_handoff(
+                    task=task,
+                    lane=controller_lane,
+                    reason=progress_decision.reason,
+                    files_written=files_written,
+                    validator_failures=latest_validator_failures,
+                    evidence_vault=evidence_vault,
+                    input_tokens=total_input_tokens,
+                    output_tokens=total_output_tokens,
+                )
+                break
+
+            if _v9_feature("retrieval"):
+                failure_role_context, failure_role_paths = _role_retrieval_packet(
+                    project_root,
+                    task,
+                    failure_context="\n".join(latest_validator_failures),
+                    limit=5,
+                )
+                if failure_role_context:
+                    active_repair_focus = f"{active_repair_focus}\n\n{failure_role_context}"
+                    agent_transcript.append(
+                        {
+                            "turn": turn + 1,
+                            "role": "controller",
+                            "failure_conditioned_retrieval": failure_role_paths,
+                        }
+                    )
+
+        if literature_v9 and _v9_feature("early-stop") and not validation_failed and not finished:
+            progress_decision = progress_guard.observe(
+                milestones_completed=_completed_milestone_count(task, files_written),
+                file_count=len(files_written),
+                had_tool_action=True,
+            )
+            agent_transcript.append(
+                {
+                    "turn": turn + 1,
+                    "role": "controller",
+                    "milestones_completed": _completed_milestone_count(task, files_written),
+                    "files_written": len(files_written),
+                    "failure_signature": "",
+                    "progress_decision": {
+                        "action": progress_decision.action,
+                        "reason": progress_decision.reason,
+                        "no_progress_turns": progress_decision.no_progress_turns,
+                        "repeated_failure_count": progress_decision.repeated_failure_count,
+                    },
+                }
+            )
+            if progress_decision.action == "recover":
+                messages = _replace_adaptive_progress_message(
+                    messages,
+                    "One bounded recovery remains before milestone escalation. Use the "
+                    "current evidence to make a requirement-linked write or call done.",
+                )
+            elif progress_decision.action == "escalate":
+                stop_reason = "milestone_escalation"
+                handoff = _make_milestone_handoff(
+                    task=task,
+                    lane=controller_lane,
+                    reason=progress_decision.reason,
+                    files_written=files_written,
+                    validator_failures=latest_validator_failures,
+                    evidence_vault=evidence_vault,
+                    input_tokens=total_input_tokens,
+                    output_tokens=total_output_tokens,
+                )
+                break
+
         if validation_failed:
             rework_turns += 1
             diagnostics_required = True
@@ -5625,6 +6146,7 @@ def _run_agent_loop(
                         "scalar-milestone-packet-authority-v6",
                         "scalar-milestone-packet-authority-v7",
                         "scalar-milestone-packet-authority-v8",
+                        "scalar-milestone-packet-authority-v9",
                         "scalar-parallel-hybrid-v1",
                         "scalar-parallel-hybrid-v2",
                     }
@@ -5650,6 +6172,7 @@ def _run_agent_loop(
                     "scalar-milestone-packet-authority-v6",
                     "scalar-milestone-packet-authority-v7",
                     "scalar-milestone-packet-authority-v8",
+                    "scalar-milestone-packet-authority-v9",
                     "scalar-parallel-hybrid-v1",
                     "scalar-parallel-hybrid-v2",
                 }
@@ -5658,6 +6181,45 @@ def _run_agent_loop(
             if repeated_write_streak >= repeated_write_limit:
                 stop_reason = "repeated_tool_loop"
                 break
+
+        if literature_v9 and _v9_feature("working-context") and not finished:
+            try:
+                working_context_limit = int(os.environ.get("BENCH_WORKING_CONTEXT_CHARS", "48000"))
+            except ValueError:
+                working_context_limit = 48_000
+            messages, context_stats = bound_working_messages(
+                messages,
+                vault=evidence_vault,
+                controller_state={
+                    "lane": controller_lane.value,
+                    "active_milestone": _active_milestone_label(task, files_written),
+                    "files_written": list(dict.fromkeys(files_written)),
+                    "validator_failures": latest_validator_failures,
+                    "next_action": ("repair" if active_repair_focus else "advance_or_validate"),
+                },
+                recent_tool_pairs=5,
+                max_chars=max(12_000, working_context_limit),
+            )
+            working_context_peak_chars = max(
+                working_context_peak_chars,
+                context_stats.before_chars,
+            )
+            working_context_pruned_chars += context_stats.pruned_chars
+            working_context_archived_refs.extend(context_stats.archived_refs)
+            if context_stats.pruned_chars:
+                agent_transcript.append(
+                    {
+                        "turn": turn + 1,
+                        "role": "controller",
+                        "working_context": {
+                            "before_chars": context_stats.before_chars,
+                            "after_chars": context_stats.after_chars,
+                            "pruned_chars": context_stats.pruned_chars,
+                            "retained_tool_pairs": context_stats.retained_tool_pairs,
+                            "archived_refs": list(context_stats.archived_refs),
+                        },
+                    }
+                )
 
         if finished:
             if stop_reason == "max_turns":
@@ -5703,6 +6265,15 @@ def _run_agent_loop(
                         "final_deterministic_repair": final_repair_receipt,
                     }
                 )
+        validation = (
+            _run_standard_validation(
+                task,
+                project_root,
+                include_hidden_oracle=False,
+            )
+            if defer_hidden_oracle
+            else _run_standard_validation(task, project_root)
+        )
         (
             lint_ok,
             lint_out,
@@ -5710,12 +6281,12 @@ def _run_agent_loop(
             project_test_out,
             oracle_ok,
             oracle_out,
-        ) = _run_standard_validation(task, project_root)
+        ) = validation
         test_out = f"$ project tests\n{project_test_out}\n\n$ acceptance oracle\n{oracle_out}"
         lint_passed = lint_ok
         tests_passed = project_test_ok and oracle_ok
         project_tests_passed = project_test_ok
-        acceptance_oracle_passed = oracle_ok
+        acceptance_oracle_passed = None if defer_hidden_oracle else oracle_ok
 
         # Quick quality heuristic (no LLM judge by default to save cost)
         # Real judge: set BENCH_JUDGE_MODEL to enable
@@ -5792,6 +6363,10 @@ def _run_agent_loop(
         stop_reason=stop_reason,
         milestones_completed=_completed_milestone_count(task, files_written),
         milestones_total=len(task.milestones),
+        controller_lane=controller_lane.value,
+        working_context_peak_chars=working_context_peak_chars,
+        working_context_pruned_chars=working_context_pruned_chars,
+        evidence_ref_count=len(set(working_context_archived_refs) | set(evidence_vault.refs)),
         agent_transcript=agent_transcript,
         call_usage=call_usage,
         files_written=files_written,
@@ -5799,6 +6374,8 @@ def _run_agent_loop(
         test_output=test_out,
         governance_decision=governance_decision,
         verify_result=verify_result,
+        handoff=handoff,
+        policy_examples=trace_policy_examples(agent_transcript),
     )
 
 

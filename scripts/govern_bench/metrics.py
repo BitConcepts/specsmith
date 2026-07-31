@@ -372,6 +372,10 @@ class RunResult:
     stop_reason: str = ""
     milestones_completed: int = 0
     milestones_total: int = 0
+    controller_lane: str = ""
+    working_context_peak_chars: int = 0
+    working_context_pruned_chars: int = 0
+    evidence_ref_count: int = 0
 
     # Error tracking
     error: str | None = None
@@ -386,6 +390,8 @@ class RunResult:
     test_output: str = ""
     governance_decision: dict = field(default_factory=dict)
     verify_result: dict = field(default_factory=dict)
+    handoff: dict = field(default_factory=dict)
+    policy_examples: list[dict] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         if self.input_tokens > 0 and self.input_cost_usd == 0.0 and self.output_cost_usd == 0.0:

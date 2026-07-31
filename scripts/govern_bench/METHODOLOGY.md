@@ -50,6 +50,9 @@ counts cannot drift between experiments:
 | `publication-open-screen` | T30/FULL × 5 | Repeated screen after admission |
 | `publication-open-release` | T30/FULL × 10 | Confirmation after a passing screen |
 | `publication-real-repository-recovery` | T30 × raw/Cursor/FULL × 10 | Corrected frozen T30 recovery after V1 invalidation |
+| `literature-v9-ablation` | T28/T29/T30/FULL × 1 | Isolated causal admission for each v9 controller feature |
+| `literature-v9-screen` | T28/T29/T30/FULL × 5 | Combined-v9 screen after every feature admission |
+| `literature-v9-release` | T28/T29/T30/FULL × 10 | Independent combined-v9 confirmation |
 
 The promotion funnel is `n=1 admission → n=5 screening → n=10 release
 replication`. A failed admission is repaired or rejected; it is not made
@@ -78,6 +81,27 @@ Wilson-based difference bounds and a predeclared five-percentage-point
 non-inferiority margin. Token superiority requires the upper 95% TPCA-ratio
 bound to remain below one.
 
+### 2.2 Literature-driven v9 controller protocol
+
+`LITERATURE_V9_PROTOCOL.yml` was written before paid v9 inference. It fixes the
+frozen v8 reference, v9 candidate, T28/T29/T30 fixture set, FULL condition,
+promotion ladder, failure accounting, and these causal cells:
+
+- role/symbol/dependency retrieval without raw-source preload;
+- five recent tool pairs plus lossless content-addressed evidence;
+- deterministic gate, compiled-patch, or milestone lane selection;
+- execution-signature early stop;
+- early stop plus one focused critical replay; and
+- the combined controller.
+
+Critical replay depends on early stopping and is therefore tested as the pair
+`early-stop,critical-replay`. A cascade is a separate routing experiment: the
+first model emits a milestone handoff and a stronger model resumes the same
+fixture and partial diff. The hidden oracle executes exactly once, after the
+final route. Feature provenance, context pruning, evidence references, failed
+token mass, and handoff state are part of every raw row. A favorable n=1 point
+estimate cannot skip the n=5 and n=10 gates.
+
 ## 3) Core Metrics
 
 ### 3.1 Primary metric
@@ -100,6 +124,8 @@ in leaderboard exports.
 - `input_tokens`, `output_tokens`, `api_cost_usd`
 - `cached_input_tokens`, `cache_write_tokens` (when reported by the provider)
 - `rework_turns`, `governance_turns`, `wall_clock_s`
+- `failed_token_share`, `milestone_escalation_rate`
+- `working_context_peak_chars`, `working_context_pruned_chars`, `evidence_ref_count`
 - governance-specific behavior rates for ambiguity/safety tasks
 
 ## 4) Interval Estimation and Derived Statistics

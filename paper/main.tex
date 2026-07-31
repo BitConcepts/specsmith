@@ -124,6 +124,22 @@ can be competitive at low cost \citep{xia2024agentless}. These findings
 motivate a compact tool surface and controller-owned validation rather than a
 large catalogue of agent skills.
 
+Recent work sharpens the controller hypotheses. Role-aware textual code
+representations improve localization while occupying substantially less space
+than raw source \citep{caumartin2026retrieval}. Five-pair tool-history pruning
+improves both completion and token use in one long-horizon enterprise workflow
+\citep{lodha2026lesscontext}; ACON and Memex separately study optimized
+compression and indexed lossless evidence \citep{kang2025acon,
+wang2026memex}. SWE-Replay branches at critical trajectory states instead of
+restarting every attempt \citep{ding2026swereplay}. These results motivate
+controlled transfer tests; none establishes the same effect on our tasks.
+
+SWE-Skills-Bench reports limited average gains and sometimes substantial token
+overhead from generic skill injection \citep{han2026sweskills}. This supports
+our decision to keep host-agent skills outside the governance kernel and to
+evaluate only mechanisms specific to requirement scope, evidence, and
+verification.
+
 \paragraph{Cost-aware model selection.}
 FrugalGPT and RouteLLM demonstrate that heterogeneous models can be cascaded or
 routed to improve cost--quality tradeoffs \citep{chen2023frugalgpt,
@@ -167,6 +183,25 @@ The design intentionally excludes broad repository preloads, mutable tool
 schemas, evaluator leakage, and unbounded self-reflection. A deterministic
 post-run audit identifies correctness, scope, retrieval, repair, tool-schema,
 and cost weaknesses and selects the next admissible experiment.
+
+\subsection{Preregistered v9 controller experiment}
+
+The next study is preregistered but unscored. It leaves the frozen v8
+publication controller unchanged and separately ablates: (i) role/symbol/
+dependency repository maps with source on demand; (ii) five recent tool pairs
+plus content-addressed full-fidelity evidence; (iii) deterministic selection of
+gate, compiled-patch, or milestone lanes; (iv) execution-signature early
+stopping; and (v) one focused critical replay. Their combination is tested only
+after each component passes one admission on the synthetic T28, fresh synthetic
+T29, and pinned-upstream T30 repositories.
+
+The promotion sequence is $n=1$, $n=5$, then independent $n=10$. Raw rows
+retain context pruning, evidence references, failed-token mass, lane choice,
+and handoff state. A separate cascade allows a weaker route to emit a structured
+milestone handoff and a stronger route to resume the same working tree; the
+hidden oracle executes exactly once after the final route. The experiment will
+therefore distinguish saved context, avoided failed trajectories, and genuine
+correctness transfer rather than pooling them into one favorable aggregate.
 
 \subsection{Promotion funnel}
 
@@ -498,6 +533,18 @@ turn, others serialized actions or exhausted the cap, and two satisfied the
 hidden rotation contract while regressing the unchanged upstream suite. The
 dual public/hidden gate prevented those partial solutions from receiving
 credit.
+
+\section{Training and Benchmark Expansion}
+
+If the inference-time ablations plateau, trace-derived labels provide narrow
+training targets for retrieval, compression, and escalation policies before
+any attempt to fine-tune an end-to-end coding model. SWE-Gym demonstrates the
+value of executable task environments and learned verifiers
+\citep{pan2024swegym}; SWE-smith scales repository-grounded task synthesis
+\citep{yang2025swesmith}; and SWE-Dev combines synthesized tests with
+trajectory scaling for open models \citep{wang2025swedev}. We therefore plan
+fresh-repository replication and held-out policy evaluation, not training on
+the three scored GovernanceBench fixtures.
 
 \section{Threats to Validity}
 

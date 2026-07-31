@@ -18,6 +18,28 @@ does not imply a parameter count or architecture that the provider has not
 published. “Small model” is reserved for a route with a published size, such
 as Llama 3.1 8B.
 
+## Publication hold and next evidence
+
+The preprint remains unsubmitted while the preregistered v9 controller is
+evaluated. Its mechanisms are literature-backed hypotheses—role-aware compact
+retrieval, five-pair lossless context, minimal controller lanes, one critical
+replay, and bounded model escalation—not claimed improvements. Each is first
+ablated on T28/T29/T30 at n=1; only a fully correct cell advances to n=5, and
+only a passing screen advances to independent n=10 confirmation.
+
+This also tests whether Specsmith's narrow integration direction is justified.
+[SWE-Skills-Bench](https://arxiv.org/abs/2603.15401) reports that most tested
+generic skills did not improve pass rate and sometimes added substantial token
+overhead, supporting measurement of specialized governance controls rather
+than expansion of the default skill catalogue. Training or distillation is a
+later stage: trace-derived controller labels can support focused verifiers or
+compression policies, while executable environments and diverse generated
+tasks follow the evidence strategy of
+[SWE-Gym](https://arxiv.org/abs/2412.21139),
+[SWE-smith](https://arxiv.org/abs/2504.21798), and
+[SWE-Dev](https://arxiv.org/abs/2506.07636). No broader small-model claim is
+approved until repeated fresh-repository gates pass.
+
 ## Claim ladder
 
 Public wording follows the strongest completed evidence gate, not the most

@@ -1,5 +1,31 @@
 # Specsmith Governance Efficiency Benchmark
 
+## Preregistered literature-driven v9 experiment
+
+The next controller study is preregistered in
+`scripts/govern_bench/LITERATURE_V9_PROTOCOL.yml`; it does not alter the frozen
+v8 publication controller and has no reported gain yet. Six cells isolate
+role-aware retrieval, lossless five-pair working context, smallest-lane
+selection, execution-derived early stopping, focused replay, and their combined
+effect on T28, T29, and the pinned upstream T30 repository. Promotion remains
+n=1 admission → n=5 screen → n=10 confirmation.
+
+The design is motivated by primary studies reporting that role-aware code
+representations can improve localization with much smaller footprints
+([Caumartin et al.](https://arxiv.org/abs/2607.11046)); five-pair pruning can
+lower token use while improving completion in a long-horizon tool workflow
+([Lodha et al.](https://arxiv.org/abs/2606.10209)); indexed external evidence
+can bound working context without discarding the underlying observations
+([Memex](https://arxiv.org/abs/2603.04257)); and critical trajectory replay can
+reduce test-time scaling cost ([SWE-Replay](https://arxiv.org/abs/2601.22129)).
+Those results motivate hypotheses; they are not evidence that the mechanisms
+will transfer to GovernanceBench.
+
+Raw v9 rows add controller lane, peak and pruned working-context characters,
+evidence-reference count, failed-token share, milestone escalation, handoff
+state, and trace-derived policy examples. The audit fails closed on missing or
+errored cells and treats high failed-token mass as an efficiency blocker.
+
 ## Current promotion and release protocol
 
 Benchmark spend now follows locked, versioned profiles:
