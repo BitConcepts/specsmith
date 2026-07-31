@@ -510,7 +510,7 @@ def main() -> int:
 
     protocol_id = ""
     protocol_digest = ""
-    if args.profile.startswith("publication-"):
+    if args.profile.startswith(("publication-", "literature-v9-")):
         from govern_bench.protocol import validate_run_contract  # noqa: E402, PLC0415
 
         try:
@@ -522,6 +522,7 @@ def main() -> int:
                 provider=args.provider,
                 model=args.model,
                 controller=os.environ.get("BENCH_CONTROLLER_EXPERIMENT", "control"),
+                controller_features=args.controller_features,
             )
         except ValueError as exc:
             print(f"\n[FATAL] Frozen publication protocol mismatch: {exc}", file=sys.stderr)

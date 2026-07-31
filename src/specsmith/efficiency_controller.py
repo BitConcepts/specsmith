@@ -135,6 +135,19 @@ class WorkingContextStats:
     retained_tool_pairs: int
 
 
+def should_compact_working_context(
+    *, completed_milestones: int, last_compacted_milestones: int
+) -> bool:
+    """Compact only after crossing a validated milestone boundary.
+
+    Active-milestone tool exchanges are working state, not archival evidence.
+    Keeping them intact prevents a rolling context window from hiding the
+    exact API contract or failure chain that the current repair still needs.
+    """
+
+    return completed_milestones > last_compacted_milestones
+
+
 def _message_chars(message: Mapping[str, Any]) -> int:
     return len(json.dumps(message, sort_keys=True, default=str))
 
@@ -339,6 +352,19 @@ class ProgressGuard:
             no_progress_turns=self.no_progress_turns,
             repeated_failure_count=self.repeated_failure_count,
         )
+
+    def acknowledge_nonterminal_escalation(self) -> None:
+        """Start a fresh bounded recovery window after an unaccepted handoff.
+
+        An escalation signal is terminal only when a configured stronger route
+        can receive it.  Otherwise the current route keeps its partial progress
+        and receives another bounded window instead of failing immediately.
+        """
+
+        self.no_progress_turns = 0
+        self.repeated_failure_count = 0
+        self.narration_stops = 0
+        self.last_failure_signature = ""
 
 
 @dataclass(frozen=True)

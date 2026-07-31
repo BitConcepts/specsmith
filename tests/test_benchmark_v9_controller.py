@@ -19,6 +19,7 @@ from govern_bench.harness import (  # noqa: E402
 )
 from govern_bench.metrics import RunResult  # noqa: E402
 from govern_bench.profiles import PROFILES  # noqa: E402
+from govern_bench.protocol import validate_run_contract  # noqa: E402
 from govern_bench.run_bench import _policy_rows, _validate_controller_features  # noqa: E402
 from govern_bench.tasks import BenchTask  # noqa: E402
 
@@ -36,6 +37,22 @@ def _task() -> BenchTask:
         acceptance_criteria="Public tests pass.",
         expected_files_changed=["service.py", "test_service.py"],
     )
+
+
+def test_v9_1_protocol_freezes_route_controller_and_feature_cell() -> None:
+    protocol_id, digest = validate_run_contract(
+        profile="literature-v9-ablation",
+        tasks=["T28", "T29", "T30"],
+        conditions=["SPECSMITH_FULL"],
+        repetitions=1,
+        provider="openai-responses",
+        model="gpt-5.6-sol",
+        controller="scalar-milestone-packet-authority-v9",
+        controller_features="retrieval,lanes",
+    )
+
+    assert protocol_id == "GB-LITERATURE-V9.1-2026-07-31"
+    assert len(digest) == 64
 
 
 def test_v9_tool_surface_keeps_exact_evidence_retrieval(monkeypatch) -> None:

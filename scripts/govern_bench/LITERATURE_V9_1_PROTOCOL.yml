@@ -1,0 +1,65 @@
+schema: governancebench-preregistration-v1
+protocol_id: GB-LITERATURE-V9.1-2026-07-31
+status: frozen
+purpose: >-
+  Preregister the boundary-aware follow-up prompted by the six GPT-5.6 Sol v9
+  admission cells. The diagnostic admissions are retained as failures; this
+  protocol tests only prospectively declared repairs and minimal hybrids.
+
+controls:
+  controller: scalar-milestone-packet-authority-v9
+  frozen_reference: scalar-milestone-packet-authority-v8
+  implementation_commit_required: true
+  active_milestone_context_is_lossless: true
+  terminal_handoff_requires_configured_escalation_route: true
+  feature_cells:
+    - lanes
+    - retrieval,lanes
+    - lanes,working-context
+    - lanes,early-stop
+    - all
+
+contracts:
+  literature-v9-ablation:
+    tasks: [T28, T29, T30]
+    conditions: [SPECSMITH_FULL]
+    repetitions: 1
+    routes: &routes
+      - {provider: openai-responses, model: gpt-5.6-sol}
+      - {provider: openai-responses, model: gpt-5.6-terra}
+      - {provider: huggingface, model: "Qwen/Qwen3.6-27B:deepinfra"}
+      - {provider: huggingface, model: "Qwen/Qwen3.6-35B-A3B-FP8:deepinfra"}
+  literature-v9-screen:
+    tasks: [T28, T29, T30]
+    conditions: [SPECSMITH_FULL]
+    repetitions: 5
+    routes: *routes
+  literature-v9-release:
+    tasks: [T28, T29, T30]
+    conditions: [SPECSMITH_FULL]
+    repetitions: 10
+    routes: *routes
+
+observed_diagnostic_runs:
+  commit: 801a6e9a6169c817ea147c59be6e8ebb90482ad9
+  run_ids: [30634194223, 30634194232, 30634195926, 30634196894, 30634197427, 30634199163]
+  interpretation:
+    lanes: only_cell_correct_on_all_three_tasks
+    working_context: rolling_pruning_failed_t30_and_increased_token_mass
+    early_stop: terminal_handoff_stopped_recoverable_t29_or_t30_states
+
+promotion:
+  admission: every_task_public_and_hidden_correct_no_error_or_skip
+  screen: at_least_4_of_5_correct_per_task_and_no_efficiency_blocker
+  confirmation: at_least_9_of_10_correct_per_task_and_joint_efficiency_gate
+
+failure_accounting:
+  diagnostic_failures_retained: true
+  failed_tokens_remain_in_denominator: true
+  provider_errors_are_not_free_failures: true
+  hidden_oracle_runs_once_after_final_route: true
+
+reporting:
+  raw_trace_required: true
+  protocol_hash_required: true
+  no_public_claim_before_confirmation: true

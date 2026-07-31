@@ -62,6 +62,7 @@ from specsmith.efficiency_controller import (
     ProgressGuard,
     bound_working_messages,
     select_controller_lane,
+    should_compact_working_context,
     trace_policy_examples,
 )
 from specsmith.retrieval import build_role_entries, rank_role_entries, render_role_packet
@@ -4766,6 +4767,7 @@ def _run_agent_loop(
     )
     working_context_pruned_chars = 0
     working_context_archived_refs: list[str] = []
+    last_compacted_milestones = 0
     stop_reason = "max_turns"
 
     if resume_handoff:
@@ -4989,18 +4991,25 @@ def _run_agent_loop(
                     }
                 )
                 if narration_decision.action == "escalate":
-                    stop_reason = "milestone_escalation"
-                    handoff = _make_milestone_handoff(
-                        task=task,
-                        lane=controller_lane,
-                        reason=narration_decision.reason,
-                        files_written=files_written,
-                        validator_failures=latest_validator_failures,
-                        evidence_vault=evidence_vault,
-                        input_tokens=total_input_tokens,
-                        output_tokens=total_output_tokens,
+                    if defer_hidden_oracle:
+                        stop_reason = "milestone_escalation"
+                        handoff = _make_milestone_handoff(
+                            task=task,
+                            lane=controller_lane,
+                            reason=narration_decision.reason,
+                            files_written=files_written,
+                            validator_failures=latest_validator_failures,
+                            evidence_vault=evidence_vault,
+                            input_tokens=total_input_tokens,
+                            output_tokens=total_output_tokens,
+                        )
+                        break
+                    progress_guard.acknowledge_nonterminal_escalation()
+                    messages = _replace_adaptive_progress_message(
+                        messages,
+                        "No stronger route accepted the handoff. Preserve partial progress "
+                        "and make one bounded requirement-linked tool action.",
                     )
-                    break
             if not content and empty_response_retries < 1 and turn + 1 < max_turns:
                 # Some OpenAI-compatible routes occasionally emit an empty
                 # assistant message immediately after a large tool-result batch.
@@ -5798,18 +5807,25 @@ def _run_agent_loop(
                     }
                 )
             elif progress_decision.action == "escalate":
-                stop_reason = "milestone_escalation"
-                handoff = _make_milestone_handoff(
-                    task=task,
-                    lane=controller_lane,
-                    reason=progress_decision.reason,
-                    files_written=files_written,
-                    validator_failures=latest_validator_failures,
-                    evidence_vault=evidence_vault,
-                    input_tokens=total_input_tokens,
-                    output_tokens=total_output_tokens,
+                if defer_hidden_oracle:
+                    stop_reason = "milestone_escalation"
+                    handoff = _make_milestone_handoff(
+                        task=task,
+                        lane=controller_lane,
+                        reason=progress_decision.reason,
+                        files_written=files_written,
+                        validator_failures=latest_validator_failures,
+                        evidence_vault=evidence_vault,
+                        input_tokens=total_input_tokens,
+                        output_tokens=total_output_tokens,
+                    )
+                    break
+                progress_guard.acknowledge_nonterminal_escalation()
+                active_repair_focus = (
+                    f"{active_repair_focus}\n\nNo stronger route accepted the handoff. "
+                    "Preserve the validated partial progress and attempt one materially "
+                    "different bounded repair from the current validator evidence."
                 )
-                break
 
             if _v9_feature("retrieval"):
                 failure_role_context, failure_role_paths = _role_retrieval_packet(
@@ -5856,18 +5872,25 @@ def _run_agent_loop(
                     "current evidence to make a requirement-linked write or call done.",
                 )
             elif progress_decision.action == "escalate":
-                stop_reason = "milestone_escalation"
-                handoff = _make_milestone_handoff(
-                    task=task,
-                    lane=controller_lane,
-                    reason=progress_decision.reason,
-                    files_written=files_written,
-                    validator_failures=latest_validator_failures,
-                    evidence_vault=evidence_vault,
-                    input_tokens=total_input_tokens,
-                    output_tokens=total_output_tokens,
+                if defer_hidden_oracle:
+                    stop_reason = "milestone_escalation"
+                    handoff = _make_milestone_handoff(
+                        task=task,
+                        lane=controller_lane,
+                        reason=progress_decision.reason,
+                        files_written=files_written,
+                        validator_failures=latest_validator_failures,
+                        evidence_vault=evidence_vault,
+                        input_tokens=total_input_tokens,
+                        output_tokens=total_output_tokens,
+                    )
+                    break
+                progress_guard.acknowledge_nonterminal_escalation()
+                messages = _replace_adaptive_progress_message(
+                    messages,
+                    "No stronger route accepted the handoff. Preserve partial progress "
+                    "and make one bounded requirement-linked tool action.",
                 )
-                break
 
         if validation_failed:
             rework_turns += 1
@@ -6182,7 +6205,16 @@ def _run_agent_loop(
                 stop_reason = "repeated_tool_loop"
                 break
 
-        if literature_v9 and _v9_feature("working-context") and not finished:
+        completed_milestones = _completed_milestone_count(task, files_written)
+        if (
+            literature_v9
+            and _v9_feature("working-context")
+            and not finished
+            and should_compact_working_context(
+                completed_milestones=completed_milestones,
+                last_compacted_milestones=last_compacted_milestones,
+            )
+        ):
             try:
                 working_context_limit = int(os.environ.get("BENCH_WORKING_CONTEXT_CHARS", "48000"))
             except ValueError:
@@ -6206,6 +6238,7 @@ def _run_agent_loop(
             )
             working_context_pruned_chars += context_stats.pruned_chars
             working_context_archived_refs.extend(context_stats.archived_refs)
+            last_compacted_milestones = completed_milestones
             if context_stats.pruned_chars:
                 agent_transcript.append(
                     {

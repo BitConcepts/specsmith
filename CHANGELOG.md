@@ -11,6 +11,9 @@ consolidated into the next published release.
 ## [Unreleased]
 
 ### Added
+- Freeze and enforce the evidence-informed `GB-LITERATURE-V9.1-2026-07-31`
+  follow-up contract across tasks, repetitions, routes, controller, feature
+  cell, and protocol hash before additional paid inference.
 - Add the preregistered literature-driven v9 benchmark controller without
   changing frozen v8: role-aware source-on-demand retrieval, lossless bounded
   working context, deterministic controller lanes, execution-derived early
@@ -221,6 +224,9 @@ consolidated into the next published release.
   repair boundaries while preserving the independent hidden acceptance oracle.
 
 ### Changed
+- Preserve complete active-milestone context and compact only validated
+  milestone history; unaccepted early-stop handoffs now continue bounded
+  recovery instead of terminating recoverable work.
 - Recover exact text-serialized active tool calls from compatible routes
   through the existing execution guards, focus repair on one failing
   requirement boundary at a time, and stop repeated multi-file write loops

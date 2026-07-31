@@ -8,6 +8,7 @@ from specsmith.efficiency_controller import (
     ProgressGuard,
     bound_working_messages,
     select_controller_lane,
+    should_compact_working_context,
     trace_policy_examples,
 )
 from specsmith.retrieval import build_role_entries, rank_role_entries, render_role_packet
@@ -100,6 +101,21 @@ def test_progress_guard_replays_once_then_escalates_repeated_failure() -> None:
     assert first.action == "continue"
     assert second.action == "replay"
     assert third.action == "escalate"
+
+
+def test_active_milestone_context_is_not_compacted() -> None:
+    assert not should_compact_working_context(completed_milestones=1, last_compacted_milestones=1)
+    assert should_compact_working_context(completed_milestones=2, last_compacted_milestones=1)
+
+
+def test_unaccepted_escalation_starts_a_fresh_recovery_window() -> None:
+    guard = ProgressGuard(replay_limit=0, escalation_turns=2)
+    guard.observe(milestones_completed=0, file_count=0)
+    assert guard.observe(milestones_completed=0, file_count=0).action == "escalate"
+
+    guard.acknowledge_nonterminal_escalation()
+
+    assert guard.observe(milestones_completed=0, file_count=0).action == "recover"
 
 
 def test_trace_policy_examples_use_controller_decisions_only() -> None:

@@ -1,14 +1,21 @@
 # Specsmith Governance Efficiency Benchmark
 
-## Preregistered literature-driven v9 experiment
+## Literature-driven v9 diagnostics and frozen v9.1 follow-up
 
-The next controller study is preregistered in
-`scripts/govern_bench/LITERATURE_V9_PROTOCOL.yml`; it does not alter the frozen
-v8 publication controller and has no reported gain yet. Six cells isolate
-role-aware retrieval, lossless five-pair working context, smallest-lane
-selection, execution-derived early stopping, focused replay, and their combined
-effect on T28, T29, and the pinned upstream T30 repository. Promotion remains
-n=1 admission → n=5 screen → n=10 confirmation.
+Six preregistered GPT-5.6 Sol n=1 cells at commit `801a6e9a` isolated
+role-aware retrieval, rolling lossless working context, smallest-lane selection,
+execution-derived early stopping, focused replay, and their combined effect.
+Only `lanes` passed T28, T29, and the pinned-upstream T30 task. Its T30 row used
+104,590 tokens. Retrieval and working-context reached the T30 turn cap; early
+stop terminated a recoverable T30 state; and the combined cell failed T29 and
+T30 after 21,883 and 21,741 tokens. All failures remain in the evidence set.
+
+The diagnosis produced a prospective, machine-enforced protocol in
+`scripts/govern_bench/LITERATURE_V9_1_PROTOCOL.yml`. It preserves every exchange
+inside the active milestone, compacts only at a validated boundary, and treats
+handoff as terminal only when a configured stronger route can receive it. The
+runner now fails closed on task, repetition, route, controller, feature-cell,
+or protocol-hash drift. Promotion remains n=1 → n=5 → independent n=10.
 
 The design is motivated by primary studies reporting that role-aware code
 representations can improve localization with much smaller footprints
@@ -21,7 +28,7 @@ reduce test-time scaling cost ([SWE-Replay](https://arxiv.org/abs/2601.22129)).
 Those results motivate hypotheses; they are not evidence that the mechanisms
 will transfer to GovernanceBench.
 
-Raw v9 rows add controller lane, peak and pruned working-context characters,
+Raw v9/v9.1 rows add controller lane, peak and pruned working-context characters,
 evidence-reference count, failed-token share, milestone escalation, handoff
 state, and trace-derived policy examples. The audit fails closed on missing or
 errored cells and treats high failed-token mass as an efficiency blocker.

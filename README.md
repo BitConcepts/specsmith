@@ -143,11 +143,11 @@ it transfers strongly on some synthetic suites, but current 20B–35B routes and
 the independent upstream task do not substantiate a general claim that small
 models replace frontier models.
 
-The preregistered v9 experiment now isolates role-aware retrieval, lossless
-working-context bounds, minimal controller lanes, execution-derived early
-stopping, focused replay, and optional stronger-model handoff. These are
-experimental controls, not published gains, until they clear n=1, n=5, and
-n=10 correctness and efficiency gates.
+The first preregistered v9 admissions found that minimal controller lanes were
+the only isolated mechanism to pass T28, T29, and T30; rolling context pruning
+and terminal early-stop regressed the long-horizon task. A frozen v9.1
+boundary-aware follow-up is in progress. These remain experimental controls,
+not published gains, until they clear n=1, n=5, and n=10 gates.
 
 See the
 [full benchmark report](https://specsmith.readthedocs.io/stable/efficiency-benchmark/),

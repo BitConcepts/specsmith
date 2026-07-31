@@ -10,8 +10,12 @@ import yaml
 
 DEFAULT_PROTOCOL_PATH = Path(__file__).with_name("PREPRINT_PROTOCOL_2026_07.yml")
 RECOVERY_PROTOCOL_PATH = Path(__file__).with_name("PREPRINT_PROTOCOL_2026_07_V2.yml")
+LITERATURE_V9_1_PROTOCOL_PATH = Path(__file__).with_name("LITERATURE_V9_1_PROTOCOL.yml")
 PROTOCOL_PATH_BY_PROFILE = {
     "publication-real-repository-recovery": RECOVERY_PROTOCOL_PATH,
+    "literature-v9-ablation": LITERATURE_V9_1_PROTOCOL_PATH,
+    "literature-v9-screen": LITERATURE_V9_1_PROTOCOL_PATH,
+    "literature-v9-release": LITERATURE_V9_1_PROTOCOL_PATH,
 }
 
 
@@ -43,6 +47,7 @@ def validate_run_contract(
     provider: str,
     model: str,
     controller: str,
+    controller_features: str = "",
     path: Path | None = None,
 ) -> tuple[str, str]:
     """Fail closed unless a publication run matches its frozen contract."""
@@ -79,5 +84,13 @@ def validate_run_contract(
         raise ValueError(
             f"{controller!r} is not the frozen controller for {profile}; "
             f"expected {expected_controller!r}"
+        )
+    allowed_features = [
+        str(value) for value in (payload.get("controls") or {}).get("feature_cells") or []
+    ]
+    if allowed_features and controller_features not in allowed_features:
+        raise ValueError(
+            f"{controller_features!r} is not a frozen feature cell for {profile}; "
+            f"allowed={allowed_features}"
         )
     return str(payload["protocol_id"]), protocol_sha256(path)

@@ -102,6 +102,15 @@ final route. Feature provenance, context pruning, evidence references, failed
 token mass, and handoff state are part of every raw row. A favorable n=1 point
 estimate cannot skip the n=5 and n=10 gates.
 
+The six Sol admissions (`30634194223`, `30634194232`, `30634195926`,
+`30634196894`, `30634197427`, `30634199163`) retain all negative rows. Only
+the lane cell passed all three tasks. Rolling five-pair context and terminal
+early-stop regressed T30, so neither was promoted. The prospective
+`LITERATURE_V9_1_PROTOCOL.yml` freezes the evidence-informed repair before its
+paid runs: compaction occurs only after a validated milestone, and an
+escalation signal cannot terminate the current route unless a configured
+stronger route can receive the same-tree handoff.
+
 ## 3) Core Metrics
 
 ### 3.1 Primary metric
