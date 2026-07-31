@@ -49,6 +49,7 @@ counts cannot drift between experiments:
 | `publication-open-admission` | T30/FULL × 1 | Frozen 20B–35B real-repository admission |
 | `publication-open-screen` | T30/FULL × 5 | Repeated screen after admission |
 | `publication-open-release` | T30/FULL × 10 | Confirmation after a passing screen |
+| `publication-real-repository-recovery` | T30 × raw/Cursor/FULL × 10 | Corrected frozen T30 recovery after V1 invalidation |
 
 The promotion funnel is `n=1 admission → n=5 screening → n=10 release
 replication`. A failed admission is repaired or rejected; it is not made
@@ -59,6 +60,15 @@ Publication protocol `GB-PREPRINT-2026-07-30-V1` is byte-hashed before paid
 inference. Publication profiles additionally fail closed on model/provider
 route drift. Raw rows retain the protocol ID and SHA-256; compact evidence
 manifests retain the unique protocol identities represented by their sources.
+
+V1 T30 is invalidated because its hidden license assertion was impossible for
+the canonical pinned file and its horizon classification weakened FULL
+completion. Corrected protocol `GB-PREPRINT-2026-07-30-V2` was separately
+frozen before rerunning T30. An invalidated stratum is never pooled with its
+replacement. Independently valid tasks from a multi-task artifact may be
+selected before completeness validation; every selected cell must still be
+complete, unique, and repetition-balanced. Provider-censored cells prohibit
+analysis of their selected stratum and remain explicit expenditure.
 
 Model-substitution release claims use a paired hierarchical bootstrap with
 10,000 deterministic resamples. The fixed-suite interval resamples repetitions

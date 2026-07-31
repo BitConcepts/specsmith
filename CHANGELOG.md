@@ -35,6 +35,21 @@ consolidated into the next published release.
   expand public timed and documentation validators, block FULL completion while
   declared milestone files remain unwritten, and freeze the corrected
   `GB-PREPRINT-2026-07-30-V2` recovery protocol with controller v8.
+- Preserve independently valid V1 T28/T29 strata while recording the complete
+  T30 invalidation and censored Terra/T28 cells in machine-readable evidence.
+  Task-filtered comparison now selects the requested strata before fail-closed
+  completeness validation, without relaxing completeness inside the selection.
+- Include `freezegun` in the development test environment so the pinned
+  ItsDangerous upstream suite and TEST-520 run from clean Linux, macOS, and
+  Windows CI installations rather than relying on benchmark-only provisioning.
+- Complete corrected frozen V2 workflow `30589098641` with 60/60 valid T30
+  rows. Sol FULL passed 8/10 at 105,523 TPCA versus raw Sol at 5/10 and
+  234,526 and Cursor-style Sol at 1/10 and 1,027,057. Terra FULL passed 2/10
+  and did not substitute for Sol raw; all within-model joint uncertainty gates
+  also remained false, preserving the negative formal transfer result.
+- Serialize non-estimable bootstrap bounds as JSON `null`, render them as
+  `undefined`, and fail superiority gates closed when a resample has no correct
+  frontier answer instead of emitting non-standard `NaN`.
 - Add separately labeled OpenAI Responses benchmark lanes for GPT-5.6 Sol,
   Terra, and Luna with native function tools, low-effort/low-verbosity controls,
   bounded requests, exact-prefix state continuation, provider-visible schema

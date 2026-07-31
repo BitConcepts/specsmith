@@ -29,11 +29,13 @@ favorable point estimate.
 | A lower-tier governed system substitutes for frontier raw on the mixed release suite | Preregistered eight-task 2×2 design, n=10, fixed-suite correctness and TPCA gates | Supported for Terra FULL versus Sol raw in workflow 30210886840 |
 | The result is robust to resampling the eight named tasks | Task-cluster correctness and TPCA confidence gates both pass | Supported within the benchmark distribution; this is not evidence on fresh repositories |
 | A lower-tier governed system substitutes on coding-only work | Prespecified coding slice clears the same correctness and TPCA gates | Not confirmed: observed results favor Terra FULL, but the correctness lower bound missed the margin by 0.7 pp |
-| The result generalizes to new repositories and task families | Independent replication across fresh real repositories, languages, providers, and task distributions | Not established: synthetic T29 v7 passed 10/10 first-pass at n=10, but no fresh real repository was tested |
-| The result transfers to a pinned independent upstream repository | Frozen same-commit T30 raw/Cursor/FULL n=10 grid with isolated hidden acceptance | Preregistered as `GB-PREPRINT-2026-07-30-V1`; results pending |
+| The result generalizes to new repositories and task families | Independent replication across fresh real repositories, languages, providers, and task distributions | Partially tested: synthetic T29 v7 passed 10/10 first-pass and corrected frozen T30 tests one independent upstream repository; broad generalization still requires more repositories and languages |
+| Same-model governance lift transfers to a pinned independent upstream repository | Frozen same-commit T30 raw/Cursor/FULL n=10 grid with isolated hidden acceptance | Large observed Sol lift but formal joint gate not confirmed: FULL 8/10 at 105.5k TPCA, raw 5/10 at 234.5k; TPCA CI favors FULL but correctness CI remains too wide |
+| Terra FULL substitutes for Sol raw on the pinned upstream repository | Correctness non-inferiority and TPCA superiority in corrected V2 | Not supported: Terra FULL passed 2/10 at 362.7k TPCA versus Sol raw 5/10 at 234.5k; both claim gates fail |
 | Published 8B or mini models replace frontier models | A small-model admission, matched n=5 screen, and n=10 release gate all pass | Rejected for current routes: Llama 3.1 8B and GPT-4o mini T28 admissions failed |
 | A reasoning-capable 20B–32B model can complete governed T28 | Correct public checks and independent oracle in admission | Supported at n=1 for Qwen3.6-27B/DeepInfra; the best controller diagnostic used 26,850 tokens and 6 turns |
 | A 20B–32B governed model replaces frontier Sol efficiently | Correct admission inside the versioned Sol envelope, then matched n=5 and n=10 gates | Not supported: the best correct 27B cell still used 1.53× the Sol token envelope and has no matched n=5 confirmation |
+| A pinned 20B–35B route completes the real-repository T30 task efficiently | Public and hidden correctness within 30k tokens, then 5/5 and 9/10 sequential gates | Not supported: all three complete admissions failed correctness; three other pinned routes were censored, so no n=5 or n=10 promotion was allowed |
 | Qwen3.6-27B/35B completes fresh T29 under hybrid/native governance | Complete public and hidden correctness at admission, followed by matched n=5 and n=10 gates | Rejected on tested routes: managed v2 remained incomplete; native 35B FP8 reached 3/4 milestones but failed at 105,087 tokens and 20 turns |
 | Native Responses tools improve the governed T28 model/cost frontier | Same-controller route admission followed by matched n=5 and n=10 confirmation | Route-specific support: structured-schema Sol passed an independent 10/10 confirmation at 17,907 TPCA and 1.77% CV; Terra's separate fixed-schema n=5 remains lower-cost at 17,213 TPCA; no cross-task native claim |
 | Small models universally replace frontier models | Broad external replication across fresh repositories, languages, providers, and task distributions | Not claimed |
@@ -43,6 +45,15 @@ Pallets ItsDangerous commit `672971d…`, while the open-model lane fixes six
 exact 20B–35B hosted routes. Candidates advance from n=1 to n=5 to n=10 only
 after the previous correctness and efficiency gate passes. Failed runs remain
 in all token and cost totals.
+
+V1 matched workflow 30578319069 is not a valid source for T30 correctness or
+TPCA: its hidden oracle asserted an absent license label, and its horizon
+classification weakened milestone completion. Those 60 rows and their spend
+are retained but invalidated. V2 fixes those two evaluator boundaries before
+the corrected T30 n=10 run. Corrected
+[workflow 30589098641](https://github.com/layer1labs/specsmith/actions/runs/30589098641)
+contains 60/60 valid rows. V1 T28/T29 remain separate protocol-labeled evidence;
+two Terra/raw T28 calls are censored provider timeouts.
 
 The decisive
 [workflow 30210886840](https://github.com/layer1labs/specsmith/actions/runs/30210886840)
@@ -73,6 +84,16 @@ task suite, sample size, and confidence result:
 > Sol raw at 65/80 and 28,023. The prespecified coding-only correctness gate
 > did not pass, so the result supports task-conditional routing rather than
 > general model equivalence.
+
+> In corrected frozen T30 workflow 30589098641, GPT-5.6 Sol with Specsmith
+> FULL passed 8/10 at 105,523 TPCA versus raw Sol at 5/10 and 234,526 and the
+> versioned Cursor-style condition at 1/10 and 1,027,057. These are favorable
+> point estimates; the prespecified within-model joint uncertainty gates did
+> not pass at n=10.
+
+> The lower-tier substitution result did not transfer to T30: Terra FULL passed
+> 2/10 at 362,650 TPCA versus Sol raw at 5/10 and 234,526. This negative result
+> limits the mixed-suite claim rather than weakening the acceptance gate.
 
 Do not shorten this to “small models replace frontier models” unless a
 published-size model passes the complete promotion funnel. Do not describe

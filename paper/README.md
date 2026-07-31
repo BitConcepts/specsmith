@@ -1,8 +1,9 @@
 # Specsmith GovernanceBench Preprint
 
 This directory contains the source, generated tables, and compact evidence for
-the Specsmith GovernanceBench preprint. The reviewed PDF is published at
-`output/pdf/specsmith-governancebench-preprint.pdf`.
+the Specsmith GovernanceBench preprint. The repository review copy is rendered
+to `output/pdf/specsmith-governancebench-preprint.pdf`; it has not been
+submitted to a preprint server.
 
 Regenerate the result include from the repository root:
 
@@ -14,6 +15,19 @@ python scripts/govern_bench/render_preprint_results.py `
   --workflow-id 30210886840 `
   --commit-sha 75a8c7911187abe8db2b6ca77f0e08fa7859ffe7
 ```
+
+Verify the corrected real-repository evidence:
+
+```powershell
+python scripts/govern_bench/export_evidence.py `
+  --verify-manifest paper/data/preprint-real-repo-v2-30589098641/manifest.json `
+  --source-dir tmp/preprint-run-30589098641
+```
+
+The raw Terra and Sol artifacts are attached to workflow `30589098641`.
+`paper/data/publication-v1-invalidation.json` records why V1 T30 is excluded,
+and `paper/data/publication-readiness-status.json` records the completed claim
+gates and remaining external-validity boundary.
 
 Build the PDF:
 

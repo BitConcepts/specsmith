@@ -22,6 +22,31 @@ lower-tier+FULL headline must preserve correctness against frontier raw; lower
 token or dollar cost cannot compensate for fewer correct outcomes. One-run
 admission remains mandatory before repeated spend.
 
+## Corrected independent-repository result
+
+[Workflow 30589098641](https://github.com/layer1labs/specsmith/actions/runs/30589098641)
+is the frozen V2 T30 comparison on a commit-pinned Pallets ItsDangerous
+snapshot:
+
+| System | Correct | TPCA | Cost/pass |
+|---|---:|---:|---:|
+| Terra raw | 1/10 | 1,316,860 | $4.65094 |
+| Terra FULL | 2/10 | 362,650 | $1.46335 |
+| Sol raw | 5/10 | 234,526 | $0.66978 |
+| Sol FULL | 8/10 | 105,523 | $0.52046 |
+
+The versioned Cursor-style controls passed 1/10 for each model, at 1,165,503
+Terra TPCA and 1,027,057 Sol TPCA. Sol FULL therefore shows substantial
+same-model point lift, but the joint gates remain false: versus raw, Sol's TPCA
+interval is 0.222–0.656 while its correctness-difference interval is −45.1 to
++87.4 percentage points. Terra FULL has lower correctness and higher TPCA than
+Sol raw. The lower-tier substitution gate fails on this independent repository.
+
+The paired TPCA interval has an undefined upper bound because some bootstrap
+resamples contain no correct Sol-raw result. Undefined bounds serialize as
+`null` and fail the superiority gate closed. This prevents a sparse-pass
+sample from creating a favorable but meaningless ratio.
+
 The preregistered release
 [workflow 30210886840](https://github.com/layer1labs/specsmith/actions/runs/30210886840)
 completed 320/320 valid cells. Terra+FULL passed 80/80 at 11.7k TPCA versus
@@ -488,31 +513,30 @@ did not reach complete write scope, so recovery correctly did not activate; it
 exhausted 20 turns at 49,339 tokens. The managed GPT-OSS model/route pair is
 rejected.
 
-## Next infrastructure queue
+## Current evidence boundary and next replication
 
-The next managed admissions should remain bounded:
+The frozen publication round supersedes the earlier infrastructure queue.
+Terra and Sol now have complete repeated synthetic evidence, and corrected T30
+is the first pinned independent-upstream comparison. The next scientific
+priority is breadth, not another controller variant on the same fixture:
 
-1. **GPT-5.6 Terra structured-schema admission** — apply the now release-sized
-   v4 controller to one Terra T28/FULL cell. This is a new controller path for
-   Terra, so start at n=1 and do not pool the earlier fixed-schema n=5 screen.
-2. **Fresh-repository replication** — keep v4 frozen and test a new
-   long-horizon repository/task family before generalizing the T28 result.
-3. **Qwen3-Coder-Next with its native `qwen3_coder` parser** — provision a
-   multi-GPU or hosted endpoint with bounded request timeouts and begin with one
-   T28 FULL atomic-patch cell; do not substitute the measured Novita route.
-Kimi, GPT-OSS, GLM, DeepSeek, MiniMax, Flash, and Nemotron receive no further
-managed-route repetitions on the measured configurations. A new attempt must
-change a demonstrated serving or controller boundary and starts again at n=1.
-Every candidate must beat the current Sol FULL T28 token envelope before
-earning a matched n=5 screen.
+1. replicate the frozen controller on at least two additional independent
+   repositories and task families, including a non-Python system;
+2. reserve paid open-model repetition for a route that first passes T30
+   admission under the unchanged public and hidden gates;
+3. separate checkpoint capability from serving effects by recording exact
+   parser, quantization, host, request timeout, and tool-schema identity; and
+4. require n=10 and preregistered uncertainty before any new substitution
+   claim.
 
-The Sol n=10 release-quality confirmation is complete in workflow `30099279843`.
-Promote a route from n=1 to n=5 only after it produces correct cells and use
-n=10 before a release-quality statistical claim. Repeat an older candidate only
-when a controller, validator, prompt contract, parser, or serving route changed;
-otherwise the deterministic envelope should stop the paid run. Preserve raw
-token, cost, latency, sampling, parser, and provider receipts so a serving
-change is not mistaken for a model-quality change.
+The tested Kimi, GPT-OSS, GLM, DeepSeek, MiniMax, Flash, Nemotron, and Qwen
+routes receive no further repetitions on unchanged configurations. A new
+attempt must alter a demonstrated model or serving boundary and begins again at
+n=1. Repeat an older candidate only when a controller, validator, prompt
+contract, parser, or serving route changed; otherwise the deterministic
+envelope stops the paid run. Preserve raw token, cost, latency, sampling,
+parser, and provider receipts so a serving change is not mistaken for model
+quality.
 
 ## Failure provenance
 

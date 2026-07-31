@@ -519,3 +519,21 @@
 - **Status**: complete
 - **Epistemic status**: high
 - **Chain hash**: `6b32d1f8954584a4...`
+
+## 2026-07-30T17:20 — wi_archive WI-95C627CEC740: Clarification-only read request; superseded by accepted REQ-490 work item WI-5086398769A6.
+- **Author**: specsmith
+- **Type**: wi_archive
+- **Status**: complete
+- **Chain hash**: `fcc59fa9d3d960b5...`
+
+## 2026-07-30T20:37 — wi_close WI-28512BA6CB99: Wording-only preflight completed under the frozen publication protocol and verified by TEST-520 plus the 120-test publication-readiness suite.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `f24d30dcbae34ceb...`
+
+## 2026-07-30T20:37 — wi_close WI-0E8D235EF6E7: Wording-only preflight completed under the frozen publication protocol and verified by TEST-520 plus the 120-test publication-readiness suite.
+- **Author**: specsmith
+- **Type**: wi_close
+- **Status**: complete
+- **Chain hash**: `936b143ae65da88a...`

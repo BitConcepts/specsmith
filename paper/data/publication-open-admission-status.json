@@ -1,0 +1,98 @@
+{
+  "schema": "governancebench-open-admission-status-v1",
+  "protocol_id": "GB-PREPRINT-2026-07-30-V1",
+  "protocol_sha256": "92545b3923527811f0b7e43d05c2cb728ace475423f93d2f5ee5192288f90f74",
+  "promotion_rule": {
+    "admission_requires": "public_and_hidden_pass",
+    "maximum_total_tokens": 30000,
+    "screen_n5_requires": "5/5 passes and mean TPCA <= 30000",
+    "release_n10_requires": "at least 9/10 passes"
+  },
+  "complete_results": [
+    {
+      "model": "Qwen/Qwen3.6-27B:deepinfra",
+      "workflow_id": "30578321675",
+      "passed": false,
+      "tokens": 52465,
+      "cost_usd": 0.050514,
+      "stop_reason": "text_response",
+      "evidence": "preprint-qwen3.6-27b-admission-30578321675",
+      "promoted": false
+    },
+    {
+      "model": "Qwen/Qwen3-32B:deepinfra",
+      "workflow_id": "30578331257",
+      "passed": false,
+      "tokens": 148710,
+      "cost_usd": 0.014974,
+      "stop_reason": "max_turns",
+      "evidence": "preprint-qwen3-32b-admission-30578331257",
+      "promoted": false
+    },
+    {
+      "model": "Qwen/Qwen3-Coder-30B-A3B-Instruct:scaleway",
+      "workflow_id": "30581395036",
+      "passed": false,
+      "tokens": 28821,
+      "cost_usd": 0.014976,
+      "stop_reason": "empty_response",
+      "evidence": "preprint-qwen3-coder-30b-admission-30581395036",
+      "promoted": false
+    }
+  ],
+  "censored_routes": [
+    {
+      "model": "openai/gpt-oss-20b:nscale",
+      "workflow_ids": ["30578324056"],
+      "partial_tokens": 8612,
+      "partial_cost_usd": 0.001045,
+      "classification": "provider_incompatible",
+      "reason": "Nscale rejected the frozen named tool-choice request with INVALID_TOOL_CHOICE."
+    },
+    {
+      "model": "zai-org/GLM-4.7-Flash:deepinfra",
+      "workflow_ids": ["30578329015", "30580159593"],
+      "partial_tokens": 7873,
+      "partial_cost_usd": 0.001442,
+      "classification": "provider_unavailable",
+      "reason": "The identical contract ended first with HTTP 504 and then with a bounded read timeout."
+    },
+    {
+      "model": "Qwen/Qwen3.6-35B-A3B:deepinfra",
+      "workflow_ids": ["30578333558", "30579968475"],
+      "partial_tokens": 0,
+      "partial_cost_usd": 0.0,
+      "classification": "provider_unavailable",
+      "reason": "Two identical live tool-call probes timed out before any scored model cell."
+    }
+  ],
+  "resolved_infrastructure_history": [
+    {
+      "model": "Qwen/Qwen3-Coder-30B-A3B-Instruct:scaleway",
+      "workflow_ids": ["30578326570", "30580157320"],
+      "classification": "harness_recovery_bug",
+      "resolution": "Normalized HF JSON directly and fixed invalid-milestone recovery to inspect tool-result content; workflow 30581395036 is the complete scored replacement."
+    }
+  ],
+  "promotion_outcome": {
+    "admitted_models": [],
+    "screen_n5_runs": [],
+    "release_n10_runs": [],
+    "conclusion": "No route cleared the independent public project-test gate, so the frozen sequential rule forbids n=5 or n=10 promotion."
+  },
+  "evaluator_disclosure": {
+    "v1_t30_hidden_stratum_invalidated": true,
+    "reason": "The V1 hidden evaluator contained an impossible license-label assertion and is excluded from correctness inference.",
+    "negative_admission_preserved": true,
+    "basis": "Each complete open-model cell independently failed the public project-test gate before hidden-oracle credit; the censoring classifications also do not depend on the hidden evaluator.",
+    "replacement_protocol": "GB-PREPRINT-2026-07-30-V2"
+  },
+  "expenditure": {
+    "complete_failed_tokens": 229996,
+    "complete_failed_cost_usd": 0.080464,
+    "censored_partial_tokens": 16485,
+    "censored_partial_cost_usd": 0.002487,
+    "all_observed_tokens": 246481,
+    "all_observed_cost_usd": 0.082951
+  }
+}

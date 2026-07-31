@@ -590,6 +590,91 @@ oracle, applies at most one FULL default-safe Ruff repair, and executes the
 oracle exactly once after the model loop. Agent-loop equilibrium uses public
 evidence only, so hidden results cannot cause another model repair turn.
 
+## Frozen real-repository open-model audit
+
+Protocol `GB-PREPRINT-2026-07-30-V1` moved admission from synthetic T28/T29 to
+the pinned ItsDangerous T30 repository. Three routes produced complete model
+failures:
+
+| Workflow | Route | Tokens | Stop | Audit diagnosis |
+|---|---|---:|---|---|
+| [30578321675](https://github.com/layer1labs/specsmith/actions/runs/30578321675) | Qwen3.6-27B / DeepInfra | 52,465 | `text_response` | premature narration, serialized calls, 1/3 milestones |
+| [30578331257](https://github.com/layer1labs/specsmith/actions/runs/30578331257) | Qwen3-32B / DeepInfra | 148,710 | `max_turns` | turn exhaustion and completion truncation after 3/3 milestones |
+| [30581395036](https://github.com/layer1labs/specsmith/actions/runs/30581395036) | Qwen3-Coder-30B / Scaleway | 28,821 | `empty_response` | post-tool continuation failure before a milestone |
+
+None passed the independent public project-test gate. The later discovery of
+an invalid V1 hidden-license assertion therefore does not change these
+admission failures: hidden-oracle credit was never needed to reject them. The
+30B route stayed under the 30,000-token efficiency ceiling, demonstrating why
+admission requires both correctness and cost rather than selecting the
+cheapest failure.
+
+GPT-OSS-20B/Nscale rejected the frozen named tool choice after 8,612 partial
+tokens. GLM-4.7-Flash/DeepInfra emitted an HTTP 504 after 7,873 partial tokens,
+then timed out on its identical retry. Qwen3.6-35B/DeepInfra timed out in two
+identical live probes. These three routes remain censored rather than being
+counted as model failures. Their partial expenditure is still reported.
+
+The Qwen-Coder path also exposed an infrastructure defect: invalid-milestone
+recovery called `.startswith()` on the normalized result object rather than its
+content. A native bounded HF JSON transport and a content-level recovery test
+removed that ambiguity; only workflow 30581395036 is the complete scored
+replacement. Because no candidate cleared public correctness, the
+preregistered funnel stopped before n=5. The correct audit action is `reject`,
+not more repetitions or a relaxed gate.
+
+## V1 evaluator invalidation and V2 recovery
+
+Matched workflow
+[30578319069](https://github.com/layer1labs/specsmith/actions/runs/30578319069)
+exposed two evaluator defects before publication. The V1 T30 hidden oracle
+required a prose license label absent from the canonical pinned file, and T30
+was mistakenly classified as standard horizon, allowing FULL to request
+completion before every milestone file existed. All 60 V1 T30 rows are
+therefore excluded from correctness and TPCA inference. Their expenditure
+remains visible as invalidated experimental spend.
+
+V1 T28 and T29 use independent fixtures and oracles and remain protocol-labeled
+evidence. Sol completed all 60 of those rows; Terra completed all 30 T29 rows
+and 28/30 T28 rows, with raw repetitions 4 and 6 censored as bounded provider
+timeouts. Attempt 2 was canceled after the T30 defect was found rather than
+spending on an invalid stratum.
+
+Frozen recovery protocol `GB-PREPRINT-2026-07-30-V2` changes only the T30
+evaluation boundary: exact pinned-license digest, long-horizon milestone
+completion, and public rotation/documentation/upstream validators. It repeats
+raw, Cursor-style, and FULL for Terra and Sol at n=10 with no provider retries.
+The machine-readable invalidation record is
+`paper/data/publication-v1-invalidation.json`.
+
+Corrected
+[workflow 30589098641](https://github.com/layer1labs/specsmith/actions/runs/30589098641)
+completed 60/60 valid cells. Sol FULL passed 8/10 at 105.5k TPCA, compared
+with raw Sol at 5/10 and 234.5k and Cursor-style Sol at 1/10 and 1,027.1k.
+Terra FULL passed 2/10 at 362.7k, compared with 1/10 for each Terra control.
+Thus FULL produced a large observed Sol improvement on T30, but its
+within-model joint uncertainty gates remained false, and Terra FULL did not
+substitute for Sol raw.
+
+The audit explains the remaining gap rather than hiding failed spend:
+
+- Sol FULL's two failures exhausted the turn budget after partial timed-value
+  and documentation work; failed rows were 26.6% of FULL tokens, versus 47.7%
+  for raw and 85.2% for Cursor-style.
+- Terra FULL spent 76.9% of its tokens on failed rows. Two cells stopped on
+  prose after one turn, five serialized independent actions or exhausted the
+  cap, and two passed the hidden rotation contract while still failing the
+  unchanged upstream project suite.
+- Across conditions, recurring hotspots were timed return-shape semantics,
+  missing documentation, serialized tool calls, repeated-tool loops, and
+  milestone fragmentation.
+
+The dual public/hidden gate was consequential: hidden correctness alone would
+have credited two Terra FULL implementations that regressed upstream behavior.
+The next optimization should target bounded early-stop recovery and the timed
+API/documentation boundary, but it must begin under a new frozen controller
+version and cannot be pooled with V2.
+
 ## Completion and oracle boundaries
 
 The clean starter cannot pass the hidden oracle without implementing:

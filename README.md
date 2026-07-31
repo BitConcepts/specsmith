@@ -148,10 +148,20 @@ task-, route-, and benchmark-specific results. Published-size open models have
 not passed the repeated frontier-replacement gates, so Specsmith does not claim
 that small models generally replace frontier models.
 
-The next publication round is frozen as `GB-PREPRINT-2026-07-30-V1`. It adds a
-commit-pinned independent upstream repository, matched raw/Cursor/Specsmith
-conditions, explicit failed-run expenditure, and sequential 20B–35B open-model
-admission. Results remain unpublished until those frozen gates finish.
+The publication-readiness round adds a commit-pinned independent upstream
+repository, matched raw/Cursor/Specsmith conditions, explicit failed-run
+expenditure, and sequential 20B–35B open-model admission. Its self-audit
+invalidated the original T30 evaluator before publication; corrected frozen
+protocol `GB-PREPRINT-2026-07-30-V2` is the only scored real-repository
+stratum. Full receipts and limitations stay in the benchmark report rather
+than this quick start.
+
+On corrected T30, Sol FULL passed 8/10 at 105.5k TPCA versus raw Sol at 5/10
+and 234.5k and the versioned Cursor-style condition at 1/10 and 1,027.1k.
+Terra FULL improved over Terra controls but passed only 2/10, so the
+lower-tier substitution claim does not transfer to this repository. The
+within-model point estimates favor FULL, but their joint uncertainty gates
+remain unconfirmed at n=10.
 
 See the
 [full benchmark report](https://specsmith.readthedocs.io/stable/efficiency-benchmark/),

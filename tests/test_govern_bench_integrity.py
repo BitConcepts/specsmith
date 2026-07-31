@@ -18,9 +18,11 @@ if str(_SCRIPTS_DIR) not in sys.path:
 
 import govern_bench.harness as harness_module  # noqa: E402
 from govern_bench.compare_runs import (  # noqa: E402
+    governance_condition_inferences,
     governance_substitution_comparisons,
     render_comparison,
     rollup,
+    select_tasks,
     split_input_spec,
     validate_comparable,
     validate_results,
@@ -228,6 +230,57 @@ def test_release_substitution_requires_n10_and_reports_paired_uncertainty() -> N
     )
     assert screened["claims"]["release_ready"] is False
     assert screened["claims"]["fixed_suite_substitution"] is False
+
+
+def test_sparse_pass_bootstrap_is_json_standard_and_fail_closed() -> None:
+    def cells(
+        model: str,
+        condition: str,
+        passes: int,
+        tokens: int,
+    ) -> list[dict]:
+        result: list[dict] = []
+        for rep in range(1, 11):
+            row = _row(task="T30", condition=condition, rep=rep, model=model)
+            row["passed"] = rep <= passes
+            row["tokens"] = tokens
+            row["cost_usd"] = tokens / 1_000_000
+            result.append(row)
+        return result
+
+    terra = (
+        cells("gpt-5.6-terra", "SPECSMITH_FULL", 2, 72_000)
+        + cells("gpt-5.6-terra", "UNGOVERNED", 1, 131_000)
+        + cells("gpt-5.6-terra", "CURSOR_RULES", 1, 116_000)
+    )
+    sol = (
+        cells("gpt-5.6-sol", "SPECSMITH_FULL", 8, 84_000)
+        + cells("gpt-5.6-sol", "UNGOVERNED", 5, 117_000)
+        + cells("gpt-5.6-sol", "CURSOR_RULES", 1, 102_000)
+    )
+    inference = substitution_inference(terra, sol, ["T30"], bootstrap_samples=500)
+
+    assert inference["fixed_suite_95_ci"]["tpca_ratio"][1] is None
+    assert inference["claims"]["fixed_suite_substitution"] is False
+    json.dumps(inference, allow_nan=False)
+
+    models = [("gpt-5.6-terra", rollup(terra)), ("gpt-5.6-sol", rollup(sol))]
+    condition_inferences = governance_condition_inferences(
+        [("gpt-5.6-terra", terra), ("gpt-5.6-sol", sol)],
+        ["T30"],
+    )
+    assert len(condition_inferences) == 4
+    assert all(
+        not item["inference"]["claims"]["fixed_suite_substitution"] for item in condition_inferences
+    )
+    report = render_comparison(
+        models,
+        tasks=["T30"],
+        raw_models=[("gpt-5.6-terra", terra), ("gpt-5.6-sol", sol)],
+    )
+    assert "undefined" in report
+    assert "–nan" not in report.casefold()
+    assert "the superiority gate fails closed" in report
 
 
 def test_file_bodies_are_just_in_time_by_default(
@@ -746,6 +799,29 @@ def test_complete_results_return_cell_signature() -> None:
         ("T1", "SPECSMITH_FULL", 1),
         ("T1", "SPECSMITH_FULL", 2),
     }
+
+
+def test_task_selection_precedes_fail_closed_validation() -> None:
+    selected = select_tasks(
+        [
+            _row(task="T1", condition="UNGOVERNED", rep=1),
+            _row(
+                task="T2",
+                condition="UNGOVERNED",
+                rep=1,
+                skipped=True,
+                error="provider timeout",
+            ),
+        ],
+        ["T1"],
+        "test",
+    )
+    assert validate_results(selected, "test") == {("T1", "UNGOVERNED", 1)}
+
+
+def test_task_selection_rejects_an_empty_stratum() -> None:
+    with pytest.raises(ValueError, match="no rows match selected tasks"):
+        select_tasks([_row(task="T1")], ["T2"], "test")
 
 
 @pytest.mark.parametrize(

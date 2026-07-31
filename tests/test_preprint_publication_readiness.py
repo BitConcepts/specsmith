@@ -369,6 +369,20 @@ def test_open_admission_status_cannot_claim_unearned_promotion() -> None:
     assert status["promotion_outcome"]["admitted_models"] == []
     assert status["promotion_outcome"]["screen_n5_runs"] == []
     assert status["promotion_outcome"]["release_n10_runs"] == []
+    assert status["evaluator_disclosure"] == {
+        "v1_t30_hidden_stratum_invalidated": True,
+        "reason": (
+            "The V1 hidden evaluator contained an impossible license-label assertion "
+            "and is excluded from correctness inference."
+        ),
+        "negative_admission_preserved": True,
+        "basis": (
+            "Each complete open-model cell independently failed the public project-test "
+            "gate before hidden-oracle credit; the censoring classifications also do "
+            "not depend on the hidden evaluator."
+        ),
+        "replacement_protocol": "GB-PREPRINT-2026-07-30-V2",
+    }
     assert {row["classification"] for row in status["censored_routes"]} == {
         "provider_incompatible",
         "provider_unavailable",
@@ -383,3 +397,67 @@ def test_open_admission_status_cannot_claim_unearned_promotion() -> None:
         status["expenditure"]["complete_failed_tokens"]
         + status["expenditure"]["censored_partial_tokens"]
     )
+
+
+def test_v1_invalidation_excludes_only_t30_and_names_frozen_recovery() -> None:
+    record_path = Path(__file__).parents[1] / "paper/data/publication-v1-invalidation.json"
+    record = json.loads(record_path.read_text(encoding="utf-8"))
+
+    assert record["protocol_id"] == "GB-PREPRINT-2026-07-30-V1"
+    assert record["workflow_id"] == "30578319069"
+    assert record["discovered_before_publication"] is True
+    assert [row["task"] for row in record["invalidated_strata"]] == ["T30"]
+    assert {row["task"] for row in record["preserved_strata"]} == {"T28", "T29"}
+    assert record["censored_cells"] == [
+        {
+            "task": "T28",
+            "condition": "UNGOVERNED",
+            "model": "openai-responses/gpt-5.6-terra",
+            "repetitions": [4, 6],
+            "classification": "provider_timeout",
+        }
+    ]
+    assert record["recovery"]["protocol_id"] == "GB-PREPRINT-2026-07-30-V2"
+    assert (
+        record["recovery"]["protocol_sha256"]
+        == hashlib.sha256(RECOVERY_PROTOCOL_PATH.read_bytes()).hexdigest()
+    )
+
+
+def test_publication_readiness_status_matches_v2_inference() -> None:
+    data_root = Path(__file__).parents[1] / "paper/data"
+    status = json.loads(
+        (data_root / "publication-readiness-status.json").read_text(encoding="utf-8")
+    )
+    summary = json.loads(
+        (data_root / "preprint-real-repo-v2-30589098641" / "summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert status["preprint_submission_status"] == "not_submitted"
+    assert [item["status"] for item in status["items"]] == [
+        "complete",
+        "complete_for_current_scope",
+        "complete",
+        "complete",
+        "complete_negative",
+    ]
+    comparison = summary["comparisons"][0]["inference"]
+    h3 = status["v2_hypothesis_outcomes"]["H3_terra_full_vs_sol_raw"]
+    assert h3["fixed_suite_substitution"] == comparison["claims"]["fixed_suite_substitution"]
+    assert h3["cross_task_substitution"] == comparison["claims"]["cross_task_substitution"]
+    assert h3["point_tpca_ratio"] == pytest.approx(comparison["point"]["tpca_ratio"], abs=1e-6)
+
+    within = {
+        (item["model"], item["baseline_condition"]): item["inference"]["claims"][
+            "fixed_suite_substitution"
+        ]
+        for item in summary["within_model_comparisons"]
+    }
+    assert within == {
+        ("gpt-5.6-terra", "UNGOVERNED"): False,
+        ("gpt-5.6-terra", "CURSOR_RULES"): False,
+        ("gpt-5.6-sol", "UNGOVERNED"): False,
+        ("gpt-5.6-sol", "CURSOR_RULES"): False,
+    }

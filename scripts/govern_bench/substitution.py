@@ -22,8 +22,34 @@ def _quantile(values: list[float], probability: float) -> float:
     high = math.ceil(position)
     if low == high:
         return ordered[low]
+    low_value = ordered[low]
+    high_value = ordered[high]
+    if low_value == high_value:
+        return low_value
+    if not math.isfinite(high_value):
+        return high_value
+    if not math.isfinite(low_value):
+        return low_value
     fraction = position - low
-    return ordered[low] + (ordered[high] - ordered[low]) * fraction
+    return low_value + (high_value - low_value) * fraction
+
+
+def _ratio_or_infinity(numerator: float, denominator: float) -> float:
+    """Return a finite ratio only when both endpoints are estimable."""
+    if denominator <= 0 or not math.isfinite(numerator) or not math.isfinite(denominator):
+        return float("inf")
+    return numerator / denominator
+
+
+def _json_safe(value: Any) -> Any:
+    """Replace non-finite statistics with JSON-standard null recursively."""
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, dict):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_json_safe(item) for item in value]
+    return value
 
 
 def _system_metrics(cells: list[dict[str, Any]]) -> dict[str, float]:
@@ -60,16 +86,19 @@ def _paired_cells(
     smaller_rows: list[dict[str, Any]],
     stronger_rows: list[dict[str, Any]],
     tasks: list[str],
+    *,
+    candidate_condition: str,
+    baseline_condition: str,
 ) -> dict[str, list[tuple[dict[str, Any], dict[str, Any]]]]:
     smaller = {
         (str(row["task"]), int(row["rep"])): row
         for row in smaller_rows
-        if row["condition"] == "SPECSMITH_FULL" and row["task"] in tasks
+        if row["condition"] == candidate_condition and row["task"] in tasks
     }
     stronger = {
         (str(row["task"]), int(row["rep"])): row
         for row in stronger_rows
-        if row["condition"] == "UNGOVERNED" and row["task"] in tasks
+        if row["condition"] == baseline_condition and row["task"] in tasks
     }
     if smaller.keys() != stronger.keys():
         missing = sorted(stronger.keys() - smaller.keys())
@@ -102,14 +131,8 @@ def _effect(
         "pass_rate_difference": smaller["pass_rate"] - stronger["pass_rate"],
         "pass_rate_difference_low": smaller_pass_ci[0] - stronger_pass_ci[1],
         "pass_rate_difference_high": smaller_pass_ci[1] - stronger_pass_ci[0],
-        "tpca_ratio": (
-            smaller["tokens_per_correct_answer"] / stronger_tpca
-            if stronger_tpca > 0
-            else float("inf")
-        ),
-        "cost_of_pass_ratio": (
-            smaller["cost_of_pass"] / stronger_cop if stronger_cop > 0 else float("inf")
-        ),
+        "tpca_ratio": _ratio_or_infinity(smaller["tokens_per_correct_answer"], stronger_tpca),
+        "cost_of_pass_ratio": _ratio_or_infinity(smaller["cost_of_pass"], stronger_cop),
     }
 
 
@@ -165,6 +188,8 @@ def substitution_inference(
     *,
     bootstrap_samples: int = _DEFAULT_BOOTSTRAP_SAMPLES,
     noninferiority_margin: float = _NONINFERIORITY_MARGIN,
+    candidate_condition: str = "SPECSMITH_FULL",
+    baseline_condition: str = "UNGOVERNED",
 ) -> dict[str, Any]:
     """Return point estimates, paired bootstrap intervals, and guarded claims.
 
@@ -172,7 +197,13 @@ def substitution_inference(
     ``task_cluster`` also resamples task IDs and is the more conservative view
     when reasoning beyond the exact versioned task grid.
     """
-    pairs_by_task = _paired_cells(smaller_rows, stronger_rows, tasks)
+    pairs_by_task = _paired_cells(
+        smaller_rows,
+        stronger_rows,
+        tasks,
+        candidate_condition=candidate_condition,
+        baseline_condition=baseline_condition,
+    )
     smaller_cells = [pair[0] for pairs in pairs_by_task.values() for pair in pairs]
     stronger_cells = [pair[1] for pairs in pairs_by_task.values() for pair in pairs]
     point = _effect(smaller_cells, stronger_cells)
@@ -181,6 +212,11 @@ def substitution_inference(
         for task, pairs in sorted(pairs_by_task.items())
         for pair in pairs
     )
+    if (candidate_condition, baseline_condition) != (
+        "SPECSMITH_FULL",
+        "UNGOVERNED",
+    ):
+        seed_basis = f"{candidate_condition}|{baseline_condition}|{seed_basis}"
     seed = hashlib.sha256(seed_basis.encode("utf-8")).hexdigest()
     fixed = _intervals(
         _bootstrap_effects(
@@ -204,9 +240,13 @@ def substitution_inference(
     fixed_token_superior = fixed["tpca_ratio"][1] < 1.0
     clustered_noninferior = clustered["pass_rate_difference"][0] >= -noninferiority_margin
     clustered_token_superior = clustered["tpca_ratio"][1] < 1.0
-    return {
+    result = {
         "schema": "governancebench-substitution-v1",
         "tasks": list(tasks),
+        "comparison": {
+            "candidate_condition": candidate_condition,
+            "baseline_condition": baseline_condition,
+        },
         "minimum_repetitions_per_task": minimum_reps,
         "bootstrap_samples": bootstrap_samples,
         "noninferiority_margin": noninferiority_margin,
@@ -223,3 +263,4 @@ def substitution_inference(
             ),
         },
     }
+    return _json_safe(result)

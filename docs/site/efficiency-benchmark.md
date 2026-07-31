@@ -50,9 +50,83 @@ uncertainty methods, and sequential promotion gates.
 T30 is a byte-hashed BSD-3-Clause snapshot of
 [Pallets ItsDangerous](https://github.com/pallets/itsdangerous) at commit
 `672971d66a2ef9f85151e53283113f33d642dabd`. Its untouched upstream test suite
-passes 297 tests. The starter fails the new rotation validator and hidden
-oracle, preventing no-op credit. Results are pending and no claim is changed
-until the frozen workflows complete.
+passes 297 tests. V1 workflow
+[30578319069](https://github.com/layer1labs/specsmith/actions/runs/30578319069)
+revealed before publication that its T30 oracle required a license label absent
+from the canonical file and that its standard-horizon classification weakened
+FULL completion. All 60 V1 T30 rows are invalidated. V1 T28/T29 remain
+independent protocol-labeled evidence, except two Terra/raw T28 provider
+timeouts.
+
+Recovery protocol `GB-PREPRINT-2026-07-30-V2` was frozen before rerunning T30.
+It verifies the license by its pinned digest, classifies T30 as long horizon,
+requires every declared milestone file, and repeats Terra/Sol ×
+raw/Cursor/FULL at n=10 without retries. No V1 T30 correctness or TPCA result
+is used below.
+
+The independently valid V1 strata remain useful:
+
+| Frozen stratum | Raw | Cursor-style | Specsmith FULL |
+|---|---:|---:|---:|
+| Sol T28, n=10 | 10/10, 41.9k TPCA | 10/10, 59.9k | 10/10, 18.0k |
+| Sol T29, n=10 | 9/10, 53.9k TPCA | 8/10, 54.5k | 10/10, 22.9k |
+| Terra T29, n=10 | 6/10, 115.0k TPCA | 8/10, 98.4k | 10/10, 17.6k |
+
+On T29, Terra FULL used 0.327× the TPCA of Sol raw, but the one-task
+correctness interval did not clear the five-point non-inferiority margin.
+This is a strong task-specific efficiency result, not a fresh-repository or
+general model-equivalence claim. Terra T28 is omitted because two raw cells
+were censored by provider timeouts.
+
+Corrected
+[workflow 30589098641](https://github.com/layer1labs/specsmith/actions/runs/30589098641)
+then completed all 60 V2 T30 rows without a skip, provider error, retry, or
+censored cell:
+
+| Frozen T30 system | Correct | TPCA | Cost/pass | Failed-token share |
+|---|---:|---:|---:|---:|
+| Terra raw | 1/10 | 1,316,860 | $4.65094 | 84.0% |
+| Terra Cursor-style | 1/10 | 1,165,503 | $3.73937 | 88.1% |
+| Terra FULL | 2/10 | 362,650 | $1.46335 | 76.9% |
+| Sol raw | 5/10 | 234,526 | $0.66978 | 47.7% |
+| Sol Cursor-style | 1/10 | 1,027,057 | $2.94382 | 85.2% |
+| Sol FULL | 8/10 | 105,523 | $0.52046 | 26.6% |
+
+For Sol, FULL reduced TPCA 55.0% versus raw and 89.7% versus the versioned
+Cursor-style condition while increasing correctness to 8/10 from 5/10 and
+1/10. For Terra, FULL reduced TPCA 72.5% versus raw but remained only 2/10
+correct. Terra FULL therefore does not substitute for Sol raw on T30: the
+correctness difference is −30 percentage points and the point TPCA ratio is
+1.546.
+
+The paired upper TPCA confidence bound is undefined because some of the 10,000
+bootstrap resamples contain no correct Sol-raw answer. It is serialized as
+JSON `null`; both substitution gates fail closed. This is evidence of
+large same-model point improvements for Sol on one independent repository, not
+a passed joint hypothesis gate: Sol FULL versus raw has a TPCA interval of
+0.222–0.656, but its correctness-difference interval is −45.1 to +87.4
+percentage points. All four within-model joint gates remain false at n=10.
+This is not evidence that a lower-tier model generally replaces a frontier
+model.
+
+The open-model admission lane is complete. None of the six pinned 20B-35B
+routes earned promotion:
+
+| Frozen T30 route | Status | Correct | Observed tokens | Outcome |
+|---|---|---:|---:|---|
+| Qwen3.6-27B / DeepInfra | Complete | 0/1 | 52,465 | Failed after 1/3 milestones |
+| Qwen3-32B / DeepInfra | Complete | 0/1 | 148,710 | Exhausted 12 turns after writing all six boundaries |
+| Qwen3-Coder-30B / Scaleway | Complete | 0/1 | 28,821 | Empty post-tool continuation; 0/3 milestones |
+| GPT-OSS-20B / Nscale | Censored | — | 8,612 partial | Frozen named tool choice rejected |
+| GLM-4.7-Flash / DeepInfra | Censored | — | 7,873 partial | HTTP 504, then identical bounded timeout |
+| Qwen3.6-35B / DeepInfra | Censored | — | 0 | Two identical live probes timed out |
+
+Complete failed cells consumed 229,996 tokens and $0.080464. Censored partial
+calls add 16,485 observed tokens and $0.002487 but are excluded from
+correctness inference. Every complete route failed the independent public
+project-test gate, so the later V1 hidden-oracle invalidation does not alter
+the negative admission outcome. The frozen sequential rule forbids n=5 and
+n=10 spend. Compact evidence and the censoring ledger are in `paper/data/`.
 
 ## July 26 preregistered model-substitution release
 

@@ -1,0 +1,105 @@
+{
+  "schema": "governancebench-publication-readiness-v1",
+  "updated_at": "2026-07-31T00:03:44Z",
+  "preprint_submission_status": "not_submitted",
+  "items": [
+    {
+      "id": 1,
+      "name": "freeze_and_preregister",
+      "status": "complete",
+      "protocol": "GB-PREPRINT-2026-07-30-V2",
+      "protocol_sha256": "741348ba78726624f6d32eef7dcfbb49b15abb1fcc01d2ec51ccb3509e5fcb22"
+    },
+    {
+      "id": 2,
+      "name": "unseen_and_real_repositories",
+      "status": "complete_for_current_scope",
+      "evidence": [
+        "T29 fresh synthetic polyglot release-control fixture",
+        "T30 commit-pinned Pallets ItsDangerous upstream repository"
+      ],
+      "boundary": "Broad external validity still requires additional independent repositories and languages."
+    },
+    {
+      "id": 3,
+      "name": "matched_counterfactuals",
+      "status": "complete",
+      "workflow_id": "30589098641",
+      "models": [
+        "openai-responses/gpt-5.6-terra",
+        "openai-responses/gpt-5.6-sol"
+      ],
+      "conditions": [
+        "UNGOVERNED",
+        "CURSOR_RULES",
+        "SPECSMITH_FULL"
+      ],
+      "rows": 60
+    },
+    {
+      "id": 4,
+      "name": "n10_uncertainty_and_failure_cost",
+      "status": "complete",
+      "repetitions_per_cell": 10,
+      "bootstrap_samples": 10000,
+      "failed_expenditure_included": true,
+      "compact_evidence": "preprint-real-repo-v2-30589098641"
+    },
+    {
+      "id": 5,
+      "name": "credible_20b_to_35b_open_admission",
+      "status": "complete_negative",
+      "complete_failed_routes": 3,
+      "censored_routes": 3,
+      "admitted_routes": 0,
+      "promotion_stopped_at": "n1",
+      "evidence": "publication-open-admission-status.json"
+    }
+  ],
+  "scientific_corrections": [
+    {
+      "protocol": "GB-PREPRINT-2026-07-30-V1",
+      "invalidated_stratum": "T30",
+      "discovered_before_publication": true,
+      "evidence": "publication-v1-invalidation.json"
+    }
+  ],
+  "v2_hypothesis_outcomes": {
+    "H1_full_vs_raw_same_model": {
+      "terra_joint_gate": false,
+      "sol_joint_gate": false,
+      "sol_point_tpca_ratio": 0.449943,
+      "sol_fixed_tpca_ratio_95": [
+        0.222008,
+        0.655503
+      ],
+      "sol_fixed_correctness_difference_pp_95": [
+        -45.1,
+        87.4
+      ]
+    },
+    "H2_full_vs_cursor_same_model": {
+      "terra_joint_gate": false,
+      "sol_joint_gate": false,
+      "upper_tpca_bounds": "undefined_due_to_zero_pass_control_resamples"
+    },
+    "H3_terra_full_vs_sol_raw": {
+      "fixed_suite_substitution": false,
+      "cross_task_substitution": false,
+      "point_correctness_difference_pp": -30.0,
+      "point_tpca_ratio": 1.54631
+    }
+  },
+  "current_claim_boundary": {
+    "supported": [
+      "Specsmith FULL produced large favorable GPT-5.6 Sol point estimates on corrected frozen T30; the formal same-model joint uncertainty gates remain unconfirmed.",
+      "The earlier preregistered mixed-suite Terra FULL versus Sol raw substitution result remains task-distribution-specific."
+    ],
+    "not_supported": [
+      "Terra FULL substitutes for Sol raw on T30.",
+      "Published 20B-35B open models replace frontier models on T30.",
+      "Small models universally replace frontier models.",
+      "One independent upstream repository establishes broad real-world generalization."
+    ]
+  }
+}

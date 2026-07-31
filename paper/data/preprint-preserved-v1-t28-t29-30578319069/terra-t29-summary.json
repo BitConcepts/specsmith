@@ -1,0 +1,125 @@
+{
+  "schema": "governancebench-model-comparison-v1",
+  "tasks": [
+    "T29"
+  ],
+  "comparisons": [],
+  "within_model_comparisons": [
+    {
+      "model": "gpt-5.6-terra",
+      "candidate_condition": "SPECSMITH_FULL",
+      "baseline_condition": "UNGOVERNED",
+      "inference": {
+        "schema": "governancebench-substitution-v1",
+        "tasks": [
+          "T29"
+        ],
+        "comparison": {
+          "candidate_condition": "SPECSMITH_FULL",
+          "baseline_condition": "UNGOVERNED"
+        },
+        "minimum_repetitions_per_task": 10,
+        "bootstrap_samples": 10000,
+        "noninferiority_margin": 0.05,
+        "point": {
+          "pass_rate_difference": 0.4,
+          "pass_rate_difference_low": -0.10935247015665306,
+          "pass_rate_difference_high": 0.6873262302663417,
+          "tpca_ratio": 0.15324733682866268,
+          "cost_of_pass_ratio": 0.25768449603025534
+        },
+        "fixed_suite_95_ci": {
+          "pass_rate_difference": [
+            -0.25965658676781633,
+            0.8922087325936989
+          ],
+          "tpca_ratio": [
+            0.08113882075330842,
+            0.21698326890846178
+          ],
+          "cost_of_pass_ratio": [
+            0.13541823411645743,
+            0.3689500377774691
+          ]
+        },
+        "task_cluster_95_ci": {
+          "pass_rate_difference": [
+            -0.25965658676781633,
+            0.8922087325936989
+          ],
+          "tpca_ratio": [
+            0.08037504786046608,
+            0.21894485572961894
+          ],
+          "cost_of_pass_ratio": [
+            0.1339890889920666,
+            0.3704031091909452
+          ]
+        },
+        "claims": {
+          "release_ready": true,
+          "fixed_suite_substitution": false,
+          "cross_task_substitution": false
+        }
+      }
+    },
+    {
+      "model": "gpt-5.6-terra",
+      "candidate_condition": "SPECSMITH_FULL",
+      "baseline_condition": "CURSOR_RULES",
+      "inference": {
+        "schema": "governancebench-substitution-v1",
+        "tasks": [
+          "T29"
+        ],
+        "comparison": {
+          "candidate_condition": "SPECSMITH_FULL",
+          "baseline_condition": "CURSOR_RULES"
+        },
+        "minimum_repetitions_per_task": 10,
+        "bootstrap_samples": 10000,
+        "noninferiority_margin": 0.05,
+        "point": {
+          "pass_rate_difference": 0.19999999999999996,
+          "pass_rate_difference_low": -0.22085064840851398,
+          "pass_rate_difference_high": 0.5098375284633581,
+          "tpca_ratio": 0.17899840254373958,
+          "cost_of_pass_ratio": 0.3088691896127055
+        },
+        "fixed_suite_95_ci": {
+          "pass_rate_difference": [
+            -0.27753279986288915,
+            0.7634069094874358
+          ],
+          "tpca_ratio": [
+            0.11927777440195131,
+            0.228350801069185
+          ],
+          "cost_of_pass_ratio": [
+            0.19876128531147397,
+            0.3993704384839901
+          ]
+        },
+        "task_cluster_95_ci": {
+          "pass_rate_difference": [
+            -0.27753279986288915,
+            0.7634069094874358
+          ],
+          "tpca_ratio": [
+            0.1187360713713013,
+            0.2273760058569291
+          ],
+          "cost_of_pass_ratio": [
+            0.19974211203814368,
+            0.3981919219031558
+          ]
+        },
+        "claims": {
+          "release_ready": true,
+          "fixed_suite_substitution": false,
+          "cross_task_substitution": false
+        }
+      }
+    }
+  ]
+}

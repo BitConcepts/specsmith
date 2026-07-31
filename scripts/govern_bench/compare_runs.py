@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import statistics
 import sys
 from collections import defaultdict
@@ -37,6 +38,21 @@ def load_results(path: str) -> list[dict]:
     if not isinstance(rows, list) or not rows:
         raise ValueError(f"{path}: benchmark result must be a non-empty JSON array")
     return rows
+
+
+def select_tasks(rows: list[dict], tasks: list[str] | None, source: str) -> list[dict]:
+    """Select task strata before completeness validation.
+
+    A censored cell in an unselected task must not prevent a fail-closed
+    comparison of an independently valid stratum. The selected rows still pass
+    the full completeness, duplicate, and repetition-set checks.
+    """
+    if not tasks:
+        return rows
+    selected = [row for row in rows if str(row.get("task")) in tasks]
+    if not selected:
+        raise ValueError(f"{source}: no rows match selected tasks {sorted(tasks)}")
+    return selected
 
 
 _REQUIRED_RESULT_FIELDS = {
@@ -260,6 +276,12 @@ def _tok(v: float) -> str:
     return f"{v / 1000:.1f}k"
 
 
+def _interval_bound(value: float | None) -> str:
+    if value is None or not math.isfinite(value):
+        return "undefined"
+    return f"{value:.3f}"
+
+
 def _usd(v: float) -> str:
     if v < 0.001:
         return f"${v * 1000:.3f}m"  # micro-dollars as milli-dollars
@@ -357,6 +379,37 @@ def governance_substitution_comparisons(
                 )
             comparisons.append(comparison)
     return comparisons
+
+
+def governance_condition_inferences(
+    raw_models: list[tuple[str, list[dict]]] | None,
+    tasks: list[str],
+) -> list[dict[str, object]]:
+    """Return paired FULL-vs-control uncertainty for each model."""
+    results: list[dict[str, object]] = []
+    for model, rows in raw_models or []:
+        available = {(str(row["task"]), str(row["condition"])) for row in rows}
+        for baseline in ("UNGOVERNED", "CURSOR_RULES"):
+            required = {
+                (task, condition) for task in tasks for condition in ("SPECSMITH_FULL", baseline)
+            }
+            if not required <= available:
+                continue
+            results.append(
+                {
+                    "model": model,
+                    "candidate_condition": "SPECSMITH_FULL",
+                    "baseline_condition": baseline,
+                    "inference": substitution_inference(
+                        rows,
+                        rows,
+                        tasks,
+                        candidate_condition="SPECSMITH_FULL",
+                        baseline_condition=baseline,
+                    ),
+                }
+            )
+    return results
 
 
 # ---------------------------------------------------------------------------
@@ -535,7 +588,7 @@ def render_comparison(
                 fixed = inference["fixed_suite_95_ci"]
                 clustered = inference["task_cluster_95_ci"]
                 claims = inference["claims"]
-                lines += [
+                inference_lines = [
                     "",
                     f"**Paired inference — {item['smaller_model']} + FULL vs "
                     f"{item['stronger_model']} + UNGOVERNED:**",
@@ -543,18 +596,24 @@ def render_comparison(
                     f"- Fixed-suite 95% CI: correctness difference "
                     f"{fixed['pass_rate_difference'][0] * 100:+.1f} to "
                     f"{fixed['pass_rate_difference'][1] * 100:+.1f} percentage points; "
-                    f"TPCA ratio {fixed['tpca_ratio'][0]:.3f}–"
-                    f"{fixed['tpca_ratio'][1]:.3f}.",
+                    f"TPCA ratio {_interval_bound(fixed['tpca_ratio'][0])}–"
+                    f"{_interval_bound(fixed['tpca_ratio'][1])}.",
                     f"- Task-cluster 95% CI: correctness difference "
                     f"{clustered['pass_rate_difference'][0] * 100:+.1f} to "
                     f"{clustered['pass_rate_difference'][1] * 100:+.1f} percentage points; "
-                    f"TPCA ratio {clustered['tpca_ratio'][0]:.3f}–"
-                    f"{clustered['tpca_ratio'][1]:.3f}.",
+                    f"TPCA ratio {_interval_bound(clustered['tpca_ratio'][0])}–"
+                    f"{_interval_bound(clustered['tpca_ratio'][1])}.",
                     f"- Claim gates: release-ready={claims['release_ready']}; "
                     f"fixed-suite substitution={claims['fixed_suite_substitution']}; "
                     f"cross-task substitution={claims['cross_task_substitution']}.",
-                    "",
                 ]
+                if fixed["tpca_ratio"][1] is None or clustered["tpca_ratio"][1] is None:
+                    inference_lines.append(
+                        "- An undefined upper TPCA bound means at least one bootstrap "
+                        "resample had no correct frontier answer; the superiority gate "
+                        "fails closed."
+                    )
+                lines += [*inference_lines, ""]
         lines += [
             "",
             "A positive substitution result means governance compensated for measured "
@@ -562,6 +621,43 @@ def render_comparison(
             "the lower-tier route matches the frontier route outside the evaluated work.",
             "",
         ]
+
+    condition_inferences = governance_condition_inferences(raw_models, all_tasks)
+    if condition_inferences:
+        lines += [
+            "## Paired within-model governance gates",
+            "",
+            "These intervals test FULL against each same-model control on matched "
+            "repetition IDs. Point improvements remain descriptive when the joint "
+            "correctness-noninferiority and TPCA-superiority gate does not pass.",
+            "",
+        ]
+        for item in condition_inferences:
+            inference = item["inference"]
+            assert isinstance(inference, dict)
+            point = inference["point"]
+            fixed = inference["fixed_suite_95_ci"]
+            claims = inference["claims"]
+            baseline = str(item["baseline_condition"])
+            lines += [
+                f"**{item['model']}: FULL vs {baseline}:**",
+                "",
+                f"- Point correctness difference: "
+                f"{point['pass_rate_difference'] * 100:+.1f} percentage points; "
+                f"TPCA ratio {_interval_bound(point['tpca_ratio'])}.",
+                f"- Fixed-suite 95% CI: correctness difference "
+                f"{fixed['pass_rate_difference'][0] * 100:+.1f} to "
+                f"{fixed['pass_rate_difference'][1] * 100:+.1f} percentage points; "
+                f"TPCA ratio {_interval_bound(fixed['tpca_ratio'][0])}–"
+                f"{_interval_bound(fixed['tpca_ratio'][1])}.",
+                f"- Joint gate: {claims['fixed_suite_substitution']}.",
+            ]
+            if fixed["tpca_ratio"][1] is None:
+                lines.append(
+                    "- The upper TPCA bound is undefined because a bootstrap resample "
+                    "had no correct control answer; the joint gate fails closed."
+                )
+            lines.append("")
 
     # ── Headline findings ──────────────────────────────────────────────────
     lines += [
@@ -602,7 +698,8 @@ def render_comparison(
                 if s and sf and s["cost_of_pass"] < float("inf") and sf["cost_of_pass"] > 0:
                     lines.append(
                         f"**`{mname}`: SPECSMITH_FULL vs UNGOVERNED on {headline_task}** — "
-                        f"governance is {_delta(s['cost_of_pass'], sf['cost_of_pass'])} "
+                        f"point estimate: governance is "
+                        f"{_delta(s['cost_of_pass'], sf['cost_of_pass'])} "
                         "per correct answer "
                         f"({_cop(sf['cost_of_pass'])} vs {_cop(s['cost_of_pass'])})"
                     )
@@ -693,6 +790,7 @@ def main() -> int:
             # an explicit FILE:LABEL override.
             path, label = split_input_spec(spec)
             rows = load_results(path)
+            rows = select_tasks(rows, args.tasks, path)
             if label is None:
                 label = _derive_model_label(rows, path)
             cells = validate_results(rows, path)
@@ -708,6 +806,7 @@ def main() -> int:
 
     selected_tasks = args.tasks or sorted({task for _label, data in models for task in data})
     substitutions = governance_substitution_comparisons(models, selected_tasks, raw_models)
+    condition_inferences = governance_condition_inferences(raw_models, selected_tasks)
     md = render_comparison(models, tasks=args.tasks, raw_models=raw_models)
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -722,8 +821,10 @@ def main() -> int:
                     "schema": "governancebench-model-comparison-v1",
                     "tasks": selected_tasks,
                     "comparisons": substitutions,
+                    "within_model_comparisons": condition_inferences,
                 },
                 indent=2,
+                allow_nan=False,
             ),
             encoding="utf-8",
         )

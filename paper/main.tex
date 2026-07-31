@@ -49,9 +49,16 @@ Both preregistered mixed-suite substitution gates passed. In a prespecified
 coding-only sensitivity, Terra FULL passed 60/60 at 15,649 TPCA versus Sol raw
 55/60 at 30,250, but its correctness lower bound was $-5.7$ percentage points,
 just outside the $-5$-point non-inferiority margin. Published 8B and mini-model
-routes failed admission. The evidence supports task-conditional substitution
-for the exact API routes and benchmark distribution, not universal model
-equivalence or a claim that small models replace frontier models.
+routes failed admission. In a separately frozen real-repository lane, three
+complete 27B--32B routes also failed correctness and three pinned 20B--35B
+routes were censored by provider incompatibility or unavailability; no route
+earned repeated promotion. On corrected pinned-upstream T30, Sol FULL passed
+8/10 at 105,523 TPCA versus raw Sol at 5/10 and 234,526, while Terra FULL
+passed 2/10 at 362,650. The within-model joint gates remained unconfirmed, and
+the lower-tier substitution result did not transfer. The evidence supports
+task-conditional substitution for the exact API routes and benchmark
+distribution, not universal model equivalence or a claim that small models
+replace frontier models.
 \end{abstract}
 
 \section{Introduction}
@@ -432,6 +439,66 @@ a clean repeated result for the exact synthetic T29, Terra Responses, and FULL
 controller package; it still does not establish transfer to a fresh real
 repository.
 
+We therefore froze protocol
+\texttt{GB-PREPRINT-2026-07-30-V1} before testing a byte-hashed snapshot of
+Pallets ItsDangerous at commit
+\texttt{672971d66a2ef9f85151e53283113f33d642dabd}. The untouched upstream suite
+passed 297 tests; the starter failed both a public key-rotation validator and
+an evaluator-isolated oracle. Six exact hosted 20B--35B routes then received
+one T30 FULL admission with a 30,000-token correctness gate. Qwen3.6-27B,
+Qwen3-32B, and Qwen3-Coder-30B produced complete failures at 52,465, 148,710,
+and 28,821 tokens. The first stopped after one of three milestones, the second
+exhausted twelve turns after writing all declared boundaries, and the third
+returned an empty post-tool continuation before completing a milestone.
+GPT-OSS-20B rejected the frozen named tool choice after 8,612 partial tokens;
+GLM-4.7-Flash produced a 504 and then a bounded timeout after 7,873 partial
+tokens; Qwen3.6-35B timed out in two live probes before a scored cell. Complete
+failed cells consumed 229,996 tokens and \$0.080464, while censored calls add
+16,485 observed tokens and \$0.002487. No complete route passed the independent
+public project-test gate, so the preregistered sequential rule prohibited n=5
+or n=10 promotion. This is a negative real-repository admission result, not
+evidence that governance alone makes a mid-sized route frontier-equivalent.
+
+The matched V1 workflow then exposed an evaluator defect before publication:
+its T30 hidden oracle required a prose license label absent from the untouched
+pinned file. T30 was also misclassified as standard horizon, so FULL could
+request completion before every milestone file existed. We invalidate all 60
+V1 T30 rows and retain their expenditure only as invalidated experimental
+spend. The open-model rejection remains valid because each complete route
+independently failed the public project-test gate. V1 T28 and T29 use separate
+fixtures and oracles and remain protocol-labeled evidence, although two
+Terra-raw T28 calls ended in bounded provider timeouts.
+
+Before further paid calls, we froze
+\texttt{GB-PREPRINT-2026-07-30-V2}. It reruns only T30 at n=10 for Terra and
+Sol under raw, Cursor-style, and FULL conditions, verifies the license by its
+pinned digest, enforces long-horizon milestone completion, and disables
+provider retries. This recovery separates evaluator correction from controller
+optimization and prevents V1 outcomes from entering the corrected inference.
+
+V2 workflow 30589098641 completed all 60 cells without a provider retry,
+error, skip, or censored observation. Sol FULL passed 8/10 at 105,523 TPCA and
+\$0.52046 per pass, compared with raw Sol at 5/10, 234,526, and \$0.66978 and
+Cursor-style Sol at 1/10, 1,027,057, and \$2.94382. Failed rows consumed
+26.6\% of Sol FULL tokens, versus 47.7\% raw and 85.2\% Cursor-style. Terra
+FULL passed 2/10 at 362,650 TPCA, compared with 1/10 for both Terra controls.
+The Sol FULL-versus-raw TPCA interval favored FULL at 0.222--0.656, but its
+correctness-difference interval was $-45.1$ to $+87.4$ percentage points; all
+four within-model joint gates remained false.
+Separately, Terra FULL failed the prespecified cross-model substitution
+comparison against raw Sol, which passed 5/10 at 234,526 TPCA. Some paired
+bootstrap resamples contained no correct
+Sol-raw answer, making the upper TPCA-ratio bound non-estimable; we serialize
+that bound as null and fail both substitution gates closed.
+
+Trace audit localized the residual failures. Sol FULL's two failures exhausted
+the turn cap after incomplete timed-value and documentation work. Terra FULL
+spent 76.9\% of its tokens on failures: two cells stopped on prose after one
+turn, others serialized actions or exhausted the cap, and two satisfied the
+hidden rotation contract while regressing the unchanged upstream suite. The
+dual public/hidden gate prevented those partial solutions from receiving
+credit.
+
 \section{Threats to Validity}
 
 \paragraph{Construct validity.}
@@ -450,8 +517,9 @@ fail-closed provider handling, and paired uncertainty.
 \paragraph{External validity.}
 Eight tasks are too few for an unconditional market-wide replacement claim.
 Task-cluster intervals expose this limitation but cannot manufacture diversity.
-The benchmark is public and may eventually be contaminated. Replication on
-fresh, real repositories such as SWE-bench-Live is necessary
+The benchmark is public and may eventually be contaminated. T30 adds one
+pinned independent upstream repository, but broader replication on fresh,
+real repositories such as SWE-bench-Live remains necessary
 \citep{zhang2025swebenchlive}.
 
 \paragraph{Researcher degrees of freedom.}
@@ -485,6 +553,12 @@ Hidden acceptance tests are isolated from model feedback. Safety tasks reward
 clarification or refusal rather than destructive execution. No human-subject
 data are collected.
 
+The corrected T30 bundle contains the 60 canonical rows, both source-artifact
+digests, workflow and commit identities, and V2 protocol SHA-256. A separate
+machine-readable record invalidates only V1 T30 while preserving independently
+valid T28/T29 strata and the two censored Terra T28 cells. The preprint has not
+been submitted to an external server.
+
 \section{Conclusion}
 
 Governance can move work from probabilistic model reasoning into deterministic
@@ -493,9 +567,11 @@ task distribution, this substantially reduced the tokens required for correct
 software changes and allowed the governed Terra route to clear the
 preregistered substitution gates against raw Sol. The coding-only gate remained
 inconclusive by 0.7 percentage points, and the published-size admissions
-failed. The scientifically defensible result is task-conditional system
-substitution with explicit confidence and routing gates---not that smaller
-models universally replace frontier models.
+failed. On the independent T30 repository, FULL produced favorable Sol point
+estimates but did not clear the joint within-model uncertainty gate, and Terra
+did not substitute for raw Sol. The scientifically defensible result is
+task-conditional system substitution with explicit confidence and routing
+gates---not that smaller models universally replace frontier models.
 
 \bibliographystyle{plainnat}
 \bibliography{references}

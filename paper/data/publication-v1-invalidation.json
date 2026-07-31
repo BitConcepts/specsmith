@@ -1,0 +1,92 @@
+{
+  "schema": "governancebench-protocol-invalidation-v1",
+  "protocol_id": "GB-PREPRINT-2026-07-30-V1",
+  "protocol_sha256": "92545b3923527811f0b7e43d05c2cb728ace475423f93d2f5ee5192288f90f74",
+  "workflow_id": "30578319069",
+  "commit_sha": "e9305bb01e5cb861f07ae7f7b01a8bf1a431c574",
+  "discovered_before_publication": true,
+  "invalidated_strata": [
+    {
+      "task": "T30",
+      "conditions": [
+        "UNGOVERNED",
+        "CURSOR_RULES",
+        "SPECSMITH_FULL"
+      ],
+      "models": [
+        "openai-responses/gpt-5.6-terra",
+        "openai-responses/gpt-5.6-sol"
+      ],
+      "rows": 60,
+      "reasons": [
+        "The hidden evaluator required the literal label 'BSD 3-Clause' in the untouched pinned LICENSE.txt even though the canonical file does not contain that label.",
+        "T30 was classified as a standard-horizon task, so the FULL completion gate did not require every declared milestone file before accepting a completion request."
+      ],
+      "disposition": "Exclude all V1 T30 rows from correctness, TPCA, and model-condition comparisons. Preserve their observed expenditure as invalidated experimental spend."
+    }
+  ],
+  "preserved_strata": [
+    {
+      "task": "T28",
+      "conditions": [
+        "UNGOVERNED",
+        "CURSOR_RULES",
+        "SPECSMITH_FULL"
+      ],
+      "models": [
+        "openai-responses/gpt-5.6-terra",
+        "openai-responses/gpt-5.6-sol"
+      ],
+      "qualification": "Sol has 30/30 valid T28 rows. Terra has 28/30 valid T28 rows because UNGOVERNED repetitions 4 and 6 ended in bounded provider timeouts."
+    },
+    {
+      "task": "T29",
+      "conditions": [
+        "UNGOVERNED",
+        "CURSOR_RULES",
+        "SPECSMITH_FULL"
+      ],
+      "models": [
+        "openai-responses/gpt-5.6-terra",
+        "openai-responses/gpt-5.6-sol"
+      ],
+      "qualification": "All 60 T29 rows are valid. T29 uses its own isolated public and hidden acceptance boundaries."
+    }
+  ],
+  "censored_cells": [
+    {
+      "task": "T28",
+      "condition": "UNGOVERNED",
+      "model": "openai-responses/gpt-5.6-terra",
+      "repetitions": [
+        4,
+        6
+      ],
+      "classification": "provider_timeout"
+    }
+  ],
+  "recovery": {
+    "protocol_id": "GB-PREPRINT-2026-07-30-V2",
+    "protocol_sha256": "741348ba78726624f6d32eef7dcfbb49b15abb1fcc01d2ec51ccb3509e5fcb22",
+    "workflow_id": "30589098641",
+    "scope": "Corrected T30 only, same raw/Cursor/FULL conditions and Terra/Sol routes, n=10, controller v8, no provider retries.",
+    "corrections": [
+      "Verify the pinned license by exact SHA-256 rather than an absent prose label.",
+      "Classify T30 as long horizon and require all declared milestone files at FULL completion.",
+      "Run public rotation, documentation, and upstream validators at the declared milestone boundaries."
+    ]
+  },
+  "attempt_history": [
+    {
+      "workflow_id": "30578319069",
+      "attempt": 1,
+      "status": "completed_with_two_provider_timeouts_and_invalid_t30"
+    },
+    {
+      "workflow_id": "30578319069",
+      "attempt": 2,
+      "status": "cancelled_after_evaluator_defect_discovery",
+      "reason": "Avoid spending on a benchmark stratum that was no longer valid."
+    }
+  ]
+}
