@@ -11,11 +11,14 @@ import yaml
 DEFAULT_PROTOCOL_PATH = Path(__file__).with_name("PREPRINT_PROTOCOL_2026_07.yml")
 RECOVERY_PROTOCOL_PATH = Path(__file__).with_name("PREPRINT_PROTOCOL_2026_07_V2.yml")
 LITERATURE_V9_1_PROTOCOL_PATH = Path(__file__).with_name("LITERATURE_V9_1_PROTOCOL.yml")
+LITERATURE_V9_2_PROTOCOL_PATH = Path(__file__).with_name("LITERATURE_V9_2_PROTOCOL.yml")
 PROTOCOL_PATH_BY_PROFILE = {
     "publication-real-repository-recovery": RECOVERY_PROTOCOL_PATH,
     "literature-v9-ablation": LITERATURE_V9_1_PROTOCOL_PATH,
     "literature-v9-screen": LITERATURE_V9_1_PROTOCOL_PATH,
     "literature-v9-release": LITERATURE_V9_1_PROTOCOL_PATH,
+    "literature-v9-hotspot-admission": LITERATURE_V9_2_PROTOCOL_PATH,
+    "literature-v9-hotspot-screen": LITERATURE_V9_2_PROTOCOL_PATH,
 }
 
 

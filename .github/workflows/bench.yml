@@ -31,6 +31,8 @@ on:
           - literature-v9-ablation
           - literature-v9-screen
           - literature-v9-release
+          - literature-v9-hotspot-admission
+          - literature-v9-hotspot-screen
         default: custom
       experiment:
         description: "Versioned controller protocol; use one admission per causal variant."

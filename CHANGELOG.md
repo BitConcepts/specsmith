@@ -11,6 +11,8 @@ consolidated into the next published release.
 ## [Unreleased]
 
 ### Added
+- Freeze `GB-LITERATURE-V9.2-2026-07-31` for the audit-selected T29 schema and
+  T30 milestone-fragmentation hotspots while retaining evaluator and turn caps.
 - Freeze and enforce the evidence-informed `GB-LITERATURE-V9.1-2026-07-31`
   follow-up contract across tasks, repetitions, routes, controller, feature
   cell, and protocol hash before additional paid inference.
@@ -224,6 +226,9 @@ consolidated into the next published release.
   repair boundaries while preserving the independent hidden acceptance oracle.
 
 ### Changed
+- Make the T29 nullable JSON Schema representation explicit and validate T30
+  documentation in the compatibility milestone, eliminating a serial third
+  milestone without weakening its documentation gate.
 - Preserve complete active-milestone context and compact only validated
   milestone history; unaccepted early-stop handoffs now continue bounded
   recovery instead of terminating recoverable work.

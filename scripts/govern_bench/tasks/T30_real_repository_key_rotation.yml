@@ -34,20 +34,16 @@ milestones:
       - "TimedSerializer.loads_with_reissue preserves max_age and SignatureExpired behavior."
       - "Without return_timestamp it returns (payload, needs_reissue); with return_timestamp it returns (payload, timestamp, needs_reissue)."
       - "Inherited URLSafeSerializer and URLSafeTimedSerializer behavior remains functional."
+      - "Serializer documentation explains reissue detection, key order, return shapes, expiry behavior, and a safe rotation example."
+      - "The upstream provenance and license files remain unchanged."
     files:
       - src/itsdangerous/timed.py
       - tests/test_itsdangerous/test_timed.py
       - tests/test_itsdangerous/test_url_safe.py
+      - docs/serializer.rst
     validators:
       - "pytest"
       - "python tools/validate_rotation_api.py"
-  - name: public API documentation
-    criteria:
-      - "Serializer documentation explains reissue detection, key order, return shapes, expiry behavior, and a safe rotation example."
-      - "The upstream provenance and license files remain unchanged."
-    files:
-      - docs/serializer.rst
-    validators:
       - "python tools/validate_rotation_docs.py"
 
 estimated_tokens_ungoverned: 18000

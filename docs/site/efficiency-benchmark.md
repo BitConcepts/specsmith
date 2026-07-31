@@ -17,6 +17,16 @@ handoff as terminal only when a configured stronger route can receive it. The
 runner now fails closed on task, repetition, route, controller, feature-cell,
 or protocol-hash drift. Promotion remains n=1 → n=5 → independent n=10.
 
+The v9.1 follow-up admitted `retrieval,lanes` with all three tasks correct and
+108,512 total tokens, 16.4% below the same-commit lane-only cell. Its n=5 screen
+([workflow 30637147849](https://github.com/layer1labs/specsmith/actions/runs/30637147849))
+passed T28 5/5, T29 5/5, and T30 4/5, spending 682,962 tokens across all rows.
+The failed T30 row consumed 118,283 tokens and stopped at 2/3 milestones, so
+the audit blocked n=10 despite the nominal 14/15 pass count. Frozen v9.2 now
+tests two prospective fixes: an explicit public JSON Schema nullable form for
+T29 and documentation validation inside T30's compatibility milestone. Turn
+caps, validators, hidden oracles, failure accounting, and route are unchanged.
+
 The design is motivated by primary studies reporting that role-aware code
 representations can improve localization with much smaller footprints
 ([Caumartin et al.](https://arxiv.org/abs/2607.11046)); five-pair pruning can

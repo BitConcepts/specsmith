@@ -1,0 +1,44 @@
+schema: governancebench-preregistration-v1
+protocol_id: GB-LITERATURE-V9.2-2026-07-31
+status: frozen
+purpose: >-
+  Prospectively test the two deterministic hotspots found by the v9.1 n=5
+  screen without changing validators, hidden oracles, turn caps, or route.
+
+controls:
+  controller: scalar-milestone-packet-authority-v9
+  feature_cells: ["retrieval,lanes"]
+  changes:
+    T29: spell out the public nullable approved_at JSON Schema representation
+    T30: validate documentation in the timed-compatibility milestone instead of a third serial milestone
+
+contracts:
+  literature-v9-hotspot-admission:
+    tasks: [T29, T30]
+    conditions: [SPECSMITH_FULL]
+    repetitions: 1
+    routes: &routes
+      - {provider: openai-responses, model: gpt-5.6-sol}
+      - {provider: openai-responses, model: gpt-5.6-terra}
+      - {provider: huggingface, model: "Qwen/Qwen3.6-27B:deepinfra"}
+      - {provider: huggingface, model: "Qwen/Qwen3.6-35B-A3B-FP8:deepinfra"}
+  literature-v9-hotspot-screen:
+    tasks: [T29, T30]
+    conditions: [SPECSMITH_FULL]
+    repetitions: 5
+    routes: *routes
+
+observed_screen:
+  run_id: 30637147849
+  result: {T28: 5/5, T29: 5/5, T30: 4/5}
+  blockers: [turn_budget_exhausted, tool_call_serialization, milestone_fragmentation, governed_failure]
+
+promotion:
+  admission: every_task_public_and_hidden_correct
+  screen: at_least_4_of_5_correct_per_task_and_zero_high_or_critical_audit_findings
+
+failure_accounting:
+  prior_failures_retained: true
+  failed_tokens_remain_in_denominator: true
+  hidden_oracle_unchanged: true
+  turn_cap_unchanged: true

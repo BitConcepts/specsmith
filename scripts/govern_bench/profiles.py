@@ -130,6 +130,22 @@ PROFILES: dict[str, BenchmarkProfile] = {
         repetitions=10,
         purpose="Independent n=10 confirmation for a combined v9 controller that clears n=5.",
     ),
+    "literature-v9-hotspot-admission": BenchmarkProfile(
+        name="literature-v9-hotspot-admission",
+        tasks=("T29", "T30"),
+        conditions=("SPECSMITH_FULL",),
+        repetitions=1,
+        purpose=(
+            "Prospective admission for explicit recurring invariants and merged T30 boundaries."
+        ),
+    ),
+    "literature-v9-hotspot-screen": BenchmarkProfile(
+        name="literature-v9-hotspot-screen",
+        tasks=("T29", "T30"),
+        conditions=("SPECSMITH_FULL",),
+        repetitions=5,
+        purpose="Matched n=5 screen after the v9.2 hotspot admission clears every gate.",
+    ),
 }
 
 

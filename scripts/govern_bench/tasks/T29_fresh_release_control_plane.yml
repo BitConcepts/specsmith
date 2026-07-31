@@ -17,7 +17,7 @@ languages:
 milestones:
   - name: shared release contract and API
     criteria:
-      - "Schema declares exactly the seven release fields, both enums, nullable approved_at, required fields, and rejects additional properties."
+      - "Schema declares exactly the seven release fields, both enums, and approved_at as JSON Schema type [string, null] with date-time format; all fields are required and additional properties are rejected."
       - "One resettable in-memory store powers create (201), composable environment/state filters, approve returning the updated release (404 when absent), and the unchanged health route."
       - "Public backend tests cover create, filtering, approval, missing IDs, and isolated store state."
     files:

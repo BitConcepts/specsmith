@@ -21,7 +21,7 @@ from govern_bench.metrics import RunResult  # noqa: E402
 from govern_bench.profiles import PROFILES  # noqa: E402
 from govern_bench.protocol import validate_run_contract  # noqa: E402
 from govern_bench.run_bench import _policy_rows, _validate_controller_features  # noqa: E402
-from govern_bench.tasks import BenchTask  # noqa: E402
+from govern_bench.tasks import BenchTask, get_task  # noqa: E402
 
 from specsmith.benchmark_audit import _condition_rollups  # noqa: E402
 
@@ -52,6 +52,33 @@ def test_v9_1_protocol_freezes_route_controller_and_feature_cell() -> None:
     )
 
     assert protocol_id == "GB-LITERATURE-V9.1-2026-07-31"
+    assert len(digest) == 64
+
+
+def test_recurring_invariants_are_explicit_at_their_milestone_boundaries() -> None:
+    t29_first = get_task("T29").milestones[0]
+    t29_criteria = " ".join(str(value) for value in t29_first["criteria"])
+    assert "[string, null]" in t29_criteria
+
+    t30 = get_task("T30")
+    assert len(t30.milestones) == 2
+    compatibility = t30.milestones[1]
+    assert "docs/serializer.rst" in compatibility["files"]
+    assert "python tools/validate_rotation_docs.py" in compatibility["validators"]
+
+
+def test_v9_2_hotspot_protocol_is_frozen() -> None:
+    protocol_id, digest = validate_run_contract(
+        profile="literature-v9-hotspot-admission",
+        tasks=["T29", "T30"],
+        conditions=["SPECSMITH_FULL"],
+        repetitions=1,
+        provider="openai-responses",
+        model="gpt-5.6-sol",
+        controller="scalar-milestone-packet-authority-v9",
+        controller_features="retrieval,lanes",
+    )
+    assert protocol_id == "GB-LITERATURE-V9.2-2026-07-31"
     assert len(digest) == 64
 
 

@@ -111,6 +111,13 @@ paid runs: compaction occurs only after a validated milestone, and an
 escalation signal cannot terminate the current route unless a configured
 stronger route can receive the same-tree handoff.
 
+The repaired `retrieval,lanes` cell reduced the three-task admission total from
+129,772 lane-only tokens to 108,512 (16.4%) with all tasks correct. Its n=5
+screen was 5/5 on T28, 5/5 on T29, and 4/5 on T30. Because the failed T30 row
+used 118,283 tokens and produced four high-severity audit findings, it did not
+advance to n=10. `LITERATURE_V9_2_PROTOCOL.yml` freezes the audit-selected
+hotspot experiment before inference and keeps the cap and evaluators unchanged.
+
 ## 3) Core Metrics
 
 ### 3.1 Primary metric
