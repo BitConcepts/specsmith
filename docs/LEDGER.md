@@ -599,3 +599,27 @@
 - **Type**: wi_archive
 - **Status**: complete
 - **Chain hash**: `7859f9465d9eaacb...`
+
+## 2026-07-31T11:15 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `06d377106e9b6357...`
+
+## 2026-08-02T13:46 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `560fedb776ea6ded...`
+
+## 2026-08-05T14:07 — KILL SWITCH ACTIVATED: emergency stop
+- **Author**: specsmith-operator
+- **Type**: kill-switch
+- **REQs affected**: REG-005
+- **Status**: complete
+- **Epistemic status**: high
+- **Chain hash**: `fdba04af8fad289a...`
